@@ -1,6 +1,6 @@
 # Metropolist[Capstone]
 ## Functional Requirements
-*The following is a short list of functional requirements for this system. This project will require the student to develop a more complete set of functional requirements.*
+*This web application allows users to create randomly generated fantasy maps of cities and additionally allows user to annotate and edit city elements at a fine granularity.*
 
 ## Roles
 *There are two roles for this system: <code>admins</code> and <code>users</code>.*
