@@ -76,24 +76,18 @@ function onMouseDown(event) {
                     $('#selectDistrict').append('<option value="0" disabled>Choose district</option><option value="red" data-icon="images/red.jpeg" class="black-text" selected>red</option><option value="blue" data-icon="images/blue.jpeg" class="black-text">blue</option>').trigger('create');
                     if(hitResult.item.fillColor != 'red'){
                         hitResult.item.fillColor = 'red';
-                        console.log("fillColor red")
                     }else{
                         $('#selectDistrict').find('option[value="red"]').attr("selected", true);
-                        console.log("selected red");
                         $('#selectDistrict').find('option[value="blue"]').removeAttr("selected", true);
-                        console.log("removeAttr blue");
                     }
                     break;
                 case "blue":
                     $('#selectDistrict').append('<option value="0" disabled>Choose district</option><option value="red" data-icon="images/red.jpeg" class="black-text">red</option><option value="blue" data-icon="images/blue.jpeg" class="black-text" selected>blue</option>').trigger('create');
                     if(hitResult.item.fillColor != 'blue'){
                         hitResult.item.fillColor = 'blue';
-                        console.log("fillColor blue")
                     }else{
                         $('#selectDistrict').find('option[value="blue"]').attr("selected", true);
-                        console.log("selected blue");
                         $('#selectDistrict').find('option[value="red"]').removeAttr("selected", true);
-                        console.log("removeAttr red");
                     }
                     break;
                 default:
@@ -175,7 +169,7 @@ function removeSmallBits(path) {
 function generateBeeHivePoints( size, loose ) {
     var points = [];
     var n = 60;
-    while( n-- ) {
+    while(n --) {
         var x = Math.random() * size.width;
         var y = Math.random() * size.height;
         points.push(new Point( x, y ));
@@ -195,12 +189,7 @@ function createPath(points, center) {
     for (var i = 0, l = points.length; i < l; i++) {
         var point = points[i];
         var next = points[(i + 1) == points.length ? 0 : i + 1];
-        var vector = (next - point) / 200;
-        path.add({
-            point: point + vector,
-            handleIn: -vector,
-            handleOut: vector
-        });
+        path.add({ point: point });
     }
     path.scale(0.97);
     removeSmallBits(path);

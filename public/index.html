@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Metropolist</title>
+    <link rel="shortcut icon" type="image/x-icon" href="images/favico.ico" media="screen" />
+    <link rel="Bookmark" href="images/favico.ico" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/qtip2/3.0.3/jquery.qtip.min.css"/>
@@ -17,6 +19,9 @@
             <img id="test" src="https://fontmeme.com/permalink/180923/7d95b1af3bc6a2edd6b5c31370e73e2d.png" height="80%" width="80%" alt="pixel-fonts" border="0">
         </a>
         <ul class="right hide-on-med-and-down">
+            <li>
+                <a class="waves-effect waves-light btn-small grey darken-1" id="render">render</a>
+            </li>
             <li>
                 <div class="switch">
                     <label>
@@ -45,11 +50,104 @@
         </ul>
     </div>
 </nav>
+<br>
 <div class="row">
     <div class="col s12">
         <div class="row">
-            <div class="col s12">
-                <canvas id="myCanvas" width="1400px" height="700px"></canvas>
+            <div class="col s6">
+                <div class="row section">
+                    <div class="col s12">
+                        <div class="card-panel">
+                            <div class="row">
+                                <div class="col s12">
+                                    <h5>Rectangle setting</h5>
+                                </div>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="row">
+                                <div class="col s2">
+                                    <p><strong>Column:</strong></p>
+                                </div>
+                                <div class="col s2">
+                                    <p class="range-field">
+                                        <input type="range" id="column" min="0" max="10" style="margin:0"/>
+                                    </p>
+                                </div>
+                                <div class="col s2 offset-s2">
+                                    <p><strong>Row:</strong></p>
+                                </div>
+                                <div class="col s2">
+                                    <p class="range-field">
+                                        <input type="range" id="row" min="0" max="10" style="margin:0"/>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col s2">
+                                    <p><strong>Rotate:</strong></p>
+                                </div>
+                                <div class="col s2">
+                                    <p class="range-field">
+                                        <input type="range" id="rotate" min="0" max="90" style="margin:0"/>
+                                    </p>
+                                </div>
+                                <div class="col s2 offset-s2">
+                                    <p><strong>Scale:</strong></p>
+                                </div>
+                                <div class="col s2">
+                                    <p class="range-field">
+                                        <input type="range" id="scale" min="1" max="10" style="margin:0"/>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col s3 offset-s8">
+                                    <a class="waves-effect waves-light btn-small grey darken-1" id="renderRec">render</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row section">
+                    <div class="col s12">
+                        <div class="card-panel">
+                            <div class="row">
+                                <div class="col s12">
+                                    <h5>Polygon setting</h5>
+                                </div>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="row">
+                                <div class="col s2">
+                                    <p><strong>Sides:</strong></p>
+                                </div>
+                                <div class="col s2">
+                                    <p class="range-field">
+                                        <input type="range" id="sides" min="3" max="17" style="margin:0"/>
+                                    </p>
+                                </div>
+                                <div class="col s2 offset-s2">
+                                    <p><strong>Radius:</strong></p>
+                                </div>
+                                <div class="col s2">
+                                    <p class="range-field">
+                                        <input type="range" id="radius" min="100" max="450" style="margin:0"/>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col s3 offset-s8">
+                                    <a class="waves-effect waves-light btn-small grey darken-1" id="renderPolygon">render</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col s6">
+                <canvas id="myCanvas" width="660px" height="660px"></canvas>
             </div>
         </div>
     </div>
@@ -73,7 +171,6 @@
 <script type="text/javascript" src="javascripts/jquery.Shortcut.js"></script>
 <script type="text/javascript" src="javascripts/paper-full.js"></script>
 <script type="text/javascript" src="javascripts/voronoi.js"></script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/qtip2/3.0.3/jquery.qtip.min.js"></script>
-<script type="text/paperscript" src="javascripts/paperscript.js" canvas="myCanvas"></script>
+<script type="text/paperscript" src="javascripts/cell.js" canvas="myCanvas"></script>
 </body>
 </html>
