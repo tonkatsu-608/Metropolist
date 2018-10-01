@@ -169,3 +169,25 @@ function onResize() {
 //     activeItem = null;
 //     path.position = view.center;
 // }
+
+////////////////////////////////////////////////
+
+// function onFrame(event) {
+//     result.rotate(3, view.center);
+// }
+//
+// function onMouseDown(event) {
+//     var hitResult = cell.polygon.parent.hitTest(event.point);
+//     cell.activeItem = hitResult && hitResult.item;
+// }
+//
+// function onMouseDrag(event) {
+//     if (cell.activeItem){
+//         cell.activeItem.position = event.point;
+//     }
+// }
+//
+// function onMouseUp() {
+//     cell.activeItem = null;
+//     cell.rec.position = view.center;
+// }
