@@ -22,11 +22,58 @@ $(document).ready(function () {
         $('#panel').addClass('hide');
     });
 });
+
+/*=====================================================================================================
+                                         Constructor Functions
+======================================================================================================*/
+function Cell(bounds, center) {
+    this.column  = 6 * Math.random() + 2;
+    this.row = 6 * Math.random() + 2;
+    this.rotate = 90 * Math.random();
+    this.bounds = bounds || paper.view.bounds
+    this.center = center || view.center
+}
+
+Cell.prototype.makeGrid = function(){
+    var path = new CompoundPath({
+        children: [],
+        center: this.center,
+    });
+    var width = this.bounds.width;
+    var height = this.bounds.height;
+    var width_per_rectangle = width / this.column;
+    var height_per_rectangle = height / this.row;
+
+    for (var i = 0; i < this.column; i++) {
+        for (var j = 0; j < this.row; j++) {
+            var xOffset = width_per_rectangle * 0.03;
+            var yOffset = height_per_rectangle * 0.03;
+            var aRect = new paper.Path.Rectangle(
+                this.bounds.left + i * width_per_rectangle + xOffset,
+                this.bounds.top + j * height_per_rectangle + yOffset,
+                width_per_rectangle - 2 * xOffset,
+                height_per_rectangle - 2 * yOffset
+            );
+            aRect.rotate(this.rotate, this.center);
+            path.addChild(aRect);
+        }
+    }
+    return path;
+};
+
+Cell.prototype.intersect = function(poly) {
+    this.grid = this.makeGrid();
+    this.poly = poly;
+    var result = this.poly.divide(this.grid);
+    result.strokeColor = new Color('black')
+    return result;
+};
+
 var voronoi =  new Voronoi();
 var sites = generateBeeHivePoints(view.size, true);
 var bbox, selectedItem;
 var oldSize = view.size;
-var spotColor = new Color('grey');
+var spotColor = new Color('#66635D');
 var selected = false;
 var isChecked = false;
 var isSelect = false;
@@ -37,16 +84,14 @@ var hitOptions = {
     tolerance: 5
 };
 var manager = {
-    stack : [ sites ],
+    stack : [sites],
     paths: []
 
 };
-onResize();
 
 $('#undo').click(function () {
     sites = (manager.stack && manager.stack.length > 0) ? manager.stack.pop() : sites;
     renderDiagram();
-    console.log("sites: " + sites.length);
 });
 // $('#redo').click(function () {
 //     renderDiagram();
@@ -56,12 +101,17 @@ $.Shortcut.on({
     "meta+Z": function () {
         sites = (manager.stack && manager.stack.length > 0) ? manager.stack.pop() : sites;
         renderDiagram();
-        console.log("sites: " + sites.length);
     },
     // "meta+shift+Z": function () {
     //     renderDiagram();
     // }
 });
+
+/*=====================================================================================================
+                                       Main Functions
+======================================================================================================*/
+onResize();
+
 /*=====================================================================================================
                                        Functions
 ======================================================================================================*/
@@ -115,7 +165,6 @@ function onMouseDown(event) {
             sites.push(event.point);
             renderDiagram();
         }
-        console.log("sites: " + sites.length);
     }
 }
 
@@ -194,6 +243,9 @@ function createPath(points, center) {
     path.scale(0.97);
     removeSmallBits(path);
     path.site = center;
+    manager.paths.push(path)
+    var cell = new Cell(path.bounds,path.site);
+    var result = cell.intersect(path)
     return path;
 }
 

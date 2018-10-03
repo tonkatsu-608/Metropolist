@@ -191,3 +191,36 @@ function onResize() {
 //     cell.activeItem = null;
 //     cell.rec.position = view.center;
 // }
+
+// for (var i = 0; i < this.column; i++) {
+//     for (var j = 0; j < this.row; j++) {
+//         var aRect = new paper.Path.Rectangle(paper.view.bounds.left + i * width_per_rectangle, paper.view.bounds.top + j * height_per_rectangle, width_per_rectangle, height_per_rectangle);
+//         aRect.rotate(this.rotate, view.center);
+//         path.addChild(aRect);
+//     }
+// }
+
+// var from = new Point(width/2, 0);
+// var to = new Point(width/2, height);
+// var path1 = new Path.Line(from, to);
+// var from = new Point(0, height/2);
+// var to = new Point(width, height/2);
+// var path2 = new Path.Line(from, to);
+// path.addChild(path1);
+// path.addChild(path2);
+
+
+// for (var i = 0; i <= this.column; i++) {
+//     var xPos = paper.view.bounds.left + i * width_per_rectangle;
+//     var topPoint = new paper.Point(xPos, paper.view.bounds.top);
+//     var bottomPoint = new paper.Point(xPos, paper.view.bounds.bottom);
+//     var aLine = new paper.Path.Line(topPoint, bottomPoint);
+//     path.addChild(aLine);
+// }
+// for (var i = 0; i <= this.row; i++) {
+//     var yPos = paper.view.bounds.top + i * height_per_rectangle;
+//     var leftPoint = new paper.Point(paper.view.bounds.left, yPos);
+//     var rightPoint = new paper.Point(paper.view.bounds.right, yPos);
+//     var aLine = new paper.Path.Line(leftPoint, rightPoint);
+//     path.addChild(aLine);
+// }
