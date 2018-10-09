@@ -1,107 +1,202 @@
-var text = new PointText({
-    position: view.center + [0, 200],
-    fillColor: 'black',
-    justification: 'center',
-    fontSize: 20
-});
+// var column  = Math.floor(5 * Math.random() + 3);
+// var row = Math.floor(5 * Math.random() + 3);
+var column  = 7;
+var row  = 7;
 
-var originals = new Group({ insert: true }); // Don't insert in DOM.
-
-var square = new Path.Rectangle({
-    position: view.center,
-    size: 300,
-    parent: originals,
-    fillColor: 'black',
-});
-
-// Make a ring using subtraction of two circles:
-var inner = new Path.Circle({
-    center: view.center,
-    radius: 100,
-    parent: originals,
-    fillColor: 'black'
-});
-
-var outer = new Path.Circle({
-    center: view.center,
-    radius: 140,
-    parent: originals,
-    fillColor: 'black'
-});
-
-var ring = outer.subtract(inner);
-
-var operations = ['intersect'];
-var colors = ['black'];
-var curIndex = -1;
-var operation, result, activeItem;
-
-// Change the mode every 3 seconds:
-setInterval(setMode, 3000);
-
-// Set the initial mode:
-setMode();
-
-function setMode() {
-    curIndex++;
-    if (curIndex == operations.length * 2)
-        curIndex = 0;
-    operation = operations[curIndex % operations.length];
+function Cell() {
+    this.sides = Math.floor(10 * Math.random() + 3);
+    this.column  = column;
+    this.row = row;
+    this.rotate = 0 * Math.random();
+    this.bounds = this.makePolygon().bounds;
+    this.center = view.center;
+    this.grid = this.makeGrid();
+    this.poly = this.makePolygon();
 }
-
-function onMouseDown(event) {
-    var hitResult = originals.hitTest(event.point);
-    activeItem = hitResult && hitResult.item;
+Cell.prototype.makePolygon = function () {
+    var polygon = new Path.RegularPolygon({
+        center: view.center,
+        sides: this.sides,
+        radius: 300,
+    });
+    return polygon;
 }
+Cell.prototype.makeGrid = function(){
+    var grid = new CompoundPath({
+        center: view.center,
+        strokeColor: 'white'
+    });
+    var width = this.bounds.width;
+    var height = this.bounds.height;
+    var width_per_rectangle = width / this.column;
+    var height_per_rectangle = height / this.row;
 
-function onMouseDrag(event) {
-    if (activeItem)
-        activeItem.position = event.point;
-}
-
-function onMouseUp() {
-    activeItem = null;
-    square.position = view.center;
-}
-
-function onFrame(event) {
-    if (activeItem != ring) {
-        // Move the ring around:
-        var offset = new Point(140, 80) * [Math.sin(event.count / 60), Math.sin(event.count / 40)];
-        ring.position = view.center + offset;
-    }
-
-    // Remove the result of the last path operation:
-    if (result)
-        result.remove();
-
-    // Perform the path operation on the ring:
-    console.log("operation: " + operation)
-    if (curIndex < operations.length) {
-        result = square[operation](ring);
-        text.content = 'square.' + operation + '(ring)';
-    } else {
-        result = ring[operation](square);
-        text.content = 'ring.' + operation + '(square)';
-    }
-    result.selected = true;
-    result.fillColor = colors[curIndex % colors.length];
-    result.moveBelow(text);
-
-    // If the result is a group, color each of its children differently:
-    if (result instanceof Group) {
-        for (var i = 0; i < result.children.length; i++) {
-            result.children[i].fillColor = colors[i];
+    for (var i = 0; i < this.column; i++) {
+        for (var j = 0; j < this.row; j++) {
+            var xOffset = width_per_rectangle * 0.01;
+            var yOffset = height_per_rectangle * 0.01;
+            var aRect = new paper.Path.Rectangle(
+                this.bounds.left + i * width_per_rectangle + xOffset,
+                this.bounds.top + j * height_per_rectangle + yOffset,
+                width_per_rectangle - 2 * xOffset,
+                height_per_rectangle - 2 * yOffset
+            );
+            aRect.rotate(this.rotate, this.center);
+            grid.addChild(aRect);
         }
     }
+    return grid;
+};
+Cell.prototype.intersect = function() {
+    var result = this.poly.divide(this.grid);
+    result.selected = true;
+    result.strokeWidth = 2;
+    result.strokeColor = new Color('black');
+    result.fillColor = new Color('#98948B');
+    return result;
 };
 
-function onResize() {
-    text.position = view.center + [0, 200];
-    square.position = view.center;
+var cell = new Cell();
+var grid = cell.grid;
+var result = cell.intersect();
+var paperNodes = [];
+var paperlinks = [];
+console.log(result.children)
+
+for(var i = 0; i < result.children.length; i++){
+    var n = result.children[i];
+    var aNode = {
+        index: n.index,
+        x: n.bounds.centerX,
+        y: n.bounds.centerY,
+    };
+    paperNodes.push(aNode);
 }
 
+for (var y = 0; y < 7; ++y) {
+    for (var x = 0; x < 7; ++x) {
+        if (y > 0) paperlinks.push({source: (y - 1) * 7 + x, target: y * 7 + x});
+        if (x > 0) paperlinks.push({source: y * 7 + (x - 1), target: y * 7 + x});
+    }
+}
+// console.log(paperNodes)
+// console.log(paperlinks)
+// var circle = new Path.Circle({
+//     center: view.center,
+//     radius: 3,
+//     fillColor: 'red'
+// });
+// function onMouseMove(event) {
+//     var nearestPoint = result.getNearestPoint(event.point);
+//     circle.position = nearestPoint;
+// }
+/*=====================================================================================================
+                                                D3
+======================================================================================================*/
+// var simulation = d3.forceSimulation(paperNodes)
+//     .force("charge", d3.forceManyBody().strength(-100))
+//     .force("link", d3.forceLink(paperlinks).strength(1).distance(30).iterations(10))
+//     .on("tick", ticked);
+//
+// var canvas = document.querySelector("canvas"),
+//     context = canvas.getContext("2d"),
+//     width = view.bounds.width,
+//     height = view.bounds.height;
+//
+// d3.select(canvas)
+//     .call(d3.drag()
+//         .container(canvas)
+//         .subject(dragsubject)
+//         .on("start", dragstarted)
+//         .on("drag", dragged)
+//         .on("end", dragended));
+//
+// function ticked() {
+//     context.clearRect(0, 0, width, height);
+//     context.save();
+//     context.translate(width / 2, height / 2);
+//
+//     context.beginPath();
+//     paperlinks.forEach(drawLink);
+//     context.strokeStyle = "#aaa";
+//     context.stroke();
+//
+//     context.beginPath();
+//     paperlinks.forEach(drawNode);
+//     context.fill();
+//     context.strokeStyle = "#fff";
+//     context.stroke();
+//     context.restore();
+// }
+//
+// function dragsubject() {
+//     return simulation.find(d3.event.x - width / 2, d3.event.y - height / 2);
+// }
+//
+// function dragstarted() {
+//     if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+//     d3.event.subject.fx = d3.event.subject.x;
+//     d3.event.subject.fy = d3.event.subject.y;
+// }
+//
+// function dragged() {
+//     d3.event.subject.fx = d3.event.x;
+//     d3.event.subject.fy = d3.event.y;
+// }
+//
+// function dragended() {
+//     if (!d3.event.active) simulation.alphaTarget(0);
+//     d3.event.subject.fx = null;
+//     d3.event.subject.fy = null;
+// }
+//
+// function drawLink(d) {
+//     context.moveTo(d.source.x, d.source.y);
+//     context.lineTo(d.target.x, d.target.y);
+// }
+//
+// function drawNode(d) {
+//     context.moveTo(d.x + 3, d.y);
+//     context.arc(d.x, d.y, 3, 0, 2 * Math.PI);
+// }
+/*=====================================================================================================
+                                                D3
+======================================================================================================*/
+// var path = d3.geo.path(),
+//     force = d3.layout.force().size([view.bounds.width, view.bounds.height]);
+var nodes = [],
+    links = [];
 
+result.children.forEach(function(d) {
+    var centroid = d.position;
+    centroid.feature = d;
+    nodes.push(centroid);
+});
+
+d3.geom.voronoi().links(nodes).forEach(function(link) {
+    var dx = link.source.x - link.target.x,
+        dy = link.source.y - link.target.y;
+    link.distance = Math.sqrt(dx * dx + dy * dy);
+    links.push(link);
+});
+
+force
+    .gravity(0)
+    .nodes(nodes)
+    .links(links)
+    .linkDistance(function(d) { return d.distance; })
+    .start();
+
+force.on("tick", function(e) {
+    link.attr("x1", function(d) { return d.source.x; })
+        .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; });
+
+    node.attr("transform", function(d) {
+        return "translate(" + d.x + "," + d.y + ")";
+    });
+});
 /*=====================================================================================================
                                        First Version
 ======================================================================================================*/

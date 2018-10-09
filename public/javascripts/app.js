@@ -24,19 +24,23 @@ $(document).ready(function () {
 });
 
 /*=====================================================================================================
-                                         Constructor Functions
+                                         Prototype Functions
 ======================================================================================================*/
-function Cell(bounds, center) {
+function Cell(path) {
     this.column  = 6 * Math.random() + 2;
     this.row = 6 * Math.random() + 2;
-    this.rotate = 90 * Math.random();
-    this.bounds = bounds || paper.view.bounds
-    this.center = center || view.center
+    this.rotate = 45 * Math.random();
+    this.bounds = path.bounds || paper.view.bounds;
+    this.center = path.site || view.center;
+    // if(this.bounds.width > this.bounds.height){
+    //     this.rotate = Math.random()* 15;
+    // }else{
+    //     this.rotate = Math.random()*(90-15)+15;
+    // }
 }
 
 Cell.prototype.makeGrid = function(){
-    var path = new CompoundPath({
-        children: [],
+    var grid = new CompoundPath({
         center: this.center,
     });
     var width = this.bounds.width;
@@ -46,8 +50,8 @@ Cell.prototype.makeGrid = function(){
 
     for (var i = 0; i < this.column; i++) {
         for (var j = 0; j < this.row; j++) {
-            var xOffset = width_per_rectangle * 0.03;
-            var yOffset = height_per_rectangle * 0.03;
+            var xOffset = width_per_rectangle * 0.01;
+            var yOffset = height_per_rectangle * 0.01;
             var aRect = new paper.Path.Rectangle(
                 this.bounds.left + i * width_per_rectangle + xOffset,
                 this.bounds.top + j * height_per_rectangle + yOffset,
@@ -55,23 +59,24 @@ Cell.prototype.makeGrid = function(){
                 height_per_rectangle - 2 * yOffset
             );
             aRect.rotate(this.rotate, this.center);
-            path.addChild(aRect);
+            grid.addChild(aRect);
         }
     }
-    return path;
+    return grid;
 };
 
 Cell.prototype.intersect = function(poly) {
     this.grid = this.makeGrid();
     this.poly = poly;
     var result = this.poly.divide(this.grid);
-    result.strokeColor = new Color('black')
+    result.strokeColor = new Color('black');
+    result.fillColor = new Color('#98948B');
     return result;
 };
 
 var voronoi =  new Voronoi();
 var sites = generateBeeHivePoints(view.size, true);
-var bbox, selectedItem;
+var bbox, selectedItem, result;
 var oldSize = view.size;
 var spotColor = new Color('#66635D');
 var selected = false;
@@ -85,8 +90,9 @@ var hitOptions = {
 };
 var manager = {
     stack : [sites],
-    paths: []
-
+    paths: [],
+    cells: [],
+    data: []
 };
 
 $('#undo').click(function () {
@@ -111,7 +117,26 @@ $.Shortcut.on({
                                        Main Functions
 ======================================================================================================*/
 onResize();
+showNearestPoint();
 
+var circle = new Path.Circle({
+    center: view.center,
+    radius: 10,
+    fillColor: 'red'
+});
+
+function onFrame(e) {
+    for(var i=0; i<project.activeLayer.children.length; i++ ){
+        var n = project.activeLayer.children[i];
+        if(n.center){
+            //CompoundPath
+            // n.fillColor = 'tomato';
+        }else{
+            //Path
+            // n.fillColor = 'tomato';
+        }
+    }
+}
 /*=====================================================================================================
                                        Functions
 ======================================================================================================*/
@@ -153,18 +178,22 @@ function onMouseDown(event) {
         }
     }else{
         if(isChecked){
-            var obj = project.hitTest(event.point, hitOptions);
-            sites = sites.filter( function(s) {
-                return s != obj.item.site;
-            } );
-            manager.stack.push( sites );
-            renderDiagram();
+            var hitResult = project.hitTest(event.point, hitOptions);
+            if (!hitResult){
+                return;
+            }else{
+                var obj = project.hitTest(event.point, hitOptions);
+                sites = sites.filter( function(s) {
+                    return s != obj.item.site;
+                } );
+                manager.stack.push( sites );
+            }
         }else{
             manager.stack.push( sites );
             sites = sites.slice();
             sites.push(event.point);
-            renderDiagram();
         }
+        renderDiagram();
     }
 }
 
@@ -175,7 +204,8 @@ function onMouseMove(event) {
             event.item.selected = true;
         }
     }else{
-        return;
+        var nearestPoint = result.getNearestPoint(event.point);
+        circle.position = nearestPoint;
     }
 }
 
@@ -203,7 +233,7 @@ function renderDiagram() {
 
 function removeSmallBits(path) {
     var averageLength = path.length / path.segments.length;
-    var min = path.length / 50;
+    var min = path.length / 20;
     for(var i = path.segments.length - 1; i >= 0; i--) {
         var segment = path.segments[i];
         var cur = segment.point;
@@ -244,9 +274,25 @@ function createPath(points, center) {
     removeSmallBits(path);
     path.site = center;
     manager.paths.push(path)
-    var cell = new Cell(path.bounds,path.site);
-    var result = cell.intersect(path)
+    var cell = new Cell(path);
+    result = cell.intersect(path);
+    manager.cells.push(result);
     return path;
+}
+
+function showNearestPoint() {
+    var circle = new Path.Circle({
+        center: view.center,
+        radius: 10,
+        fillColor: 'red',
+    });
+    var paths = new CompoundPath({
+    });
+
+    for(var i=0; i<manager.paths.length; i++){
+        var n = manager.paths[i];
+        paths.addChild(manager.paths[i])
+    }
 }
 
 function onResize() {
