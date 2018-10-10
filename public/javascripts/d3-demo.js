@@ -52,9 +52,19 @@ var canvas = d3.select("canvas")
 var sites = d3.range(60).map(function(d) { return [Math.random() * width, Math.random() * height]; });
 var voronoi = d3.voronoi()
     .extent([[-1, 1], [width + 1, height + 1]]);
-var diagram, links, polygons;
 
-render();
+var diagram, links, polygons;
+diagram = voronoi(sites);
+links = diagram.links();
+polygons = diagram.polygons();
+
+var simulation = d3.forceSimulation(sites)
+    .force("charge", d3.forceManyBody().strength(-10))
+    .force("link", d3.forceLink(links).distance(200))
+    .force("center", d3.forceCenter(width / 2, height / 2))
+    .alphaTarget(1)
+    .on("tick", render);
+
 d3.select(canvas)
     .call(d3.drag()
         .container(canvas)
@@ -63,13 +73,6 @@ d3.select(canvas)
         .on("drag", dragged)
         .on("end", dragended))
     .on('start.render drag.render end.render', render)
-
-var simulation = d3.forceSimulation(sites)
-    .force("charge", d3.forceManyBody().strength(-10))
-    .force("link", d3.forceLink(links).distance(200))
-    .force("center", d3.forceCenter(width / 2, height / 2))
-    .alphaTarget(1)
-    .on("tick", render);
 
 //mousedown
 function mousedowned() {
@@ -129,26 +132,28 @@ function render() {
                                          Draw Functions
 ======================================================================================================*/
 function dragsubject() {
-    var sbj = diagram.find(d3.event.x, d3.event.y);
+    var sbj = diagram.find(d3.event.x, d3.event.y, 2);
     console.log("sbj: " + sbj);
     return sbj;
 }
 
 function dragstarted() {
-    console.log("dragStarted: " + d3.event.subject)
+    console.log("dragStarted: " + d3.event.subject);
     d3.event.subject.active = true;
 }
 
 function dragged() {
-    console.log("dragged X: " + d3.event.x)
-    console.log("dragged Y: " + d3.event.y)
-
-    d3.event.subject.x = d3.event.x;
-    d3.event.subject.y = d3.event.y;
+    console.log("x: " + d3.event.x + ", y: " + d3.event.y);
+    d3.event.subject.data[0] = d3.event.x;
+    d3.event.subject.data[1] = d3.event.y;
+    // d3.event.subject.x = d3.event.x;
+    // d3.event.subject.y = d3.event.y;
+    console.log("D3: " , d3.event.subject)
+    render();
 }
 
 function dragended() {
-    console.log("dragEnded: " + d3.event.subject)
+    console.log("dragEnded: " + d3.event.subject);
     d3.event.subject.active = false;
 }
 
