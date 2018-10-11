@@ -9,7 +9,14 @@
     <link rel="stylesheet" href="stylesheets/materialize.min.css">
     <!--Let browser know website is optimized for mobile-->
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-</head>
+    <style>
+        path {
+            pointer-events: all;
+            fill: none;
+            stroke: #000;
+            stroke-width: 1;
+        }
+    </style>
 </head>
 <body>
 <nav class="grey lighten-3">
@@ -130,6 +137,7 @@
             <!--</div>-->
 
             <div class="col s6">
+                <!--<svg width="1400" height="650" style="background-color: #CBC5B9"></svg>-->
                 <canvas id="myCanvas" width="1400px" height="650px" style="background-color: #CBC5B9"></canvas>
             </div>
         </div>
@@ -155,14 +163,15 @@
 <!--<script type="text/javascript" src="javascripts/others/d3.v3.js"></script>-->
 <!--<script type="text/javascript" src="javascripts/others/topojson.v1.min.js"></script>-->
 <script type="text/javascript" src="javascripts/others/d3.v4.js"></script>
-<!--<script type="text/javascript" src="javascripts/others/cytoscape.js"></script>-->
-<!--<script src="https://cdn.rawgit.com/cytoscape/cytoscape.js-qtip/2.7.0/cytoscape-qtip.js"></script>-->
+<!--<script type="text/javascript" src="https://unpkg.com/d3-force-attract@latest"></script>-->
+<!--<script type="text/javascript" src="https://unpkg.com/d3-force-cluster@latest"></script>-->
 <!--<script type="text/javascript" src="javascripts/others/paper-full.js"></script>-->
 <!--<script type="text/javascript" src="javascripts/others/voronoi.js"></script>-->
-
-<script type="text/javascript" src="javascripts/d3-demo.js"></script>
-<!--<script type="text/paperscript" src="javascripts/app.js" canvas="myCanvas"></script>-->
+<script type="text/javascript" src="javascripts/d3-canvas.js"></script>
+<!--<script type="text/javascript" src="javascripts/d3-svg.js"></script>-->
+<!--<script type="text/javascript" src="javascripts/d3-svg-cluster.js"></script>-->
+<!--<script type="text/javascript" src="javascripts/d3-svg-without-force.js"></script>-->
+<!--<script type="text/paperscript" src="javascripts/paper-canvas.js" canvas="myCanvas"></script>-->
 <!--<script type="text/paperscript" src="javascripts/demo.js" canvas="myCanvas"></script>-->
-<!--<script type="text/paperscript" src="javascripts/cytoscape-demo.js" canvas="myCanvas"></script>-->
 </body>
 </html>
