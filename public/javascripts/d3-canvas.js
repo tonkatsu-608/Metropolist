@@ -23,11 +23,44 @@ $(document).ready(function () {
     });
 });
 
+var canvas = d3.select("canvas")
+    // .on("touchstart mousedown", mousedowned)
+        .node(),
+    context = canvas.getContext("2d"),
+    width = canvas.width,
+    height = canvas.height;
+
 var isChecked = false;
 var isSelected = false;
 var state = {
     stack : [],
+    points: []
 };
+var n = 30;
+
+var color = d3.scaleOrdinal().range(d3.schemeCategory20);
+
+var buildings = [];
+
+function makeGraphics() {
+    var sites = d3.range(n).map( d => [Math.random() * width, Math.random() * height] );
+    var voronoi = d3.voronoi().extent([[-1, 1], [width + 1, height + 1]]);
+    var diagram = voronoi( sites );
+    var links = diagram.links();
+    var polygons = diagram.polygons();
+    var clusters = polygons.map( poly => makeDots( poly, 10, 10 ) );
+
+    return {
+        sites : sites,
+        voronoi : voronoi,
+        diagram : diagram,
+        polygons : polygons,
+        clusters : clusters,
+        links : links
+    }
+}
+
+var graphics = makeGraphics();
 
 //undo functions
 $('#undo').click(function () {
@@ -43,27 +76,6 @@ $.Shortcut.on({
 /*=====================================================================================================
                                          Main Functions
 ======================================================================================================*/
-var canvas = d3.select("canvas")
-        // .on("touchstart mousedown", mousedowned)
-            .node(),
-    context = canvas.getContext("2d"),
-    width = canvas.width,
-    height = canvas.height;
-
-var n = 30;
-var color = d3.scaleOrdinal()
-    .range(d3.schemeCategory20);
-
-var sites = d3.range(n).map(function(d) {
-    return [Math.random() * width, Math.random() * height];
-});
-
-var voronoi = d3.voronoi().extent([[-1, 1], [width + 1, height + 1]]),
-    diagram,
-    links,
-    polygons,
-    buildings = [];
-
 render();
 
 d3.select(canvas)
@@ -73,32 +85,22 @@ d3.select(canvas)
         .on("start", dragstarted)
         .on("drag", dragged)
         .on("end", dragended))
-    .on('start.render drag.render end.render', render)
+    .on('start.render drag.render end.render', render);
 
 //render
 function render() {
     context.clearRect(0, 0, width, height);
 
-    diagram = voronoi(sites);
-    links = diagram.links();
-    polygons = diagram.polygons();
-
-
-    //draw polygons
-    context.beginPath();
-    for(var i = 0, n = polygons.length; i < n; ++i) {
-        drawCell(polygons[i]);
-    }
-    context.strokeStyle = "#000";
-    context.stroke();
-
-    for(var i = 0, n = polygons.length; i < n; i ++){
+    let diagram = graphics.diagram;
+    let links = graphics.links;
+    let polygons = graphics.polygons;
+    for(var i = 0, n = polygons.length; i < n; i ++) {
         let area = d3.polygonArea(polygons[i]);
-        let points = makeDots(polygons[i],10, 10);
-
+        let points = graphics.clusters[i];
         for(var j = 0, m = points.length; j < m; j ++){
-            buildings.push(points[j]);
-            //draw points
+            points[j].parent = i;
+            state.points.push(points[j])
+            // draw points
             context.beginPath();
             drawPoint(points[j],area);
             context.fillStyle = color(i);
@@ -108,7 +110,15 @@ function render() {
         }
     }
 
-    //draw links
+    //draw polygons
+    context.beginPath();
+    for(var i = 0, n = polygons.length; i < n; ++i) {
+        drawCell(polygons[i]);
+    }
+    context.strokeStyle = "#000";
+    context.stroke();
+
+    // draw links
     // context.beginPath();
     // for (var i = 0, n = links.length; i < n; ++i) {
     //     drawLink(links[i]);
@@ -132,30 +142,48 @@ function render() {
                                          Drag Functions
 ======================================================================================================*/
 function dragsubject() {
-    for (var i = buildings.length - 1, circle, x, y; i >= 0; --i) {
-        building = buildings[i];
-        x = building.x - d3.event.x;
-        y = building.y - d3.event.y;
-        if (x * x + y * y < 10 * 10) return building;
+    var n = state.points.length,
+        i,
+        dx,
+        dy,
+        d2,
+        s2 = 100,
+        point,
+        subject;
+
+    for (i = 0; i < n; ++i) {
+        point = state.points[i];
+        dx = d3.event.x - point[0];
+        dy = d3.event.y - point[1];
+        d2 = dx * dx + dy * dy;
+        if (d2 < s2) subject = point, s2 = d2;
     }
-    // var sbj = diagram.find(d3.event.x, d3.event.y);
-    // return sbj;
+    console.log("subject:",subject);
+    return subject;
 }
 
 function dragstarted() {
+    console.log("dragstarted:",d3.event.subject)
     d3.event.subject.active = true;
 }
 
 function dragged() {
-    d3.event.subject.data[0] = d3.event.x;
-    d3.event.subject.data[1] = d3.event.y;
+    console.log("dragged:",d3.event.subject)
+    var point = d3.event.subject;
+    var isInside = d3.polygonContains(graphics.polygons[point.parent], point);
+    if(isInside){
+        d3.event.subject[0] = d3.event.x;
+        d3.event.subject[1] = d3.event.y;
+    }else{
+
+    }
     render();
 }
 
 function dragended() {
+    console.log("dragended:",d3.event.subject)
     d3.event.subject.active = false;
 }
-
 /*=====================================================================================================
                                          Draw Functions
 ======================================================================================================*/
@@ -184,12 +212,17 @@ function drawPoint(point,area) {
     // context.moveTo(point[0] + 2.5, point[1]);
     // context.arc(point[0], point[1], r, 0, 2 * Math.PI, false);
     let w = 0;
-    if(area < 20000){
-        w = Math.round(Math.random() * 5 + 5);
+    if(area){
+        if(area < 20000){
+            w = Math.round(Math.random() * 5 + 5);
+        }else{
+            w = Math.round(Math.random() * 10 + 5);
+        }
+
     }else{
-        w = Math.round(Math.random() * 10 + 5);
+        w = 10;
     }
-    context.rect(point[0], point[1], w, w);
+    context.rect(point[0], point[1], 10, 10);
 }
 
 //mousedown
@@ -309,4 +342,44 @@ function distPointEdge(p, l1, l2) {
     let dy = p[1] - Y;
 
     return Math.sqrt(dx * dx + dy * dy);
+}
+
+function chunkify(a, n, balanced) {
+
+    if (n < 2)
+        return [a];
+
+    var len = a.length,
+        out = [],
+        i = 0,
+        size;
+
+    if (len % n === 0) {
+        size = Math.floor(len / n);
+        while (i < len) {
+            out.push(a.slice(i, i += size));
+        }
+    }
+
+    else if (balanced) {
+        while (i < len) {
+            size = Math.ceil((len - i) / n--);
+            out.push(a.slice(i, i += size));
+        }
+    }
+
+    else {
+
+        n--;
+        size = Math.floor(len / n);
+        if (len % size === 0)
+            size--;
+        while (i < size * n) {
+            out.push(a.slice(i, i += size));
+        }
+        out.push(a.slice(size * n));
+
+    }
+
+    return out;
 }
