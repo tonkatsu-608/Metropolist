@@ -22,7 +22,6 @@ $(document).ready(function () {
         $('#panel').addClass('hide');
     });
 });
-
 var canvas = d3.select("canvas")
     // .on("touchstart mousedown", mousedowned)
         .node(),
@@ -34,65 +33,57 @@ var isChecked = false;
 var isSelected = false;
 var state = {
     stack : [],
-    points: [],
-    foci: []
+    points: []
 };
-var n = 30;
-
+var tau = 2 * Math.PI;
+var N = 30;//sites num
+var W = 10, R = 5;//building size
+var CLUSTERS_PER_CELL = Math.round(Math.random() * 15 + 5);//buildings num for each district
 var color = d3.scaleOrdinal().range(d3.schemeCategory20);
 
 function makeGraphics() {
-    var sites = d3.range(n).map( d => [Math.random() * width, Math.random() * height] );
-    var voronoi = d3.voronoi().extent([[-1, 1], [width + 1, height + 1]]);
+    var sites = d3.range(N).map( d => [Math.random() * width, Math.random() * height] );
+    var voronoi = d3.voronoi().extent([[1,1], [width-1, height-1]]);
     var diagram = voronoi( sites );
     var links = diagram.links();
     var polygons = diagram.polygons();
-    var clusters = polygons.map( poly => makeDots( poly, 10, 10 ) );
-
+    var clusters = polygons.map( poly => makeDots( poly, CLUSTERS_PER_CELL, 10 ) );
+    var foci = polygons.map( poly => d3.polygonCentroid(poly));
     return {
         sites : sites,
         voronoi : voronoi,
         diagram : diagram,
+        links : links,
         polygons : polygons,
         clusters : clusters,
-        links : links
+        foci: foci
     }
 }
-
 var graphics = makeGraphics();
-//undo functions
-$('#undo').click(function () {
-    sites = (state.stack && state.stack.length > 0) ? state.stack.pop() : sites;
-    render();
-});
-$.Shortcut.on({
-    "meta+Z": function () {
-        sites = (state.stack && state.stack.length > 0) ? state.stack.pop() : sites;
-        render();
+for(var i = 0, n = graphics.polygons.length; i < n; i ++) {
+    let area = d3.polygonArea(graphics.polygons[i]);
+    let points = graphics.clusters[i];
+    // delete graphics.polygons[i].data;
+    for(var j = 0, m = points.length; j < m; j ++){
+        graphics.clusters[i][j].parent = i;
+        state.points.push(graphics.clusters[i][j]);
     }
-});
+}
 /*=====================================================================================================
                                          Main Functions
 ======================================================================================================*/
-let diagram = graphics.diagram;
-let links = graphics.links;
-let polygons = graphics.polygons;
-for(var i = 0, n = polygons.length; i < n; i ++) {
-    let area = d3.polygonArea(polygons[i]);
-    let points = graphics.clusters[i];
-    state.foci.push(d3.polygonCentroid(polygons[i]))
-    for(var j = 0, m = points.length; j < m; j ++){
-        points[j].parent = i;
-        state.points.push(points[j])
-    }
+var simulations = [];
+for(var i = 0, n = graphics.polygons.length; i < n; i ++){
+    simulations[i] = d3.forceSimulation(graphics.clusters[i])
+        .force("x", d3.forceX().strength(0.002))
+        .force("y", d3.forceY().strength(0.002))
+        .force("center", d3.forceCenter(graphics.foci[i][0], graphics.foci[i][1]))
+        .force("charge", d3.forceManyBody().strength(-40).distanceMin(10).distanceMax(50))
+        .force('attraction', d3.forceManyBody().strength(20).distanceMin(10).distanceMax(50))
+        .force('repulsion', d3.forceManyBody().strength(-20).distanceMin(10).distanceMax(50))
+        .force("collide", d3.forceCollide().radius(function(d) { return R; }).iterations(2))
+        .on("tick", render)
 }
-var simulation = d3.forceSimulation(state.points)
-// .velocityDecay(0.2)
-// .force("x", d3.forceX().strength(0.002))
-// .force("y", d3.forceY().strength(0.002))
-    .force("center", d3.forceCenter(width / 2, height / 2))
-    .force("collide", d3.forceCollide().radius(function(d) { return d.r + 2; }).iterations(2))
-    .on("tick", render);
 
 d3.select(canvas)
     .call(d3.drag()
@@ -101,50 +92,67 @@ d3.select(canvas)
         .on("start", dragstarted)
         .on("drag", dragged)
         .on("end", dragended))
-    .on('start.render drag.render end.render', render);
 
 //render
 function render() {
-    // Push nodes toward their designated focus.
-    var k = 0.03;
-    state.points.forEach(function(o,i) {
-        o.x += (graphics.sites[o.parent][0] - o.x) * k;
-        o.y += (graphics.sites[o.parent][1] - o.y) * k;
-    });
-
     context.clearRect(0, 0, width, height);
     context.save();
 
-    // draw points
-    for(var i = 0, n = state.points.length; i < n; ++i) {
-        context.beginPath();
-        drawPoint(state.points[i]);
-        context.fillStyle = color(i);
-        context.fill();
-        context.strokeStyle = "#000";
-        context.stroke();
+    //draw points
+    for(var k = 0; k <  graphics.polygons.length; k ++) {
+        for (var i = 0; i < graphics.clusters[k].length; i++) {
+            var d = graphics.clusters[k][i];
+            var polyPoints = graphics.polygons[k];
+            var L = polyPoints.length;
+            d.x = Math.max(R, Math.min(width - R, d.x));
+            d.y = Math.max(R, Math.min(height - R, d.y));
+            // change focus to the center of the triangle
+            var center = d3.polygonCentroid(polyPoints);
+            var x = d.x,
+                y = d.y,
+                inter = false;
+            for (var j = 0; j < L; j++) {
+                var f = j,
+                    s = (j + 1) < L ? (j + 1) : 0,
+                    inter = getLineIntersection(polyPoints[f][0], polyPoints[f][1],
+                        polyPoints[s][0], polyPoints[s][1], center[0], center[1], x, y);
+                if (inter) {
+                    x = inter.x;
+                    y = inter.y;
+                    break;
+                }
+            }
+            context.beginPath();
+            context.rect(x - W/2, y - W/2, W, W);
+            // context.moveTo(x + R, y);
+            // context.arc(x, y, R, 0, 2 * Math.PI);
+            context.fillStyle = color(k);
+            context.fill();
+            context.strokeStyle = "#333";
+            context.stroke();
+        }
     }
 
     //draw polygons
     context.beginPath();
-    for(var i = 0, n = polygons.length; i < n; ++i) {
-        drawCell(polygons[i]);
+    for(var i = 0, n = graphics.polygons.length; i < n; ++i) {
+        drawCell(graphics.polygons[i]);
     }
     context.strokeStyle = "#000";
     context.stroke();
 
-    // draw links
+    // // draw links
     // context.beginPath();
     // for (var i = 0, n = graphics.links.length; i < n; ++i) {
     //     drawLink(graphics.links[i]);
     // }
     // context.strokeStyle = "rgba(0,0,0,0.2)";
     // context.stroke();
-
-    // draw sites
+    //
+    // draw foci
     // context.beginPath();
-    // for (var i = 1, n = graphics.sites.length; i < n; ++i) {
-    //     drawSite(graphics.sites[i]);
+    // for (var i = 0, n = graphics.foci.length; i < n; ++i) {
+    //     drawSite(graphics.foci[i]);
     // }
     // context.fillStyle = "#000";
     // context.fill();
@@ -157,73 +165,40 @@ function render() {
                                          Drag Functions
 ======================================================================================================*/
 function dragsubject() {
-    var sbj = simulation.find(d3.event.x, d3.event.y);
-    console.log("sbj:",sbj);
+    var sbj, I, isInside;
+    var point = [d3.event.x, d3.event.y];
+    for(var i = 0, poly = graphics.polygons; i < graphics.polygons.length; i ++){
+        isInside = d3.polygonContains(poly[i], point);
+        if(isInside){
+            I = i;
+            break;
+        }
+    }
+    sbj = simulations[I].find(d3.event.x, d3.event.y);
+    sbj.parent = I;
+    console.log("sbj:",sbj)
     return sbj;
 }
 
 function dragstarted() {
     console.log("dragstarted:",d3.event.subject)
-    if (!d3.event.active) simulation.alphaTarget(0.3).restart();
-    d3.event.subject.fx = d3.event.subject.x;
-    d3.event.subject.fy = d3.event.subject.y;
+    if (!d3.event.active) simulations.forEach(s => s.alphaTarget(0.3).restart());
+    d3.event.subject.fx = Math.max(R, Math.min(width - R, d3.event.subject[0])) ;
+    d3.event.subject.fy = Math.max(R, Math.min(height - R, d3.event.subject[1])) ;
 }
 
 function dragged() {
     console.log("dragged:",d3.event.subject)
-    d3.event.subject.fx = d3.event.x;
-    d3.event.subject.fy = d3.event.y;
+    d3.event.subject.fx = Math.max(R, Math.min(width - R, d3.event.x));
+    d3.event.subject.fy = Math.max(R, Math.min(height - R, d3.event.y));
 }
 
 function dragended() {
     console.log("dragended:",d3.event.subject)
-    if (!d3.event.active) simulation.alphaTarget(0);
+    if (!d3.event.active) simulations.forEach(s => s.alphaTarget(0));
     d3.event.subject.fx = null;
     d3.event.subject.fy = null;
 }
-// function dragsubject() {
-//     var n = state.points.length,
-//         i,
-//         dx,
-//         dy,
-//         d2,
-//         s2 = 100,
-//         point,
-//         subject;
-//
-//     for (i = 0; i < n; ++i) {
-//         point = state.points[i];
-//         dx = d3.event.x - point[0];
-//         dy = d3.event.y - point[1];
-//         d2 = dx * dx + dy * dy;
-//         if (d2 < s2) subject = point, s2 = d2;
-//     }
-//     console.log("subject:",subject);
-//     return subject;
-// }
-//
-// function dragstarted() {
-//     console.log("dragstarted:",d3.event.subject)
-//     d3.event.subject.active = true;
-// }
-//
-// function dragged() {
-//     console.log("dragged:",d3.event.subject)
-//     var point = d3.event.subject;
-//     var isInside = d3.polygonContains(graphics.polygons[point.parent], point);
-//     if(isInside){
-//         d3.event.subject[0] = d3.event.x;
-//         d3.event.subject[1] = d3.event.y;
-//     }else{
-//
-//     }
-//     render();
-// }
-//
-// function dragended() {
-//     console.log("dragended:",d3.event.subject)
-//     d3.event.subject.active = false;
-// }
 /*=====================================================================================================
                                          Draw Functions
 ======================================================================================================*/
@@ -247,30 +222,12 @@ function drawCell(cell) {
     return true;
 }
 
-function drawPoint(point,area) {
-    // let r = Math.round(Math.random() * 5 + 5);
-    // context.moveTo(point[0] + r, point[1]);
-    // context.arc(point[0], point[1], r, 0, 2 * Math.PI, false);
-    let w = 0;
-    if(area){
-        if(area < 20000){
-            w = Math.round(Math.random() * 5 + 5);
-        }else{
-            w = Math.round(Math.random() * 10 + 5);
-        }
-
-    }else{
-        w = 10;
-    }
-    context.rect(point[0], point[1], 10, 10);
-}
-
 //mousedown
 function mousedowned() {
     if(!isSelected){
         var node = d3.mouse(this);
         if(isChecked){
-            var obj = diagram.find(node[0], node[1]);
+            var obj = graphics.diagram.find(node[0], node[1]);
             sites = sites.slice();
             sites.splice(obj.index, 1);
             state.stack.push(sites);
@@ -280,11 +237,24 @@ function mousedowned() {
             sites.push(node)
         }
     }else{
-        console.log("selected")
+        console.log("selected");
     }
     render();
 }
-
+/*=====================================================================================================
+                                     Additional Functions
+======================================================================================================*/
+//undo functions
+$('#undo').click(function () {
+    sites = (state.stack && state.stack.length > 0) ? state.stack.pop() : sites;
+    render();
+});
+$.Shortcut.on({
+    "meta+Z": function () {
+        sites = (state.stack && state.stack.length > 0) ? state.stack.pop() : sites;
+        render();
+    }
+});
 function makeDots(polygon, numPoints, options) {
 
     options = Object.assign({
@@ -422,4 +392,25 @@ function chunkify(a, n, balanced) {
     }
 
     return out;
+}
+// source: http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
+function getLineIntersection(p0_x, p0_y, p1_x, p1_y, p2_x, p2_y, p3_x, p3_y) {
+    var s1_x, s1_y, s2_x, s2_y;
+    s1_x = p1_x - p0_x;
+    s1_y = p1_y - p0_y;
+    s2_x = p3_x - p2_x;
+    s2_y = p3_y - p2_y;
+    var s, t;
+    s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) / (-s2_x * s1_y + s1_x * s2_y);
+    t = (s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) / (-s2_x * s1_y + s1_x * s2_y);
+
+    if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
+        var intX = p0_x + (t * s1_x);
+        var intY = p0_y + (t * s1_y);
+        return {
+            x: intX,
+            y: intY
+        };
+    }
+    return false;
 }

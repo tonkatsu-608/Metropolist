@@ -319,3 +319,48 @@ force.on("tick", function(e) {
 //     var aLine = new paper.Path.Line(leftPoint, rightPoint);
 //     path.addChild(aLine);
 // }
+
+////////////////////d3-canvas.js////////////////////////////
+// function dragsubject() {
+//     var n = state.points.length,
+//         i,
+//         dx,
+//         dy,
+//         d2,
+//         s2 = 100,
+//         point,
+//         subject;
+//
+//     for (i = 0; i < n; ++i) {
+//         point = state.points[i];
+//         dx = d3.event.x - point[0];
+//         dy = d3.event.y - point[1];
+//         d2 = dx * dx + dy * dy;
+//         if (d2 < s2) subject = point, s2 = d2;
+//     }
+//     console.log("subject:",subject);
+//     return subject;
+// }
+//
+// function dragstarted() {
+//     console.log("dragstarted:",d3.event.subject)
+//     d3.event.subject.active = true;
+// }
+//
+// function dragged() {
+//     console.log("dragged:",d3.event.subject)
+//     var point = d3.event.subject;
+//     var isInside = d3.polygonContains(graphics.polygons[point.parent], point);
+//     if(isInside){
+//         d3.event.subject[0] = Math.max(W, Math.min(width - W, d3.event.x));
+//         d3.event.subject[1] = Math.max(W, Math.min(height - W, d3.event.y));
+//     }else{
+//
+//     }
+//     render();
+// }
+//
+// function dragended() {
+//     console.log("dragended:",d3.event.subject)
+//     d3.event.subject.active = false;
+// }
