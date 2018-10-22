@@ -28,60 +28,55 @@ var canvas = d3.select("canvas")
     context = canvas.getContext("2d"),
     width = canvas.width,
     height = canvas.height;
-
-var isChecked = false;
-var isSelected = false;
+var isChecked = false,
+    isSelected = false;
 var state = {
     stack : [],
     points: []
 };
-var tau = 2 * Math.PI;
-var N = 30;//sites num
-var W = 10, R = 5;//building size
-var CLUSTERS_PER_CELL = Math.round(Math.random() * 15 + 5);//buildings num for each district
-var color = d3.scaleOrdinal().range(d3.schemeCategory20);
+const tau = 2 * Math.PI,
+    N = 30, //sites num
+    W = 10; //building size
+const CLUSTERS_PER_CELL = () =>  Math.round(Math.random() * 25 + 5);//buildings num for each district
+const color = d3.scaleOrdinal().range(d3.schemeCategory20);
+const scale = d3.scaleLinear()
+    .domain([0,100])
+    .range([0,90]);
+const graphics = makeGraphics();
 
-function makeGraphics() {
-    var sites = d3.range(N).map( d => [Math.random() * width, Math.random() * height] );
-    var voronoi = d3.voronoi().extent([[1,1], [width-1, height-1]]);
-    var diagram = voronoi( sites );
-    var links = diagram.links();
-    var polygons = diagram.polygons();
-    var clusters = polygons.map( poly => makeDots( poly, CLUSTERS_PER_CELL, 10 ) );
-    var foci = polygons.map( poly => d3.polygonCentroid(poly));
-    return {
-        sites : sites,
-        voronoi : voronoi,
-        diagram : diagram,
-        links : links,
-        polygons : polygons,
-        clusters : clusters,
-        foci: foci
-    }
-}
-var graphics = makeGraphics();
-for(var i = 0, n = graphics.polygons.length; i < n; i ++) {
+for(let i = 0, poly = graphics.polygons; i < poly.length; i ++) {
     let area = d3.polygonArea(graphics.polygons[i]);
     let points = graphics.clusters[i];
+
     // delete graphics.polygons[i].data;
-    for(var j = 0, m = points.length; j < m; j ++){
+    for(let j = 0, m = points.length; j < m; j ++){
         graphics.clusters[i][j].parent = i;
         state.points.push(graphics.clusters[i][j]);
     }
+
+    //// Shrink Polygons
+    // console.log("before: ",poly[i])
+    // for(let k = 0; k < poly[i].length; k ++){
+    //     poly[i][k] = poly[i][k].map(p => scale(p))
+    // }
+    // console.log("after: ",poly[i])
+
 }
 /*=====================================================================================================
                                          Main Functions
 ======================================================================================================*/
-var simulations = [];
-for(var i = 0, n = graphics.polygons.length; i < n; i ++){
+const simulations = [];
+for(let i = 0, poly = graphics.polygons; i < poly.length; i ++){
+    let boudnsPoint = bounds(poly[i]);
+    let distance = Math.max(boudnsPoint.width, boudnsPoint.height) / 2;
+    if(graphics.foci[i][1] > height * 0.5){
+        graphics.foci[i][1] -= graphics.foci[i][1] / 15;
+    }
     simulations[i] = d3.forceSimulation(graphics.clusters[i])
-        .force("x", d3.forceX().strength(0.002))
-        .force("y", d3.forceY().strength(0.002))
         .force("center", d3.forceCenter(graphics.foci[i][0], graphics.foci[i][1]))
-        .force("charge", d3.forceManyBody().strength(-40).distanceMin(10).distanceMax(50))
-        .force('attraction', d3.forceManyBody().strength(20).distanceMin(10).distanceMax(50))
-        .force('repulsion', d3.forceManyBody().strength(-20).distanceMin(10).distanceMax(50))
-        .force("collide", d3.forceCollide().radius(function(d) { return R; }).iterations(2))
+        .force("repulsion", d3.forceManyBody().strength(-10).distanceMin(10).distanceMax(distance))
+        .force("collide", d3.forceCollide(W).iterations(2))
+        .force('polygonCollide', forceCollidePolygon(poly[i]).radius(W).iterations(4))
         .on("tick", render)
 }
 
@@ -99,33 +94,33 @@ function render() {
     context.save();
 
     //draw points
-    for(var k = 0; k <  graphics.polygons.length; k ++) {
-        for (var i = 0; i < graphics.clusters[k].length; i++) {
-            var d = graphics.clusters[k][i];
-            var polyPoints = graphics.polygons[k];
-            var L = polyPoints.length;
-            d.x = Math.max(R, Math.min(width - R, d.x));
-            d.y = Math.max(R, Math.min(height - R, d.y));
-            // change focus to the center of the triangle
-            var center = d3.polygonCentroid(polyPoints);
-            var x = d.x,
-                y = d.y,
-                inter = false;
-            for (var j = 0; j < L; j++) {
-                var f = j,
-                    s = (j + 1) < L ? (j + 1) : 0,
-                    inter = getLineIntersection(polyPoints[f][0], polyPoints[f][1],
-                        polyPoints[s][0], polyPoints[s][1], center[0], center[1], x, y);
-                if (inter) {
-                    x = inter.x;
-                    y = inter.y;
-                    break;
-                }
-            }
+    for(let k = 0; k <  graphics.polygons.length; k ++) {
+        for (let i = 0; i < graphics.clusters[k].length; i++) {
+            let d = graphics.clusters[k][i];
+            let polyPoints = graphics.polygons[k];
+            let L = polyPoints.length;
+            d.x = Math.max(W, Math.min(width - W, d.x));
+            d.y = Math.max(W, Math.min(height - W, d.y));
+            // // change focus to the center of the triangle
+            // let center = d3.polygonCentroid(polyPoints);
+            // let x = d.x,
+            //     y = d.y,
+            //     inter = false;
+            // for (let j = 0; j < L; j++) {
+            //     let f = j,
+            //         s = (j + 1) < L ? (j + 1) : 0,
+            //         inter = getLineIntersection(polyPoints[f][0], polyPoints[f][1],
+            //             polyPoints[s][0], polyPoints[s][1], center[0], center[1], x, y);
+            //     if (inter) {
+            //         d.x = inter.x;
+            //         d.y = inter.y;
+            //         break;
+            //     }
+            // }
             context.beginPath();
-            context.rect(x - W/2, y - W/2, W, W);
-            // context.moveTo(x + R, y);
-            // context.arc(x, y, R, 0, 2 * Math.PI);
+            // context.rect(x - W/2, y - W/2, W, W);
+            context.moveTo(d.x + W, d.y);
+            context.arc(d.x, d.y, W, 0, 2 * Math.PI);
             context.fillStyle = color(k);
             context.fill();
             context.strokeStyle = "#333";
@@ -135,7 +130,7 @@ function render() {
 
     //draw polygons
     context.beginPath();
-    for(var i = 0, n = graphics.polygons.length; i < n; ++i) {
+    for(let i = 0, n = graphics.polygons.length; i < n; i ++) {
         drawCell(graphics.polygons[i]);
     }
     context.strokeStyle = "#000";
@@ -148,16 +143,16 @@ function render() {
     // }
     // context.strokeStyle = "rgba(0,0,0,0.2)";
     // context.stroke();
-    //
+
     // draw foci
-    // context.beginPath();
-    // for (var i = 0, n = graphics.foci.length; i < n; ++i) {
-    //     drawSite(graphics.foci[i]);
-    // }
-    // context.fillStyle = "#000";
-    // context.fill();
-    // context.strokeStyle = "#fff";
-    // context.stroke();
+    context.beginPath();
+    for (var i = 0, n = graphics.foci.length; i < n; ++i) {
+        drawSite(graphics.foci[i]);
+    }
+    context.fillStyle = "#000";
+    context.fill();
+    context.strokeStyle = "#fff";
+    context.stroke();
 
     context.restore();
 }
@@ -167,7 +162,7 @@ function render() {
 function dragsubject() {
     var sbj, I, isInside;
     var point = [d3.event.x, d3.event.y];
-    for(var i = 0, poly = graphics.polygons; i < graphics.polygons.length; i ++){
+    for(let i = 0, poly = graphics.polygons; i < graphics.polygons.length; i ++){
         isInside = d3.polygonContains(poly[i], point);
         if(isInside){
             I = i;
@@ -176,26 +171,35 @@ function dragsubject() {
     }
     sbj = simulations[I].find(d3.event.x, d3.event.y);
     sbj.parent = I;
-    console.log("sbj:",sbj)
+    console.log("sbj: ",sbj)
     return sbj;
 }
 
 function dragstarted() {
-    console.log("dragstarted:",d3.event.subject)
-    if (!d3.event.active) simulations.forEach(s => s.alphaTarget(0.3).restart());
-    d3.event.subject.fx = Math.max(R, Math.min(width - R, d3.event.subject[0])) ;
-    d3.event.subject.fy = Math.max(R, Math.min(height - R, d3.event.subject[1])) ;
+    simulations[d3.event.subject.parent]
+        .force("center", d3.forceCenter(d3.event.x, d3.event.y))
+        .restart();
+    if (!d3.event.active) simulations[d3.event.subject.parent].alphaTarget(0.3).restart();
+    // if (!d3.event.active) simulations.forEach(s => s.alphaTarget(0.3).restart());
+    // d3.event.subject.fx = Math.max(R, Math.min(width - R, d3.event.subject[0]));
+    // d3.event.subject.fy = Math.max(R, Math.min(height - R, d3.event.subject[1]));
+    d3.event.subject.fx = d3.event.x;
+    d3.event.subject.fy = d3.event.y;
 }
 
 function dragged() {
-    console.log("dragged:",d3.event.subject)
-    d3.event.subject.fx = Math.max(R, Math.min(width - R, d3.event.x));
-    d3.event.subject.fy = Math.max(R, Math.min(height - R, d3.event.y));
+    simulations[d3.event.subject.parent]
+        .force("center", d3.forceCenter(d3.event.x, d3.event.y))
+        .restart();
+    // d3.event.subject.fx = Math.max(R, Math.min(width - R, d3.event.x));
+    // d3.event.subject.fy = Math.max(R, Math.min(height - R, d3.event.y));
+    d3.event.subject.fx = d3.event.x;
+    d3.event.subject.fy = d3.event.y;
 }
 
 function dragended() {
-    console.log("dragended:",d3.event.subject)
-    if (!d3.event.active) simulations.forEach(s => s.alphaTarget(0));
+    if (!d3.event.active) simulations[d3.event.subject.parent].alphaTarget(0);
+    // if (!d3.event.active) simulations.forEach(s => s.alphaTarget(0));
     d3.event.subject.fx = null;
     d3.event.subject.fy = null;
 }
@@ -255,6 +259,25 @@ $.Shortcut.on({
         render();
     }
 });
+function makeGraphics() {
+    var sites = d3.range(N).map( d => [Math.random() * width, Math.random() * height] );
+    var voronoi = d3.voronoi().extent([[2,2], [width-2, height-2]]);
+    var diagram = voronoi( sites );
+    var links = diagram.links();
+    var polygons = diagram.polygons();
+    var clusters = polygons.map( poly => makeDots( poly, CLUSTERS_PER_CELL(), 10 ) );
+    var foci = polygons.map( poly => d3.polygonCentroid(poly));
+    return {
+        sites : sites,
+        voronoi : voronoi,
+        diagram : diagram,
+        links : links,
+        polygons : polygons,
+        clusters : clusters,
+        foci: foci
+    }
+}
+
 function makeDots(polygon, numPoints, options) {
 
     options = Object.assign({
@@ -313,7 +336,6 @@ function makeDots(polygon, numPoints, options) {
         }
 
     points.complete = (points.length >= numPoints)
-
     return points
 }
 
@@ -354,45 +376,110 @@ function distPointEdge(p, l1, l2) {
     return Math.sqrt(dx * dx + dy * dy);
 }
 
-function chunkify(a, n, balanced) {
-
-    if (n < 2)
-        return [a];
-
-    var len = a.length,
-        out = [],
-        i = 0,
-        size;
-
-    if (len % n === 0) {
-        size = Math.floor(len / n);
-        while (i < len) {
-            out.push(a.slice(i, i += size));
-        }
-    }
-
-    else if (balanced) {
-        while (i < len) {
-            size = Math.ceil((len - i) / n--);
-            out.push(a.slice(i, i += size));
-        }
-    }
-
-    else {
-
-        n--;
-        size = Math.floor(len / n);
-        if (len % size === 0)
-            size--;
-        while (i < size * n) {
-            out.push(a.slice(i, i += size));
-        }
-        out.push(a.slice(size * n));
-
-    }
-
-    return out;
+// get bounds of a specific polygon
+function bounds( polygon ) {
+    let xs = polygon.map( p => p[0] );
+    let ys = polygon.map( p => p[1] );
+    // var minX = xs.reduce( (acc, val) => Math.min( (acc, val ), Infinity ));
+    // var maxX = xs.reduce( (acc, val) => Math.max( (acc, val), -Infinity ));
+    // var minY = ys.reduce( (acc, val) => Math.min( (acc, val), Infinity ));
+    // var maxY = ys.reduce( (acc, val) => Math.max( (acc, val), -Infinity ));
+    let minX = Math.min.apply( null, xs );
+    let maxX = Math.max.apply( null, xs );
+    let minY = Math.min.apply( null, ys );
+    let maxY = Math.max.apply( null, ys );
+    return { width : maxX - minX, height : maxY - minY };
 }
+
+// inspired from http://bl.ocks.org/larsenmtl/39a028da44db9e8daf14578cb354b5cb
+function forceCollidePolygon(polygon, radius){
+    var nodes, n, iterations = 1,
+        max=Math.max,
+        min=Math.min;
+    var absub = function(a,b){ return max(a,b)-min(a,b); };
+    var center= d3.polygonCentroid(polygon);
+
+    // took from d3-force/src/collide.js
+    if (typeof radius !== "function") radius = constant(radius == null ? 1 : +radius);
+
+    // took from d3-force/src/constant.js
+    function constant(x){
+        return function() {
+            return x;
+        };
+    }
+    // took from d3-force/src/jiggle.js
+    function jiggle() {
+        return (Math.random() - 0.5) * 1e-6;
+    }
+
+    // adapted from http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
+    function intersection(p0, p1, p2, p3) {
+        var s1 = [ p1[0] - p0[0], p1[1] - p0[1]];
+        var s2 = [ p3[0] - p2[0], p3[1] - p2[1]];
+        // intersection compute
+        var s, t;
+        s = -s1[1] * (p0[0] - p2[0]) + s1[0] * (p0[1] - p3[1]);
+        t =  s2[0] * (p0[1] - p2[1]) - s2[1] * (p0[0] - p3[0]);
+        s = s / (-s2[0] * s1[1] + s1[0] * s2[1]);
+        t = t / (-s2[0] * s1[1] + s1[0] * s2[1]);
+
+        if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
+            // intersection coordinates
+            return {
+                x:p0[0] + (t * s1[0]),
+                y:p0[1] + (t * s1[1])
+            };
+        }
+        return false;
+    }
+
+    function velocity( dist ) {
+        return Math.sqrt( dist );
+    }
+
+    function force(){
+        for(var l = 0; l < iterations; l++) {
+            for(var k = 0; k < nodes.length; k++) {
+                var node = nodes[k];
+                var r  = radius(node);
+                var px = (node.x >= center[0]?1:-1);
+                var py = (node.y >= center[1]?1:-1);
+                var t = [ node.x + px*r, node.y + py*r];
+
+                // we loop over polygon's edges to check collisions
+                for(var j = 0; j < polygon.length; j++){
+                    var n = (j+1) < polygon.length ? (j+1):0;
+                    var p1 = polygon[j];
+                    var p2 = polygon[n];
+                    var i = intersection(p1, p2, center, t);
+                    if(i){
+                        // give a small velocity at the opposite of the collision point
+                        // this can be tweaked
+                        node.vx = -px*10/Math.sqrt(absub(i.x, t[0]) + jiggle());
+                        node.vy = -py*10/Math.sqrt(absub(i.y, t[1]) + jiggle());
+                        break;
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    force.iterations = function(_) {
+        return arguments.length ? (iterations = +_, force) : iterations;
+    };
+
+    force.initialize = function(_){
+        n = (nodes = _).length;
+    };
+
+    force.radius = function(_){
+        return arguments.length ? (radius = typeof _ === "function" ? _ : constant(+_), force) : radius;
+    };
+    return force;
+}
+
 // source: http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
 function getLineIntersection(p0_x, p0_y, p1_x, p1_y, p2_x, p2_y, p3_x, p3_y) {
     var s1_x, s1_y, s2_x, s2_y;

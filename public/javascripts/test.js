@@ -1,104 +1,203 @@
-var width = 1400,
-    height = 750,
-    radius = 10;
+var viz = {
+    size: {width: 960, height: 800},
+    clusters: [{name: 'a'},{name:'b'},{name:'c'}],
+    colors: d3.scale,
+    polygons_params: {
+        ta:4/9, // the height of the top middle segment (in proportion of height)
+        tb:7/9 // the height of the 2 bottom left & right segments (in proportion of height)
+    }
+};
 
-var svg = d3.select("body").append("svg")
-    .attr("width", width)
-    .attr("height", height)
-    .style("background", "#eee");
+var svg = d3.select("svg")
+    .attr("width",  viz.size.width)
+    .attr("height", viz.size.height);
 
-// center of svg
-var px = width / 4,
-    py = height / 2.5,
-    nodes = d3.range(20).map(function(d){ return {} });
 
-generateLayout(Math.round(Math.random() * 10));
+function initLayout(cluster){
+    // this new scale helps us to have similar size in different clusters
+    var scale = d3.scaleLinear()
+        .domain(d3.extent(cluster.data.map(function(d){
+            return d.size;
+        })))
+        .range([5, 30]);
+    var radius = function(d){
+        return scale(d.size) + 5;
+    }
 
-function generateLayout(ns){
+    var polygon = svg.append('polygon')
+        .attr('points', cluster.polygon)
+        .attr('stroke', '#000')
+        .attr('fill', '#bbb')
+        .attr('stroke-width', 2)
+        .style('opacity', 0.3);
 
-    svg.selectAll("*").remove();
+    var bubbles = svg.append('g').attr('class', 'bubbles '+cluster.name)
+        .selectAll('.bubble')
+        .data(cluster.data).enter()
+        .append('circle')
+        .attr('class', 'bubble')
+        .attr('r', function(d){ return scale(d.size);})
+        .attr('stroke-width', 2)
+        .call(d3.drag()
+            .on('start', dragstarted)
+            .on('drag', dragged)
+            .on('end', dragended)
+        );
 
-    if (!ns) ns = parseInt(Math.random() * 5) + 4;
+    var center = d3.polygonCentroid(cluster.polygon);
+    // improve bottom cluster positionning
+    if(center[1] > viz.size.height*0.5){
+        center[1] -= center[1]/15;
+    }
+    var force = d3.forceSimulation(cluster.data)
+        .force('center', d3.forceCenter(center[0], center[1]))
+        .force('polygonCollide',
+            forceCollidePolygon(cluster.polygon)
+                .radius(radius).iterations(4)
+        )
+        .force('collide', d3.forceCollide(radius).iterations(3))
+        .on('tick', function(){
+            bubbles.attr('transform', function(d){
+                return 'translate('+d.x+','+d.y+')';
+            });
+        });
+    return force;
+}
 
-    var ang = d3.range(ns).map(function(d){ return Math.random() * (2 * Math.PI) }).sort();
+function initPolygons(){
+    // pseudo-triangles parameters
+    var ta = viz.polygons_params.ta, tb = viz.polygons_params.tb;
+    var w = viz.size.width, h = viz.size.height;
+    var points = {
+        a:[ 0,   0],
+        b:[ w,   0],
+        c:[ w,   h],
+        d:[ 0,   h],
+        e:[ w/2, 0],
+        f:[ w,   tb * h],
+        g:[ 0,   tb * h],
+        h:[ w/2, ta * h]
+    };
+    return {
+        a:[points.a, points.e, points.h, points.g],
+        b:[points.e, points.b, points.f, points.h],
+        c:[points.g, points.h, points.f, points.c, points.d]
+    };
+}
 
-    var polyPoints = ang.map(function(a){
-        var r = (Math.random() * Math.min(width, height)) / 2,
-            x = r * Math.cos(a) + px;
-        y = r * Math.sin(a) + py;
-        return [x, y];
+var polygons = initPolygons();
+viz.clusters = viz.clusters.map(function(c){
+    c.data = d3.range(55).map(function(){
+        return { size: (Math.random() * 70 + 5) };
     });
+    c.polygon = polygons[c.name];
+    c.layout  = initLayout(c);
+    return c;
+});
 
-    var cent = d3.geom.polygon(polyPoints).centroid();
+console.log(viz.clusters)
 
-    svg.append("polygon")
-        .style("stroke", "black")
-        .style("fill", "none")
-        .attr("points", polyPoints.join(" "));
+function dragstarted (d) {
+    if (!d3.event.active) viz.clusters.forEach(f => f.layout.alphaTarget(0.3).restart());
+    console.log("dragstarted: ",d)
+    d.fx = d.x;
+    d.fy = d.y;
+}
 
-    var force = d3.layout.force()
-        .size([width, height])
-        .nodes(nodes)
-        .links([]);
+function dragged (d) {
+    console.log("dragged: ",d)
+    d.fx = d3.event.x;
+    d.fy = d3.event.y;
+}
 
-    force.linkDistance(100);
-    force.charge(-200);
+function dragended (d) {
+    if (!d3.event.active) viz.clusters.forEach(f => f.layout.alphaTarget(0));
+    d.fx = null;
+    d.fy = null;
+}
 
-    var node = svg.selectAll('.node')
-        .data(nodes)
-        .enter().append('circle')
-        .attr('class', 'node')
-        .call(force.drag);
+// inspired from http://bl.ocks.org/larsenmtl/39a028da44db9e8daf14578cb354b5cb
+function forceCollidePolygon(polygon, radius){
+    var nodes, n, iterations = 1,
+        max=Math.max,
+        min=Math.min;
+    var absub = function(a,b){ return max(a,b)-min(a,b); };
+    var center= d3.polygonCentroid(polygon);
 
-    var N = polyPoints.length;
-    force.on('tick', function(e) {
+    // took from d3-force/src/collide.js
+    if (typeof radius !== "function") radius = constant(radius == null ? 1 : +radius);
 
-        node.attr('r', radius)
-            .attr('transform', function(d) {
+    // took from d3-force/src/constant.js
+    function constant(x){
+        return function() {
+            return x;
+        };
+    }
+    // took from d3-force/src/jiggle.js
+    function jiggle() {
+        return (Math.random() - 0.5) * 1e-6;
+    }
 
-                // change focus to the center of the triangle
-                var x = (d.x - (width / 2 - cent[0])),
-                    y = (d.y - (height / 2 - cent[1])),
-                    inter = false;
+    // adapted from http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
+    function intersection(p0, p1, p2, p3){
+        var s1 = [ p1[0] - p0[0], p1[1] - p0[1]];
+        var s2 = [ p3[0] - p2[0], p3[1] - p2[1]];
+        // intersection compute
+        var s, t;
+        s = -s1[1] * (p0[0] - p2[0]) + s1[0] * (p0[1] - p3[1]);
+        t =  s2[0] * (p0[1] - p2[1]) - s2[1] * (p0[0] - p3[0]);
+        s = s / (-s2[0] * s1[1] + s1[0] * s2[1]);
+        t = t / (-s2[0] * s1[1] + s1[0] * s2[1]);
 
-                for (var i = 0; i < N; i++){
-                    var f = i,
-                    s = (i + 1) < N ? (i + 1) : 0,
-                    inter = getLineIntersection(polyPoints[f][0], polyPoints[f][1],
-                        polyPoints[s][0], polyPoints[s][1], cent[0], cent[1], x, y);
+        if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
+            // intersection coordinates
+            return {
+                x:p0[0] + (t * s1[0]),
+                y:p0[1] + (t * s1[1])
+            };
+        }
+        return false;
+    }
 
-                    if (inter){
-                        x = inter.x;
-                        y = inter.y;
+    function force(){
+        for(var l = 0; l < iterations; l++){
+            for(var k = 0; k < nodes.length; k++){
+                var node = nodes[k];
+                var r  = radius(node);
+                var px = (node.x >= center[0]?1:-1);
+                var py = (node.y >= center[1]?1:-1);
+
+                var t = [ node.x + px*r, node.y + py*r];
+
+                // we loop over polygon's edges to check collisions
+                for(var j = 0; j < polygon.length; j++){
+                    var n = (j+1) < polygon.length ? (j+1):0;
+                    var p1 = polygon[j];
+                    var p2 = polygon[n];
+                    var i = intersection(p1, p2, center, t);
+                    if(i){
+                        // give a small velocity at the opposite of the collision point
+                        // this can be tweaked
+                        node.vx = -px/Math.sqrt(absub(i.x, t[0]) + jiggle());
+                        node.vy = -py/Math.sqrt(absub(i.y, t[1]) + jiggle());
                         break;
                     }
                 }
-
-                return "translate(" + x + "," + y + ")";
-            });
-    });
-
-    force.start();
-}
-
-// from http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
-function getLineIntersection(p0_x, p0_y, p1_x, p1_y, p2_x, p2_y, p3_x, p3_y) {
-    var s1_x, s1_y, s2_x, s2_y;
-    s1_x = p1_x - p0_x;
-    s1_y = p1_y - p0_y;
-    s2_x = p3_x - p2_x;
-    s2_y = p3_y - p2_y;
-    var s, t;
-    s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) / (-s2_x * s1_y + s1_x * s2_y);
-    t = (s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) / (-s2_x * s1_y + s1_x * s2_y);
-
-    if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
-        var intX = p0_x + (t * s1_x);
-        var intY = p0_y + (t * s1_y);
-        return {
-            x: intX,
-            y: intY
-        };
+            }
+        }
+        return;
     }
-    return false;
+
+    force.iterations = function(_) {
+        return arguments.length ? (iterations = +_, force) : iterations;
+    };
+
+    force.initialize = function(_){
+        n = (nodes = _).length;
+    };
+
+    force.radius = function(_){
+        return arguments.length ? (radius = typeof _ === "function" ? _ : constant(+_), force) : radius;
+    };
+    return force;
 }

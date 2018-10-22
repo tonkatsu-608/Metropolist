@@ -10,11 +10,17 @@
     <!--Let browser know website is optimized for mobile-->
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <style>
-        path {
-            pointer-events: all;
+        .bubbles.a .bubble {
+            stroke: red;
+        }
+        .bubbles.b .bubble {
+            stroke: steelblue;
+        }
+        .bubbles.c .bubble {
+            stroke: orange;
+        }
+        .bubble {
             fill: none;
-            stroke: #000;
-            stroke-width: 1;
         }
     </style>
 </head>
@@ -137,7 +143,7 @@
             <!--</div>-->
 
             <div class="col s6">
-                <!--<svg width="1400" height="650" style="background-color: #CBC5B9"></svg>-->
+                <!--<svg style="background-color: #CBC5B9"></svg>-->
                 <canvas id="myCanvas" width="1400px" height="650px" style="background-color: #CBC5B9"></canvas>
             </div>
         </div>
@@ -168,6 +174,7 @@
 <!--<script type="text/javascript" src="javascripts/others/paper-full.js"></script>-->
 <!--<script type="text/javascript" src="javascripts/others/voronoi.js"></script>-->
 <script type="text/javascript" src="javascripts/d3-canvas.js"></script>
+<!--<script type="text/javascript" src="javascripts/test.js"></script>-->
 <!--<script type="text/javascript" src="javascripts/d3-canvas-multifoci.js"></script>-->
 <!--<script type="text/javascript" src="javascripts/d3-svg.js"></script>-->
 <!--<script type="text/javascript" src="javascripts/d3-svg-cluster.js"></script>-->
