@@ -76,7 +76,7 @@ for(let i = 0, poly = graphics.polygons; i < poly.length; i ++){
         .force("center", d3.forceCenter(graphics.foci[i][0], graphics.foci[i][1]))
         .force("repulsion", d3.forceManyBody().strength(-10).distanceMin(10).distanceMax(distance))
         .force("collide", d3.forceCollide(W).iterations(2))
-        .force('polygonCollide', forceCollidePolygon(poly[i]).radius(W).iterations(4))
+        .force('polygonCollide', forceCollidePolygon(poly[i]).radius(W).iterations(1))
         .on("tick", render)
 }
 
@@ -434,9 +434,47 @@ function forceCollidePolygon(polygon, radius){
         return false;
     }
 
-    function velocity( dist ) {
-        return Math.sqrt( dist );
+    function sqr(x) {
+        return x * x
     }
+
+    function dist2(v, w) {
+        return sqr(v.x - w.x) + sqr(v.y - w.y)
+    }
+
+    function pointToSegment(p, v, w) {
+        var l2 = dist2(v, w);
+
+        if (l2 == 0) return dist2(p, v);
+
+        var t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+
+        if (t < 0) return v;
+        if (t > 1) return w;
+
+        return { x: v.x + t * (w.x - v.x), y: v.y + t * (w.y - v.y) };
+    }
+
+    function distToSegment(point, vector) {
+        return Math.round(Math.sqrt(dist2(point, vector)));
+    }
+
+    // function calVector(p, v, w) {
+    //     let vector = {}
+    //     var vw = (v.x-w.x)*(v.x-w.x)+(v.y-w.y)*(v.y-w.y);   //线段两点距离平方
+    //     var k = ((p.x-v.x)*(w.x-v.x)+(p.y-v.y)*(w.y-v.y));  //向量点乘=|a|*|b|*cosA
+    //     var r = k / vw;                                       //r即点到线段的投影长度与线段长度比
+    //     var outx = v.x+r*(w.x-v.x);
+    //     var outy = v.y+r*(w.y-v.y);
+    //     var des = (p.x-outx)*(p.x-outx)+(p.y-outy)*(p.y-outy);
+    //     let perpendicular = {
+    //         x: outx,
+    //         y: outy
+    //     };
+    //     vector.distance = Math.round(Math.sqrt(des));
+    //     vector.perpendicular = perpendicular;
+    //     return vector
+    // }
 
     function force(){
         for(var l = 0; l < iterations; l++) {
@@ -445,21 +483,29 @@ function forceCollidePolygon(polygon, radius){
                 var r  = radius(node);
                 var px = (node.x >= center[0]?1:-1);
                 var py = (node.y >= center[1]?1:-1);
-                var t = [ node.x + px*r, node.y + py*r];
-
+                var t = [node.x + px*r, node.y + py*r];
+                var point = { x: node.x + px*r, y: node.y + py*r }
                 // we loop over polygon's edges to check collisions
                 for(var j = 0; j < polygon.length; j++){
                     var n = (j+1) < polygon.length ? (j+1):0;
                     var p1 = polygon[j];
                     var p2 = polygon[n];
-                    var i = intersection(p1, p2, center, t);
-                    if(i){
-                        // give a small velocity at the opposite of the collision point
-                        // this can be tweaked
-                        node.vx = -px*10/Math.sqrt(absub(i.x, t[0]) + jiggle());
-                        node.vy = -py*10/Math.sqrt(absub(i.y, t[1]) + jiggle());
-                        break;
-                    }
+                    var segment1 = {x: p1[0], y: p1[1]}
+                    var segment2 = {x: p2[0], y: p2[1]}
+                //     var i = intersection(p1, p2, center, t);
+                //     if(i){
+                //         // give a small velocity at the opposite of the collision point
+                //         // this can be tweaked
+                //         node.vx = -px*10/Math.sqrt(absub(i.x, t[0]) + jiggle());
+                //         node.vy = -py*10/Math.sqrt(absub(i.y, t[1]) + jiggle());
+                //         break;
+                //     }
+                    let vector = pointToSegment(point, segment1, segment2);
+                    let d = distToSegment(point, vector);
+                    node.vx = (point.x - vector.x) / d;
+                    node.vy = (point.y - vector.y) / d;
+                    // node.vx = -px * .2 * vector.x / Math.sqrt(d + jiggle());
+                    // node.vy = -py * .2 * vector.y / Math.sqrt(d + jiggle());
                 }
             }
         }
