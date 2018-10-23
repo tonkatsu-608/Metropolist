@@ -30,6 +30,7 @@ var canvas = d3.select("canvas")
     height = canvas.height;
 var isChecked = false,
     isSelected = false;
+var DRAGGED_SUBJECT = null;
 var state = {
     stack : [],
     points: []
@@ -47,20 +48,10 @@ const graphics = makeGraphics();
 for(let i = 0, poly = graphics.polygons; i < poly.length; i ++) {
     let area = d3.polygonArea(graphics.polygons[i]);
     let points = graphics.clusters[i];
-
-    // delete graphics.polygons[i].data;
     for(let j = 0, m = points.length; j < m; j ++){
         graphics.clusters[i][j].parent = i;
         state.points.push(graphics.clusters[i][j]);
     }
-
-    //// Shrink Polygons
-    // console.log("before: ",poly[i])
-    // for(let k = 0; k < poly[i].length; k ++){
-    //     poly[i][k] = poly[i][k].map(p => scale(p))
-    // }
-    // console.log("after: ",poly[i])
-
 }
 /*=====================================================================================================
                                          Main Functions
@@ -68,13 +59,13 @@ for(let i = 0, poly = graphics.polygons; i < poly.length; i ++) {
 const simulations = [];
 for(let i = 0, poly = graphics.polygons; i < poly.length; i ++){
     let boudnsPoint = bounds(poly[i]);
-    let distance = Math.max(boudnsPoint.width, boudnsPoint.height) / 2;
+    let distance = Math.max(boudnsPoint.width, boudnsPoint.height)/2;
     if(graphics.foci[i][1] > height * 0.5){
         graphics.foci[i][1] -= graphics.foci[i][1] / 15;
     }
     simulations[i] = d3.forceSimulation(graphics.clusters[i])
-        .force("center", d3.forceCenter(graphics.foci[i][0], graphics.foci[i][1]))
-        .force("repulsion", d3.forceManyBody().strength(-10).distanceMin(10).distanceMax(distance))
+       .force("center", d3.forceCenter(graphics.foci[i][0], graphics.foci[i][1]))
+        .force("repulsion", d3.forceManyBody().strength(-12).distanceMin(10).distanceMax(distance))
         .force("collide", d3.forceCollide(W).iterations(2))
         .force('polygonCollide', forceCollidePolygon(poly[i]).radius(W).iterations(1))
         .on("tick", render)
@@ -99,26 +90,26 @@ function render() {
             let d = graphics.clusters[k][i];
             let polyPoints = graphics.polygons[k];
             let L = polyPoints.length;
-            d.x = Math.max(W, Math.min(width - W, d.x));
-            d.y = Math.max(W, Math.min(height - W, d.y));
-            // // change focus to the center of the triangle
-            // let center = d3.polygonCentroid(polyPoints);
-            // let x = d.x,
-            //     y = d.y,
-            //     inter = false;
-            // for (let j = 0; j < L; j++) {
-            //     let f = j,
-            //         s = (j + 1) < L ? (j + 1) : 0,
-            //         inter = getLineIntersection(polyPoints[f][0], polyPoints[f][1],
-            //             polyPoints[s][0], polyPoints[s][1], center[0], center[1], x, y);
-            //     if (inter) {
-            //         d.x = inter.x;
-            //         d.y = inter.y;
-            //         break;
-            //     }
-            // }
+            // change focus to the center of the triangle
+           let center = d3.polygonCentroid(polyPoints);
+            if( DRAGGED_SUBJECT && DRAGGED_SUBJECT.parent == k ) {
+                center =  DRAGGED_SUBJECT;
+            }
+            let x = d.x,
+                y = d.y,
+                inter = false;
+            for (let j = 0; j < L; j++) {
+                let f = j,
+                    s = (j + 1) < L ? (j + 1) : 0,
+                    inter = getLineIntersection(polyPoints[f][0], polyPoints[f][1],
+                        polyPoints[s][0], polyPoints[s][1], center[0], center[1], x, y);
+                if (inter) {
+                    d.x = (d.x + inter.x) * .5;
+                    d.y = (d.y + inter.y) * .5;
+                    break;
+                }
+            }
             context.beginPath();
-            // context.rect(x - W/2, y - W/2, W, W);
             context.moveTo(d.x + W, d.y);
             context.arc(d.x, d.y, W, 0, 2 * Math.PI);
             context.fillStyle = color(k);
@@ -171,7 +162,8 @@ function dragsubject() {
     }
     sbj = simulations[I].find(d3.event.x, d3.event.y);
     sbj.parent = I;
-    console.log("sbj: ",sbj)
+    console.log("sbj: ",sbj);
+    DRAGGED_SUBJECT = sbj;
     return sbj;
 }
 
@@ -180,9 +172,6 @@ function dragstarted() {
         .force("center", d3.forceCenter(d3.event.x, d3.event.y))
         .restart();
     if (!d3.event.active) simulations[d3.event.subject.parent].alphaTarget(0.3).restart();
-    // if (!d3.event.active) simulations.forEach(s => s.alphaTarget(0.3).restart());
-    // d3.event.subject.fx = Math.max(R, Math.min(width - R, d3.event.subject[0]));
-    // d3.event.subject.fy = Math.max(R, Math.min(height - R, d3.event.subject[1]));
     d3.event.subject.fx = d3.event.x;
     d3.event.subject.fy = d3.event.y;
 }
@@ -191,17 +180,15 @@ function dragged() {
     simulations[d3.event.subject.parent]
         .force("center", d3.forceCenter(d3.event.x, d3.event.y))
         .restart();
-    // d3.event.subject.fx = Math.max(R, Math.min(width - R, d3.event.x));
-    // d3.event.subject.fy = Math.max(R, Math.min(height - R, d3.event.y));
     d3.event.subject.fx = d3.event.x;
     d3.event.subject.fy = d3.event.y;
 }
 
 function dragended() {
     if (!d3.event.active) simulations[d3.event.subject.parent].alphaTarget(0);
-    // if (!d3.event.active) simulations.forEach(s => s.alphaTarget(0));
     d3.event.subject.fx = null;
     d3.event.subject.fy = null;
+    DRAGGED_SUBJECT = null;
 }
 /*=====================================================================================================
                                          Draw Functions
@@ -456,25 +443,8 @@ function forceCollidePolygon(polygon, radius){
     }
 
     function distToSegment(point, vector) {
-        return Math.round(Math.sqrt(dist2(point, vector)));
+        return Math.sqrt(dist2(point, vector));
     }
-
-    // function calVector(p, v, w) {
-    //     let vector = {}
-    //     var vw = (v.x-w.x)*(v.x-w.x)+(v.y-w.y)*(v.y-w.y);   //线段两点距离平方
-    //     var k = ((p.x-v.x)*(w.x-v.x)+(p.y-v.y)*(w.y-v.y));  //向量点乘=|a|*|b|*cosA
-    //     var r = k / vw;                                       //r即点到线段的投影长度与线段长度比
-    //     var outx = v.x+r*(w.x-v.x);
-    //     var outy = v.y+r*(w.y-v.y);
-    //     var des = (p.x-outx)*(p.x-outx)+(p.y-outy)*(p.y-outy);
-    //     let perpendicular = {
-    //         x: outx,
-    //         y: outy
-    //     };
-    //     vector.distance = Math.round(Math.sqrt(des));
-    //     vector.perpendicular = perpendicular;
-    //     return vector
-    // }
 
     function force(){
         for(var l = 0; l < iterations; l++) {
@@ -502,10 +472,14 @@ function forceCollidePolygon(polygon, radius){
                 //     }
                     let vector = pointToSegment(point, segment1, segment2);
                     let d = distToSegment(point, vector);
-                    node.vx = (point.x - vector.x) / d;
-                    node.vy = (point.y - vector.y) / d;
-                    // node.vx = -px * .2 * vector.x / Math.sqrt(d + jiggle());
-                    // node.vy = -py * .2 * vector.y / Math.sqrt(d + jiggle());
+
+                    if( d < 20 ) {
+                        let dvx = Math.abs(point.x - vector.x) / (d);
+                        let dvy = Math.abs(point.y - vector.y) / (d);
+
+                        node.vx += Math.sign(point.x - vector.x) * dvx;
+                        node.vy += Math.sign(point.y - vector.y) * dvy;
+                    }
                 }
             }
         }

@@ -406,3 +406,7 @@ force.on("tick", function(e) {
 //
 //     return out;
 // }
+// d3.event.subject.fx = Math.max(R, Math.min(width - R, d3.event.subject[0]));
+// d3.event.subject.fy = Math.max(R, Math.min(height - R, d3.event.subject[1]));
+// d.x = Math.max(W, Math.min(width - W, d.x));
+// d.y = Math.max(W, Math.min(height - W, d.y));
