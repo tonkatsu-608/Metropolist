@@ -36,9 +36,9 @@ var state = {
     points: []
 };
 const tau = 2 * Math.PI,
-    N = 30, //sites num
-    W = 10; //building size
-const CLUSTERS_PER_CELL = () =>  Math.round(Math.random() * 25 + 5);//buildings num for each district
+    N = 30;//polygons' num
+    // W = 10; //building size
+const CLUSTERS_PER_CELL = () =>  Math.round(Math.random() * 10 + 10);//buildings num for each district
 const color = d3.scaleOrdinal().range(d3.schemeCategory20);
 const scale = d3.scaleLinear()
     .domain([0,100])
@@ -50,6 +50,7 @@ for(let i = 0, poly = graphics.polygons; i < poly.length; i ++) {
     let points = graphics.clusters[i];
     for(let j = 0, m = points.length; j < m; j ++){
         graphics.clusters[i][j].parent = i;
+        graphics.clusters[i][j].r = Math.round(Math.random() * 10 + 5);
         state.points.push(graphics.clusters[i][j]);
     }
 }
@@ -60,14 +61,12 @@ const simulations = [];
 for(let i = 0, poly = graphics.polygons; i < poly.length; i ++){
     let boudnsPoint = bounds(poly[i]);
     let distance = Math.max(boudnsPoint.width, boudnsPoint.height)/2;
-    if(graphics.foci[i][1] > height * 0.5){
-        graphics.foci[i][1] -= graphics.foci[i][1] / 15;
-    }
     simulations[i] = d3.forceSimulation(graphics.clusters[i])
        .force("center", d3.forceCenter(graphics.foci[i][0], graphics.foci[i][1]))
-        .force("repulsion", d3.forceManyBody().strength(-12).distanceMin(10).distanceMax(distance))
-        .force("collide", d3.forceCollide(W).iterations(2))
-        .force('polygonCollide', forceCollidePolygon(poly[i]).radius(W).iterations(1))
+        .force("collide", d3.forceCollide(10).iterations(2))
+        .force("polygonCollide", forceCollidePolygon(poly[i]).radius(10).iterations(4))
+        .force("myForce", myForce().distanceMin(10).distanceMax(distance))
+        // .force("repulsion", d3.forceManyBody().strength(-12).distanceMin(10).distanceMax(distance))
         .on("tick", render)
 }
 
@@ -106,12 +105,14 @@ function render() {
                 if (inter) {
                     d.x = (d.x + inter.x) * .5;
                     d.y = (d.y + inter.y) * .5;
+                    // d.x = inter.x;
+                    // d.y = inter.y;
                     break;
                 }
             }
             context.beginPath();
-            context.moveTo(d.x + W, d.y);
-            context.arc(d.x, d.y, W, 0, 2 * Math.PI);
+            context.moveTo(d.x + d.r, d.y);
+            context.arc(d.x, d.y, d.r, 0, 2 * Math.PI);
             context.fillStyle = color(k);
             context.fill();
             context.strokeStyle = "#333";
@@ -246,6 +247,15 @@ $.Shortcut.on({
         render();
     }
 });
+function jiggle() {
+    return (Math.random() - 0.5) * 1e-6;
+}
+function constant$6(x) {
+    return function() {
+        return x;
+    };
+}
+
 function makeGraphics() {
     var sites = d3.range(N).map( d => [Math.random() * width, Math.random() * height] );
     var voronoi = d3.voronoi().extent([[2,2], [width-2, height-2]]);
@@ -378,13 +388,120 @@ function bounds( polygon ) {
     return { width : maxX - minX, height : maxY - minY };
 }
 
+// self-defined custom force
+function myForce() {
+    var nodes,
+        node,
+        alpha,
+        strength = constant$6(-12),
+        strengths,
+        distanceMin2 = 1,
+        distanceMax2 = Infinity,
+        theta2 = 0.81;
+
+    function initialize() {
+        if (!nodes) return;
+        var i, n = nodes.length, node;
+        strengths = new Array(n);
+        // for (i = 0; i < n; ++i) node = nodes[i], strengths[node.index] = +strength(node, i, nodes);
+        for (i = 0; i < n; ++i) node = nodes[i], strengths[node.index] = -node.r;
+    }
+
+    function force(_) {
+        var i, n = nodes.length, tree = d3.quadtree(nodes, d3.x$1, d3.y$1).visitAfter(accumulate);
+        for (alpha = _, i = 0; i < n; ++i) node = nodes[i], tree.visit(apply);
+    }
+
+    function accumulate(quad) {
+        var strength = 0, q, c, weight = 0, x, y, i;
+
+        // For internal nodes, accumulate forces from child quadrants.
+        if (quad.length) {
+            for (x = y = i = 0; i < 4; ++i) {
+                if ((q = quad[i]) && (c = Math.abs(q.value))) {
+                    strength += q.value, weight += c, x += c * q.x, y += c * q.y;
+                }
+            }
+            quad.x = x / weight;
+            quad.y = y / weight;
+        }
+
+        // For leaf nodes, accumulate forces from coincident quadrants.
+        else {
+            q = quad;
+            q.x = q.data.x;
+            q.y = q.data.y;
+            do strength += strengths[q.data.index];
+            while (q = q.next);
+        }
+        quad.value = strength;
+    }
+
+    function apply(quad, x1, _, x2) {
+        if (!quad.value) return true;
+
+        var x = quad.x - node.x,
+            y = quad.y - node.y,
+            w = x2 - x1,
+            l = x * x + y * y;
+
+        // Apply the Barnes-Hut approximation if possible.
+        // Limit forces for very close nodes; randomize direction if coincident.
+        if (w * w / theta2 < l) {
+            if (l < distanceMax2) {
+                if (x === 0) x = jiggle(), l += x * x;
+                if (y === 0) y = jiggle(), l += y * y;
+                if (l < distanceMin2) l = Math.sqrt(distanceMin2 * l);
+                node.vx += x * quad.value * alpha / l;
+                node.vy += y * quad.value * alpha / l;
+            }
+            return true;
+        }
+
+        // Otherwise, process points directly.
+        else if (quad.length || l >= distanceMax2) return;
+
+        // Limit forces for very close nodes; randomize direction if coincident.
+        if (quad.data !== node || quad.next) {
+            if (x === 0) x = jiggle(), l += x * x;
+            if (y === 0) y = jiggle(), l += y * y;
+            if (l < distanceMin2) l = Math.sqrt(distanceMin2 * l);
+        }
+
+        do if (quad.data !== node) {
+            w = strengths[quad.data.index] * alpha / l;
+            node.vx += x * w;
+            node.vy += y * w;
+        } while (quad = quad.next);
+    }
+
+    force.iterations = function(_) {
+        return arguments.length ? (iterations = +_, force) : iterations;
+    };
+
+    force.initialize = function(_){
+        n = (nodes = _).length;
+        initialize();
+    };
+
+    force.distanceMin = function(_) {
+        return arguments.length ? (distanceMin2 = _ * _, force) : Math.sqrt(distanceMin2);
+    };
+
+    force.distanceMax = function(_) {
+        return arguments.length ? (distanceMax2 = _ * _, force) : Math.sqrt(distanceMax2);
+    };
+
+    force.strength = function(_) {
+        return arguments.length ? (strength = typeof _ === "function" ? _ : constant$6(+_), initialize(), force) : strength;
+    };
+
+    return force;
+}
+
 // inspired from http://bl.ocks.org/larsenmtl/39a028da44db9e8daf14578cb354b5cb
 function forceCollidePolygon(polygon, radius){
-    var nodes, n, iterations = 1,
-        max=Math.max,
-        min=Math.min;
-    var absub = function(a,b){ return max(a,b)-min(a,b); };
-    var center= d3.polygonCentroid(polygon);
+    var nodes, n, iterations = 1;
 
     // took from d3-force/src/collide.js
     if (typeof radius !== "function") radius = constant(radius == null ? 1 : +radius);
@@ -394,31 +511,6 @@ function forceCollidePolygon(polygon, radius){
         return function() {
             return x;
         };
-    }
-    // took from d3-force/src/jiggle.js
-    function jiggle() {
-        return (Math.random() - 0.5) * 1e-6;
-    }
-
-    // adapted from http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
-    function intersection(p0, p1, p2, p3) {
-        var s1 = [ p1[0] - p0[0], p1[1] - p0[1]];
-        var s2 = [ p3[0] - p2[0], p3[1] - p2[1]];
-        // intersection compute
-        var s, t;
-        s = -s1[1] * (p0[0] - p2[0]) + s1[0] * (p0[1] - p3[1]);
-        t =  s2[0] * (p0[1] - p2[1]) - s2[1] * (p0[0] - p3[0]);
-        s = s / (-s2[0] * s1[1] + s1[0] * s2[1]);
-        t = t / (-s2[0] * s1[1] + s1[0] * s2[1]);
-
-        if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
-            // intersection coordinates
-            return {
-                x:p0[0] + (t * s1[0]),
-                y:p0[1] + (t * s1[1])
-            };
-        }
-        return false;
     }
 
     function sqr(x) {
@@ -450,11 +542,8 @@ function forceCollidePolygon(polygon, radius){
         for(var l = 0; l < iterations; l++) {
             for(var k = 0; k < nodes.length; k++) {
                 var node = nodes[k];
-                var r  = radius(node);
-                var px = (node.x >= center[0]?1:-1);
-                var py = (node.y >= center[1]?1:-1);
-                var t = [node.x + px*r, node.y + py*r];
-                var point = { x: node.x + px*r, y: node.y + py*r }
+                var point = { x: node.x , y: node.y }
+
                 // we loop over polygon's edges to check collisions
                 for(var j = 0; j < polygon.length; j++){
                     var n = (j+1) < polygon.length ? (j+1):0;
@@ -462,14 +551,7 @@ function forceCollidePolygon(polygon, radius){
                     var p2 = polygon[n];
                     var segment1 = {x: p1[0], y: p1[1]}
                     var segment2 = {x: p2[0], y: p2[1]}
-                //     var i = intersection(p1, p2, center, t);
-                //     if(i){
-                //         // give a small velocity at the opposite of the collision point
-                //         // this can be tweaked
-                //         node.vx = -px*10/Math.sqrt(absub(i.x, t[0]) + jiggle());
-                //         node.vy = -py*10/Math.sqrt(absub(i.y, t[1]) + jiggle());
-                //         break;
-                //     }
+
                     let vector = pointToSegment(point, segment1, segment2);
                     let d = distToSegment(point, vector);
 
@@ -510,7 +592,6 @@ function getLineIntersection(p0_x, p0_y, p1_x, p1_y, p2_x, p2_y, p3_x, p3_y) {
     var s, t;
     s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) / (-s2_x * s1_y + s1_x * s2_y);
     t = (s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) / (-s2_x * s1_y + s1_x * s2_y);
-
     if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
         var intX = p0_x + (t * s1_x);
         var intY = p0_y + (t * s1_y);

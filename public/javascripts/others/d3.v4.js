@@ -6300,7 +6300,6 @@
         force.theta = function(_) {
             return arguments.length ? (theta2 = _ * _, force) : Math.sqrt(theta2);
         };
-
         return force;
     }
 
