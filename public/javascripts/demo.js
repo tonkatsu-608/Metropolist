@@ -1,84 +1,84 @@
 // var column  = Math.floor(5 * Math.random() + 3);
 // var row = Math.floor(5 * Math.random() + 3);
-var column  = 7;
-var row  = 7;
-
-function Cell() {
-    this.sides = Math.floor(10 * Math.random() + 3);
-    this.column  = column;
-    this.row = row;
-    this.rotate = 0 * Math.random();
-    this.bounds = this.makePolygon().bounds;
-    this.center = view.center;
-    this.grid = this.makeGrid();
-    this.poly = this.makePolygon();
-}
-Cell.prototype.makePolygon = function () {
-    var polygon = new Path.RegularPolygon({
-        center: view.center,
-        sides: this.sides,
-        radius: 300,
-    });
-    return polygon;
-}
-Cell.prototype.makeGrid = function(){
-    var grid = new CompoundPath({
-        center: view.center,
-        strokeColor: 'white'
-    });
-    var width = this.bounds.width;
-    var height = this.bounds.height;
-    var width_per_rectangle = width / this.column;
-    var height_per_rectangle = height / this.row;
-
-    for (var i = 0; i < this.column; i++) {
-        for (var j = 0; j < this.row; j++) {
-            var xOffset = width_per_rectangle * 0.01;
-            var yOffset = height_per_rectangle * 0.01;
-            var aRect = new paper.Path.Rectangle(
-                this.bounds.left + i * width_per_rectangle + xOffset,
-                this.bounds.top + j * height_per_rectangle + yOffset,
-                width_per_rectangle - 2 * xOffset,
-                height_per_rectangle - 2 * yOffset
-            );
-            aRect.rotate(this.rotate, this.center);
-            grid.addChild(aRect);
-        }
-    }
-    return grid;
-};
-Cell.prototype.intersect = function() {
-    var result = this.poly.divide(this.grid);
-    result.selected = true;
-    result.strokeWidth = 2;
-    result.strokeColor = new Color('black');
-    result.fillColor = new Color('#98948B');
-    return result;
-};
-
-var cell = new Cell();
-var grid = cell.grid;
-var result = cell.intersect();
-var paperNodes = [];
-var paperlinks = [];
-console.log(result.children)
-
-for(var i = 0; i < result.children.length; i++){
-    var n = result.children[i];
-    var aNode = {
-        index: n.index,
-        x: n.bounds.centerX,
-        y: n.bounds.centerY,
-    };
-    paperNodes.push(aNode);
-}
-
-for (var y = 0; y < 7; ++y) {
-    for (var x = 0; x < 7; ++x) {
-        if (y > 0) paperlinks.push({source: (y - 1) * 7 + x, target: y * 7 + x});
-        if (x > 0) paperlinks.push({source: y * 7 + (x - 1), target: y * 7 + x});
-    }
-}
+// var column  = 7;
+// var row  = 7;
+//
+// function Cell() {
+//     this.sides = Math.floor(10 * Math.random() + 3);
+//     this.column  = column;
+//     this.row = row;
+//     this.rotate = 0 * Math.random();
+//     this.bounds = this.makePolygon().bounds;
+//     this.center = view.center;
+//     this.grid = this.makeGrid();
+//     this.poly = this.makePolygon();
+// }
+// Cell.prototype.makePolygon = function () {
+//     var polygon = new Path.RegularPolygon({
+//         center: view.center,
+//         sides: this.sides,
+//         radius: 300,
+//     });
+//     return polygon;
+// }
+// Cell.prototype.makeGrid = function(){
+//     var grid = new CompoundPath({
+//         center: view.center,
+//         strokeColor: 'white'
+//     });
+//     var width = this.bounds.width;
+//     var height = this.bounds.height;
+//     var width_per_rectangle = width / this.column;
+//     var height_per_rectangle = height / this.row;
+//
+//     for (var i = 0; i < this.column; i++) {
+//         for (var j = 0; j < this.row; j++) {
+//             var xOffset = width_per_rectangle * 0.01;
+//             var yOffset = height_per_rectangle * 0.01;
+//             var aRect = new paper.Path.Rectangle(
+//                 this.bounds.left + i * width_per_rectangle + xOffset,
+//                 this.bounds.top + j * height_per_rectangle + yOffset,
+//                 width_per_rectangle - 2 * xOffset,
+//                 height_per_rectangle - 2 * yOffset
+//             );
+//             aRect.rotate(this.rotate, this.center);
+//             grid.addChild(aRect);
+//         }
+//     }
+//     return grid;
+// };
+// Cell.prototype.intersect = function() {
+//     var result = this.poly.divide(this.grid);
+//     result.selected = true;
+//     result.strokeWidth = 2;
+//     result.strokeColor = new Color('black');
+//     result.fillColor = new Color('#98948B');
+//     return result;
+// };
+//
+// var cell = new Cell();
+// var grid = cell.grid;
+// var result = cell.intersect();
+// var paperNodes = [];
+// var paperlinks = [];
+// console.log(result.children)
+//
+// for(var i = 0; i < result.children.length; i++){
+//     var n = result.children[i];
+//     var aNode = {
+//         index: n.index,
+//         x: n.bounds.centerX,
+//         y: n.bounds.centerY,
+//     };
+//     paperNodes.push(aNode);
+// }
+//
+// for (var y = 0; y < 7; ++y) {
+//     for (var x = 0; x < 7; ++x) {
+//         if (y > 0) paperlinks.push({source: (y - 1) * 7 + x, target: y * 7 + x});
+//         if (x > 0) paperlinks.push({source: y * 7 + (x - 1), target: y * 7 + x});
+//     }
+// }
 // console.log(paperNodes)
 // console.log(paperlinks)
 // var circle = new Path.Circle({
@@ -164,39 +164,39 @@ for (var y = 0; y < 7; ++y) {
 ======================================================================================================*/
 // var path = d3.geo.path(),
 //     force = d3.layout.force().size([view.bounds.width, view.bounds.height]);
-var nodes = [],
-    links = [];
-
-result.children.forEach(function(d) {
-    var centroid = d.position;
-    centroid.feature = d;
-    nodes.push(centroid);
-});
-
-d3.geom.voronoi().links(nodes).forEach(function(link) {
-    var dx = link.source.x - link.target.x,
-        dy = link.source.y - link.target.y;
-    link.distance = Math.sqrt(dx * dx + dy * dy);
-    links.push(link);
-});
-
-force
-    .gravity(0)
-    .nodes(nodes)
-    .links(links)
-    .linkDistance(function(d) { return d.distance; })
-    .start();
-
-force.on("tick", function(e) {
-    link.attr("x1", function(d) { return d.source.x; })
-        .attr("y1", function(d) { return d.source.y; })
-        .attr("x2", function(d) { return d.target.x; })
-        .attr("y2", function(d) { return d.target.y; });
-
-    node.attr("transform", function(d) {
-        return "translate(" + d.x + "," + d.y + ")";
-    });
-});
+// var nodes = [],
+//     links = [];
+//
+// result.children.forEach(function(d) {
+//     var centroid = d.position;
+//     centroid.feature = d;
+//     nodes.push(centroid);
+// });
+//
+// d3.geom.voronoi().links(nodes).forEach(function(link) {
+//     var dx = link.source.x - link.target.x,
+//         dy = link.source.y - link.target.y;
+//     link.distance = Math.sqrt(dx * dx + dy * dy);
+//     links.push(link);
+// });
+//
+// force
+//     .gravity(0)
+//     .nodes(nodes)
+//     .links(links)
+//     .linkDistance(function(d) { return d.distance; })
+//     .start();
+//
+// force.on("tick", function(e) {
+//     link.attr("x1", function(d) { return d.source.x; })
+//         .attr("y1", function(d) { return d.source.y; })
+//         .attr("x2", function(d) { return d.target.x; })
+//         .attr("y2", function(d) { return d.target.y; });
+//
+//     node.attr("transform", function(d) {
+//         return "translate(" + d.x + "," + d.y + ")";
+//     });
+// });
 /*=====================================================================================================
                                        First Version
 ======================================================================================================*/
@@ -364,10 +364,6 @@ force.on("tick", function(e) {
 //     console.log("dragended:",d3.event.subject)
 //     d3.event.subject.active = false;
 // }
-// .force("charge", d3.forceManyBody().distanceMin(10).distanceMax(50))
-// .force('attraction', d3.forceManyBody().strength(20).distanceMin(20).distanceMax(Math.round(Math.random() * 20 + 10)))
-// .force("repulsion", d3.forceManyBody().strength(-20).distanceMin(20).distanceMax(distance))
-
 // function chunkify(a, n, balanced) {
 //     if (n < 2)
 //         return [a];
@@ -406,7 +402,12 @@ force.on("tick", function(e) {
 //
 //     return out;
 // }
+// .force("charge", d3.forceManyBody().distanceMin(10).distanceMax(50))
+// .force('attraction', d3.forceManyBody().strength(20).distanceMin(20).distanceMax(Math.round(Math.random() * 20 + 10)))
 // d3.event.subject.fx = Math.max(R, Math.min(width - R, d3.event.subject[0]));
 // d3.event.subject.fy = Math.max(R, Math.min(height - R, d3.event.subject[1]));
 // d.x = Math.max(W, Math.min(width - W, d.x));
 // d.y = Math.max(W, Math.min(height - W, d.y));
+// context.moveTo(d.x + d.r, d.y);
+// context.arc(d.x, d.y, d.r, 0, 2 * Math.PI);
+// .force("repulsion", d3.forceManyBody().strength(-12).distanceMin(10).distanceMax(distance))

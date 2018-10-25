@@ -18,6 +18,13 @@ $(document).ready(function () {
             isChecked = false;
         }
     });
+    $('#isDraged').on('change', function () {
+        if (this.checked) {
+            isDraged = true;
+        } else {
+            isDraged = false;
+        }
+    });
     $('nav').click( function(e) {
         $('#panel').addClass('hide');
     });
@@ -28,48 +35,52 @@ var canvas = d3.select("canvas")
     context = canvas.getContext("2d"),
     width = canvas.width,
     height = canvas.height;
-var isChecked = false,
-    isSelected = false;
-var DRAGGED_SUBJECT = null;
 var state = {
     stack : [],
     points: []
-};
-const tau = 2 * Math.PI,
-    N = 30;//polygons' num
-    // W = 10; //building size
+},
+    isChecked = false,
+    isSelected = false,
+    isDraged = false;
+    DRAGGED_SUBJECT = null;
+
+const N = 30; //quantity of polygons
 const CLUSTERS_PER_CELL = () =>  Math.round(Math.random() * 10 + 10);//buildings num for each district
 const color = d3.scaleOrdinal().range(d3.schemeCategory20);
 const scale = d3.scaleLinear()
     .domain([0,100])
     .range([0,90]);
+
 const graphics = makeGraphics();
 
+// set points(buildings/)' properties
 for(let i = 0, poly = graphics.polygons; i < poly.length; i ++) {
     let area = d3.polygonArea(graphics.polygons[i]);
     let points = graphics.clusters[i];
     for(let j = 0, m = points.length; j < m; j ++){
         graphics.clusters[i][j].parent = i;
-        graphics.clusters[i][j].r = Math.round(Math.random() * 10 + 5);
+        graphics.clusters[i][j].r = Math.round(Math.random() * 10 + 10);
+        graphics.clusters[i][j].rotation =  Math.round(Math.random() * 45) / 180 * Math.PI;
         state.points.push(graphics.clusters[i][j]);
     }
 }
 /*=====================================================================================================
                                          Main Functions
 ======================================================================================================*/
+// make simulations in using d3.forceSimulation
 const simulations = [];
 for(let i = 0, poly = graphics.polygons; i < poly.length; i ++){
     let boudnsPoint = bounds(poly[i]);
-    let distance = Math.max(boudnsPoint.width, boudnsPoint.height)/2;
+    let distance = Math.max(boudnsPoint.width, boudnsPoint.height) / 2;
     simulations[i] = d3.forceSimulation(graphics.clusters[i])
        .force("center", d3.forceCenter(graphics.foci[i][0], graphics.foci[i][1]))
-        .force("collide", d3.forceCollide(10).iterations(2))
+        .force("collide", d3.forceCollide(15).iterations(2))
         .force("polygonCollide", forceCollidePolygon(poly[i]).radius(10).iterations(4))
         .force("myForce", myForce().distanceMin(10).distanceMax(distance))
-        // .force("repulsion", d3.forceManyBody().strength(-12).distanceMin(10).distanceMax(distance))
         .on("tick", render)
 }
 
+// initialize drag event
 d3.select(canvas)
     .call(d3.drag()
         .container(canvas)
@@ -78,47 +89,9 @@ d3.select(canvas)
         .on("drag", dragged)
         .on("end", dragended))
 
-//render
+// render canvas
 function render() {
     context.clearRect(0, 0, width, height);
-    context.save();
-
-    //draw points
-    for(let k = 0; k <  graphics.polygons.length; k ++) {
-        for (let i = 0; i < graphics.clusters[k].length; i++) {
-            let d = graphics.clusters[k][i];
-            let polyPoints = graphics.polygons[k];
-            let L = polyPoints.length;
-            // change focus to the center of the triangle
-           let center = d3.polygonCentroid(polyPoints);
-            if( DRAGGED_SUBJECT && DRAGGED_SUBJECT.parent == k ) {
-                center =  DRAGGED_SUBJECT;
-            }
-            let x = d.x,
-                y = d.y,
-                inter = false;
-            for (let j = 0; j < L; j++) {
-                let f = j,
-                    s = (j + 1) < L ? (j + 1) : 0,
-                    inter = getLineIntersection(polyPoints[f][0], polyPoints[f][1],
-                        polyPoints[s][0], polyPoints[s][1], center[0], center[1], x, y);
-                if (inter) {
-                    d.x = (d.x + inter.x) * .5;
-                    d.y = (d.y + inter.y) * .5;
-                    // d.x = inter.x;
-                    // d.y = inter.y;
-                    break;
-                }
-            }
-            context.beginPath();
-            context.moveTo(d.x + d.r, d.y);
-            context.arc(d.x, d.y, d.r, 0, 2 * Math.PI);
-            context.fillStyle = color(k);
-            context.fill();
-            context.strokeStyle = "#333";
-            context.stroke();
-        }
-    }
 
     //draw polygons
     context.beginPath();
@@ -127,6 +100,7 @@ function render() {
     }
     context.strokeStyle = "#000";
     context.stroke();
+    context.closePath();
 
     // // draw links
     // context.beginPath();
@@ -145,27 +119,92 @@ function render() {
     context.fill();
     context.strokeStyle = "#fff";
     context.stroke();
+    context.closePath();
 
-    context.restore();
+    //draw points
+    for(let k = 0; k <  graphics.polygons.length; k ++) {
+        for (let i = 0; i < graphics.clusters[k].length; i ++) {
+            let d = graphics.clusters[k][i];
+            let polyPoints = graphics.polygons[k];
+            // change focus to the center of the triangle
+            let center = d3.polygonCentroid(polyPoints);
+            if( DRAGGED_SUBJECT && DRAGGED_SUBJECT.parent == k ) {
+                center =  DRAGGED_SUBJECT;
+            }
+            let x = d.x,
+                y = d.y,
+                inter = false,
+                distances = [];
+            for (let j = 0,L = polyPoints.length; j < L; j++) {
+                let f = j,
+                    s = (j + 1) < L ? (j + 1) : 0,
+                    segment1 = { x: polyPoints[f][0], y: polyPoints[f][1] },
+                    segment2 = { x: polyPoints[s][0], y: polyPoints[s][1] },
+                    point = { x: x, y: y };
+
+                // push all the distances into an array
+                distances.push(distToSegment(point, pointToSegment(point, segment1, segment2)));
+
+                // check whether point is intersecting with polygon bounds
+                inter = getLineIntersection(segment1.x, segment1.y, segment2.x, segment2.y, center[0], center[1], x, y);
+                if (inter) {
+                    // d.x = (d.x + inter.x) * .5;
+                    // d.y = (d.y + inter.y) * .5;
+                    d.x = inter.x;
+                    d.y = inter.y;
+                    break;
+                }
+            }
+            let indexOfNearestSegment = distances.indexOf(Math.min(...distances));
+            let nearestSegment = {
+                p1: polyPoints[indexOfNearestSegment],
+                p2: polyPoints[indexOfNearestSegment + 1] || polyPoints[0]
+            };
+            let rotation = Math.atan2(nearestSegment.p2[1] - nearestSegment.p1[1], nearestSegment.p2[0] - nearestSegment.p1[0]) || d.rotation;
+
+            //clicked part turn to circles
+            context.save();
+            context.translate(d.x, d.y);
+            context.rotate(rotation);
+            context.translate( -(d.x), -(d.y));
+            context.beginPath();
+            context.rect(d.x - d.r / 2, d.y - d.r / 2, d.r, d.r);
+            context.fillStyle = color(k);
+            context.fill();
+            context.strokeStyle = "#333";
+            context.stroke();
+            context.closePath();
+            context.restore();
+        }
+
+        if(DRAGGED_SUBJECT){
+            context.moveTo(d.x + d.r / 2, d.y);
+            context.arc(d.x, d.y, d.r / 2, 0, 2 * Math.PI);
+        }else{
+            context.rect(d.x - d.r / 2, d.y - d.r / 2, d.r, d.r);
+        }
+    }
 }
 /*=====================================================================================================
                                          Drag Functions
 ======================================================================================================*/
 function dragsubject() {
-    var sbj, I, isInside;
-    var point = [d3.event.x, d3.event.y];
-    for(let i = 0, poly = graphics.polygons; i < graphics.polygons.length; i ++){
-        isInside = d3.polygonContains(poly[i], point);
-        if(isInside){
-            I = i;
-            break;
+    if(isDraged){
+        var sbj, I, isInside;
+        var point = [d3.event.x, d3.event.y];
+        for(let i = 0, poly = graphics.polygons; i < graphics.polygons.length; i ++){
+            isInside = d3.polygonContains(poly[i], point);
+            if(isInside){
+                I = i;
+                break;
+            }
         }
+        sbj = simulations[I].find(d3.event.x, d3.event.y);
+        sbj.parent = I;
+        console.log("sbj: ",sbj);
+        DRAGGED_SUBJECT = sbj;
+        return sbj;
     }
-    sbj = simulations[I].find(d3.event.x, d3.event.y);
-    sbj.parent = I;
-    console.log("sbj: ",sbj);
-    DRAGGED_SUBJECT = sbj;
-    return sbj;
 }
 
 function dragstarted() {
@@ -194,16 +233,19 @@ function dragended() {
 /*=====================================================================================================
                                          Draw Functions
 ======================================================================================================*/
+// draw sites
 function drawSite(site) {
     context.moveTo(site[0] + 2.5, site[1]);
     context.arc(site[0], site[1], 2.5, 0, 2 * Math.PI, false);
 }
 
+// draw links among sites
 function drawLink(link) {
     context.moveTo(link.source[0], link.source[1]);
     context.lineTo(link.target[0], link.target[1]);
 }
 
+// draw polygons
 function drawCell(cell) {
     if (!cell) return false;
     context.moveTo(cell[0][0], cell[0][1]);
@@ -247,15 +289,7 @@ $.Shortcut.on({
         render();
     }
 });
-function jiggle() {
-    return (Math.random() - 0.5) * 1e-6;
-}
-function constant$6(x) {
-    return function() {
-        return x;
-    };
-}
-
+// initialize the graphics
 function makeGraphics() {
     var sites = d3.range(N).map( d => [Math.random() * width, Math.random() * height] );
     var voronoi = d3.voronoi().extent([[2,2], [width-2, height-2]]);
@@ -335,7 +369,6 @@ function makeDots(polygon, numPoints, options) {
     points.complete = (points.length >= numPoints)
     return points
 }
-
 function distPointEdge(p, l1, l2) {
 
     let A = p[0] - l1[0],
@@ -393,7 +426,7 @@ function myForce() {
     var nodes,
         node,
         alpha,
-        strength = constant$6(-12),
+        strength = constant(-12),
         strengths,
         distanceMin2 = 1,
         distanceMax2 = Infinity,
@@ -493,7 +526,7 @@ function myForce() {
     };
 
     force.strength = function(_) {
-        return arguments.length ? (strength = typeof _ === "function" ? _ : constant$6(+_), initialize(), force) : strength;
+        return arguments.length ? (strength = typeof _ === "function" ? _ : constant(+_), initialize(), force) : strength;
     };
 
     return force;
@@ -505,38 +538,6 @@ function forceCollidePolygon(polygon, radius){
 
     // took from d3-force/src/collide.js
     if (typeof radius !== "function") radius = constant(radius == null ? 1 : +radius);
-
-    // took from d3-force/src/constant.js
-    function constant(x){
-        return function() {
-            return x;
-        };
-    }
-
-    function sqr(x) {
-        return x * x
-    }
-
-    function dist2(v, w) {
-        return sqr(v.x - w.x) + sqr(v.y - w.y)
-    }
-
-    function pointToSegment(p, v, w) {
-        var l2 = dist2(v, w);
-
-        if (l2 == 0) return dist2(p, v);
-
-        var t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
-
-        if (t < 0) return v;
-        if (t > 1) return w;
-
-        return { x: v.x + t * (w.x - v.x), y: v.y + t * (w.y - v.y) };
-    }
-
-    function distToSegment(point, vector) {
-        return Math.sqrt(dist2(point, vector));
-    }
 
     function force(){
         for(var l = 0; l < iterations; l++) {
@@ -555,7 +556,7 @@ function forceCollidePolygon(polygon, radius){
                     let vector = pointToSegment(point, segment1, segment2);
                     let d = distToSegment(point, vector);
 
-                    if( d < 20 ) {
+                    if( d < 30 ) {
                         let dvx = Math.abs(point.x - vector.x) / (d);
                         let dvy = Math.abs(point.y - vector.y) / (d);
 
@@ -601,4 +602,39 @@ function getLineIntersection(p0_x, p0_y, p1_x, p1_y, p2_x, p2_y, p3_x, p3_y) {
         };
     }
     return false;
+}
+
+// took from d3-force/src/jiggle.js
+function jiggle() {
+    return (Math.random() - 0.5) * 1e-6;
+}
+// took from d3-force/src/constant.js
+function constant(x){
+    return function() {
+        return x;
+    };
+}
+function sqr(x) {
+    return x * x;
+}
+
+function dist2(v, w) {
+    return sqr(v.x - w.x) + sqr(v.y - w.y);
+}
+
+function pointToSegment(p, v, w) {
+    var l2 = dist2(v, w);
+
+    if (l2 == 0) return dist2(p, v);
+
+    var t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+
+    if (t < 0) return v;
+    if (t > 1) return w;
+
+    return { x: v.x + t * (w.x - v.x), y: v.y + t * (w.y - v.y) };
+}
+
+function distToSegment(point, vector) {
+    return Math.sqrt(dist2(point, vector));
 }
