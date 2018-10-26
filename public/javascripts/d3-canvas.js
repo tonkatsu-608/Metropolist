@@ -36,13 +36,13 @@ var canvas = d3.select("canvas")
     width = canvas.width,
     height = canvas.height;
 var state = {
-    stack : [],
-    points: []
-},
+        stack : [],
+        points: []
+    },
     isChecked = false,
     isSelected = false,
     isDraged = false;
-    DRAGGED_SUBJECT = null;
+DRAGGED_SUBJECT = null;
 
 const N = 30; //quantity of polygons
 const CLUSTERS_PER_CELL = () =>  Math.round(Math.random() * 10 + 10);//buildings num for each district
@@ -73,10 +73,10 @@ for(let i = 0, poly = graphics.polygons; i < poly.length; i ++){
     let boudnsPoint = bounds(poly[i]);
     let distance = Math.max(boudnsPoint.width, boudnsPoint.height) / 2;
     simulations[i] = d3.forceSimulation(graphics.clusters[i])
-       .force("center", d3.forceCenter(graphics.foci[i][0], graphics.foci[i][1]))
+        .force("center", d3.forceCenter(graphics.foci[i][0], graphics.foci[i][1]))
         .force("collide", d3.forceCollide(15).iterations(2))
         .force("polygonCollide", forceCollidePolygon(poly[i]).radius(10).iterations(4))
-        .force("myForce", myForce().distanceMin(10).distanceMax(distance))
+        .force("myForce", myForce().distanceMin(10).distanceMax(distance).iterations(4))
         .on("tick", render)
 }
 
@@ -121,7 +121,9 @@ function render() {
     context.stroke();
     context.closePath();
 
-    //draw points
+
+
+    // draw boxes
     for(let k = 0; k <  graphics.polygons.length; k ++) {
         for (let i = 0; i < graphics.clusters[k].length; i ++) {
             let d = graphics.clusters[k][i];
@@ -176,12 +178,26 @@ function render() {
             context.closePath();
             context.restore();
         }
+    }
+    if(DRAGGED_SUBJECT){
+        // draw circles
+        for(let i = 0, clusters = graphics.clusters[DRAGGED_SUBJECT.parent]; i < clusters.length; i ++){
+            let d = clusters[i];
+            context.save();
 
-        if(DRAGGED_SUBJECT){
-            context.moveTo(d.x + d.r / 2, d.y);
-            context.arc(d.x, d.y, d.r / 2, 0, 2 * Math.PI);
-        }else{
-            context.rect(d.x - d.r / 2, d.y - d.r / 2, d.r, d.r);
+            context.clearRect(d.x - d.r / 2, d.y - d.r / 2, d.r / 2, d.r / 2);
+            context.beginPath();
+            context.moveTo(d.x + Math.sqrt(2) * d.r / 2, d.y);
+            context.arc(d.x, d.y, Math.sqrt(2) * d.r / 2, 0, 2 * Math.PI);
+            context.fillStyle = "#CBC5B9";
+            context.fill();
+            context.strokeStyle = "#000";
+            context.lineWidth = 1.5;
+            context.stroke();
+            context.closePath();
+
+            context.clip();
+            context.restore();
         }
     }
 }
@@ -201,8 +217,8 @@ function dragsubject() {
         }
         sbj = simulations[I].find(d3.event.x, d3.event.y);
         sbj.parent = I;
-        console.log("sbj: ",sbj);
         DRAGGED_SUBJECT = sbj;
+        console.log("DRAGGED_SUBJECT: ",DRAGGED_SUBJECT);
         return sbj;
     }
 }
@@ -222,6 +238,7 @@ function dragged() {
         .restart();
     d3.event.subject.fx = d3.event.x;
     d3.event.subject.fy = d3.event.y;
+    render();
 }
 
 function dragended() {
