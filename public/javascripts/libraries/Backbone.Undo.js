@@ -12,12 +12,12 @@
 (function (factory) {
     if (typeof define === "function" && define.amd) {
         // AMD support
-        define(["public/javascripts/others/underscore", "others/backbone"], factory);
+        define(["public/javascripts/libraries/underscore", "libraries/backbone"], factory);
     } else if (typeof exports !== 'undefined') {
         // CommonJS support
         module.exports = factory(
-            require("public/javascripts/others/underscore"),
-            require("others/backbone")
+            require("public/javascripts/libraries/underscore"),
+            require("libraries/backbone")
         );
     } else {
         // Non-modular execution
@@ -739,7 +739,7 @@
                 // undoManager so that the stack of this other undoManager
                 // is used by two different managers.
                 // This enables to set up a main-undoManager and besides it
-                // several others for special, exceptional cases (by using
+                // several libraries for special, exceptional cases (by using
                 // instance-based custom UndoTypes). Models / collections
                 // which need this special treatment are only registered at
                 // those special undoManagers. Those special ones are then

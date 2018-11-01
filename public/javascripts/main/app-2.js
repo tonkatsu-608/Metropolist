@@ -1,28 +1,50 @@
+/*
+    polygons = [Polygon, Polygon, Polygon, ..., Polygon]
+    Polygon {
+        vertices : [[x1, y1], [x2, y2], ..., [xn, yn]],
+        type : string in ['rich', 'medium','poor','plaza'],
+        data : [x, y]
+    }
+
+    items = [Item, Item, Item, ..., Item]
+    Item {
+        width: Int,
+        height: Int,
+        radius: Int,
+        x: [x, y],
+        y: [x, y],
+        vx: Float,
+        vy: Float,
+        rotation: Float
+    }
+ */
+
+
 $(document).ready(function () {
     $('.sidenav').sidenav();
     $('select').formSelect();
     $('.dropdown-trigger').dropdown();
-    $('#select').on('change', function () {
+    // $('#select').on('change', function () {
+    //     if (this.checked) {
+    //         isSelected = true;
+    //         $('#switch').attr('disabled', 'disabled');
+    //     } else {
+    //         isSelected = false;
+    //         $('#switch').removeAttr('disabled', 'disabled');
+    //     }
+    // });
+    // $('#switch').on('change', function () {
+    //     if (this.checked) {
+    //         isChecked = true;
+    //     } else {
+    //         isChecked = false;
+    //     }
+    // });
+    $('#dragSwitch').on('change', function () {
         if (this.checked) {
-            isSelected = true;
-            $('#switch').attr('disabled', 'disabled');
+            state.isDragSelected = true;
         } else {
-            isSelected = false;
-            $('#switch').removeAttr('disabled', 'disabled');
-        }
-    });
-    $('#switch').on('change', function () {
-        if (this.checked) {
-            isChecked = true;
-        } else {
-            isChecked = false;
-        }
-    });
-    $('#isDraged').on('change', function () {
-        if (this.checked) {
-            isDraged = true;
-        } else {
-            isDraged = false;
+            state.isDragSelected = false;
         }
     });
     $('nav').click( function(e) {
@@ -35,63 +57,117 @@ var canvas = d3.select("canvas")
     context = canvas.getContext("2d"),
     width = canvas.width,
     height = canvas.height;
+
 var state = {
-        stack : [],
+        stack: [],
     },
     isChecked = false,
     isSelected = false,
-    isDraged = false,
+    isDragSelected = false,
     DRAGGED_SUBJECT = null;
-const N = 30; // quantity of polygons
+
+const N = 20; // quantity of polygons
 const DISTRICT_TYPES = ['rich', 'medium','poor','plaza']; // four types of districts
 const COLOR = d3.scaleOrdinal().range(d3.schemeCategory20);
-const graphics = makeGraphics();
+/*=====================================================================================================
+                                     Constructor Functions
+======================================================================================================*/
+// initialize the graphics
+function Graphics() {
+    this.sites = d3.range(N).map( d => [Math.random() * width, Math.random() * height] );
+    this.voronoi = d3.voronoi().extent([[2,2], [width-2, height-2]]);
+    this.diagram = this.voronoi( this.sites );
+    this.links = this.diagram.links();
+    this.polygons = this.diagram.polygons().filter(p => p.data.type = DISTRICT_TYPES[Math.floor(Math.random() * 4)]);
+    this.clusters = this.polygons.map( makeCluster );
+    this.foci = this.polygons.map( poly => d3.polygonCentroid(poly));
+}
+
+function makeCluster(poly) {
+    let CLUSTERS_PER_CELL = null;
+    switch (poly.data.type){
+        case 'rich': CLUSTERS_PER_CELL = Math.round(Math.random() * 5 + 5);
+            break;
+        case 'medium': CLUSTERS_PER_CELL = Math.round(Math.random() * 5 + 10);
+            break;
+        case 'poor': CLUSTERS_PER_CELL = Math.round(Math.random() * 5 + 15);
+            break;
+        case 'plaza': CLUSTERS_PER_CELL = Math.round(Math.random() * 1 + 2);
+            break;
+        default: CLUSTERS_PER_CELL = Math.round(Math.random() * 10 + 10);
+    }
+    // make dots is of form [[x1, y1], [x2, y2], ..., [xn, yn]]
+    return makeDots( poly, CLUSTERS_PER_CELL, 10 )
+}
+
+
+var graphics = new Graphics();
+var polygons = graphics.polygons;
+var clusters = graphics.clusters;
+var foci = graphics.foci;
+console.log( 'Polygon 0', polygons[0] );
+
+
+
+
 // set (buildings||polygons)' properties
-for(let i = 0, poly = graphics.polygons; i < poly.length; i ++) {
-    // let area = d3.polygonArea(graphics.polygons[i]);
-    for(let j = 0, m = graphics.clusters[i].length; j < m; j ++){
-        graphics.clusters[i][j].parent = i;
-        let R = 0;
-        switch (poly[i].data.type){
-            case 'rich': R = Math.round(Math.random() * 5 + 20);
+for(let i = 0; i < polygons.length; i ++) {
+    // let area = d3.polygonArea(polygons[i]);
+    for(let j = 0, m = clusters[i].length; j < m; j ++){
+        let w = 0, h = 0;
+        switch (polygons[i].data.type){
+            case 'rich':
+                w = Math.round(Math.random() * 10 + 18), h = Math.round(Math.random() * 10 + 18);
                 break;
-            case 'medium': R = Math.round(Math.random() * 5 + 15);
+            case 'medium':
+                w = Math.round(Math.random() * 10 + 12), h = Math.round(Math.random() * 10 + 12);
                 break;
-            case 'poor': R = Math.round(Math.random() * 5 + 10);
+            case 'poor':
+                w = Math.round(Math.random() * 10 + 6), h = Math.round(Math.random() * 10 + 6);
                 break;
-            case 'plaza': R = Math.round(Math.random() * 20 + 30);
+            case 'plaza':
+                w = Math.round(Math.random() * 30 + 30), h = Math.round(Math.random() * 30 + 30);
                 break;
-            default: R = Math.round(Math.random() * 10 + 10);
+            default:
+                w = Math.round(Math.random() * 10 + 10), h = Math.round(Math.random() * 10 + 10);
         }
-        graphics.clusters[i][j].r = R;
+        clusters[i][j].parent = i;
+        clusters[i][j].w = w;
+        clusters[i][j].h = h;
+        clusters[i][j].r = Math.round(Math.random() * 10 + 10);
     }
 }
+
+for( let i = 0; i < polygons.length; i++ ) {
+    console.log( clusters[i] ) ;
+}
+
 /*=====================================================================================================
                                          Main Functions
 ======================================================================================================*/
 // make simulations in using d3.forceSimulation
 const simulations = [];
-for(let i = 0, poly = graphics.polygons; i < poly.length; i ++){
-    let boudnsPoint = bounds(poly[i]);
+for(let i = 0; i < polygons.length; i ++){
+    let boudnsPoint = bounds(polygons[i]);
     let distance = Math.max(boudnsPoint.width, boudnsPoint.height) / 2;
-    simulations[i] = d3.forceSimulation(graphics.clusters[i])
-        .force("center", d3.forceCenter(graphics.foci[i][0], graphics.foci[i][1]))
+    simulations[i] = d3.forceSimulation(clusters[i])
+        .force("center", d3.forceCenter(foci[i][0], foci[i][1]))
         .force("collide", d3.forceCollide(20).iterations(2))
-        .force("polygonCollide", forceCollidePolygon(poly[i]).radius(10).iterations(4))
+        .force("polygonCollide", forceCollidePolygon(polygons[i]).radius(10).iterations(4))
         .force("myForce", myForce().distanceMin(10).distanceMax(distance).iterations(4))
         .on("tick", render)
 }
 var menu = function(d) {
     var I, point = [d3.event.layerX, d3.event.layerY];
-    for(let i = 0, poly = graphics.polygons; i < graphics.polygons.length; i ++){
-        if(d3.polygonContains(poly[i], point)){
+    for(let i = 0; i < polygons.length; i ++){
+        if(d3.polygonContains(polygons[i], point)){
             I = i;
             break;
         }
     }
 
     var content =  [{
-            title: 'Current Type: ' + graphics.polygons[I].data.type,
+            title: 'Current Type: ' + polygons[I].data.type,
         },
         {
             divider: true
@@ -99,36 +175,35 @@ var menu = function(d) {
         {
             title: 'Change type to Rich',
             action: function() {
-                graphics.polygons[I].data.type = 'rich';
-                console.log('rich');
-                render();
+                polygons[I].data.type = 'rich';
+                graphics = new Graphics();
+                simulations[I].restart();
             }
         },
         {
             title: 'Change type to Medium',
             action: function() {
-                graphics.polygons[I].data.type = 'medium';
-                console.log('medium');
-                render();
+                polygons[I].data.type = 'medium';
+                graphics = new Graphics();
+                simulations[I].restart();
             }
         },
         {
             title: 'Change type to Poor',
             action: function() {
-                graphics.polygons[I].data.type = 'poor';
-                console.log('poor');
-                render();
+                polygons[I].data.type = 'poor';
+                graphics = new Graphics();
+                simulations[I].restart();
             }
         },
         {
             title: 'Change type to Plaza',
             action: function() {
-                graphics.polygons[I].data.type = 'plaza';
-                console.log('plaza');
-                render();
+                polygons[I].data.type = 'plaza';
+                graphics = new Graphics();
+                simulations[I].restart();
             }
         }];
-
     return content;
 };
 
@@ -147,13 +222,19 @@ function render() {
     context.clearRect(0, 0, width, height);
 
     //draw polygons
+    context.save();
     context.beginPath();
-    for(let i = 0, n = graphics.polygons.length; i < n; i ++) {
-        drawCell(graphics.polygons[i]);
+    for(let i = 0, n = polygons.length; i < n; i ++) {
+        drawCell(polygons[i]);
     }
+    context.lineCap = "round";
+    context.lineWidth = 5;
+    context.lineCap = "butt";
     context.strokeStyle = "#000";
+    context.setLineDash([5,10]);
     context.stroke();
     context.closePath();
+    context.restore();
 
     // // draw links
     // context.beginPath();
@@ -164,21 +245,23 @@ function render() {
     // context.stroke();
 
     // draw foci
+    context.save();
     context.beginPath();
-    for (var i = 0, n = graphics.foci.length; i < n; ++i) {
-        drawSite(graphics.foci[i]);
+    for (var i = 0, n = foci.length; i < n; ++i) {
+        drawSite(foci[i]);
     }
     context.fillStyle = "#000";
     context.fill();
     context.strokeStyle = "#fff";
     context.stroke();
     context.closePath();
+    context.restore();
 
     // draw boxes
-    for(let k = 0; k <  graphics.polygons.length; k ++) {
-        for (let i = 0; i < graphics.clusters[k].length; i ++) {
-            let d = graphics.clusters[k][i];
-            let polyPoints = graphics.polygons[k];
+    for(let k = 0; k <  polygons.length; k ++) {
+        for (let i = 0; i < clusters[k].length; i ++) {
+            let d = clusters[k][i];
+            let polyPoints = polygons[k];
             // change focus to the center of the triangle
             let center = d3.polygonCentroid(polyPoints);
             if( DRAGGED_SUBJECT && DRAGGED_SUBJECT.parent == k ) {
@@ -221,23 +304,24 @@ function render() {
             context.rotate(rotation);
             context.translate( -(d.x), -(d.y));
             context.beginPath();
-            context.rect(d.x - d.r / 2, d.y - d.r / 2, d.r, d.r);
+            context.rect(d.x - d.w / 2, d.y - d.h / 2, d.w, d.h);
             context.fillStyle = COLOR(k);
             context.fill();
             context.strokeStyle = "#333";
+            context.lineWidth = 2;
             context.stroke();
             context.closePath();
             context.restore();
         }
     }
     // draw circle
-    if(isDraged && DRAGGED_SUBJECT){
+    if(isDragSelected && DRAGGED_SUBJECT){
         let d = DRAGGED_SUBJECT;
         context.save();
-        context.clearRect(d.x - d.r / 2, d.y - d.r / 2, d.r / 2, d.r / 2);
+        context.clearRect(d.x - d.w / 2, d.y - d.h / 2, d.w, d.h);
         context.beginPath();
-        context.moveTo(d.x + Math.sqrt(2) * d.r / 2, d.y);
-        context.arc(d.x, d.y, Math.sqrt(2) * d.r / 2, 0, 2 * Math.PI);
+        context.moveTo(d.x + Math.sqrt(2) * (d.w + d.h) / 4, d.y);
+        context.arc(d.x, d.y, Math.sqrt(2) * (d.w + d.h) / 4, 0, 2 * Math.PI);
         context.fillStyle = "#CBC5B9";
         context.fill();
         context.strokeStyle = "#000";
@@ -248,15 +332,14 @@ function render() {
         context.restore();
     }
 }
-//right click to change type
 /*=====================================================================================================
                                          Drag Functions
 ======================================================================================================*/
 function dragsubject() {
     var sbj, I, isInside;
     var point = [d3.event.x, d3.event.y];
-    for(let i = 0, poly = graphics.polygons; i < graphics.polygons.length; i ++){
-        isInside = d3.polygonContains(poly[i], point);
+    for(let i = 0; i < polygons.length; i ++){
+        isInside = d3.polygonContains(polygons[i], point);
         if(isInside){
             I = i;
             break;
@@ -271,7 +354,7 @@ function dragsubject() {
 
 function dragstarted() {
     d3.contextMenu('close');
-    if(!isDraged) {
+    if(!isDragSelected) {
         simulations[d3.event.subject.parent]
             .force("center", d3.forceCenter(d3.event.x, d3.event.y))
             .restart();
@@ -282,7 +365,7 @@ function dragstarted() {
 }
 
 function dragged() {
-    if(!isDraged) {
+    if(!isDragSelected) {
         simulations[d3.event.subject.parent]
             .force("center", d3.forceCenter(d3.event.x, d3.event.y))
             .restart();
@@ -357,41 +440,6 @@ $.Shortcut.on({
         render();
     }
 });
-// initialize the graphics
-function makeGraphics() {
-    let sites = d3.range(N).map( d => [Math.random() * width, Math.random() * height] );
-    let voronoi = d3.voronoi().extent([[2,2], [width-2, height-2]]);
-    let diagram = voronoi( sites );
-    let links = diagram.links();
-    let polygons = diagram.polygons();
-    polygons.filter(p => p.data.type = DISTRICT_TYPES[Math.floor(Math.random() * 4)]);
-    let clusters = polygons.map( function(poly) {
-        let CLUSTERS_PER_CELL = null;
-        switch (poly.data.type){
-            case 'rich': CLUSTERS_PER_CELL = Math.round(Math.random() * 5 + 5);
-                break;
-            case 'medium': CLUSTERS_PER_CELL = Math.round(Math.random() * 5 + 10);
-                break;
-            case 'poor': CLUSTERS_PER_CELL = Math.round(Math.random() * 5 + 15);
-                break;
-            case 'plaza': CLUSTERS_PER_CELL = Math.round(Math.random() * 1 + 2);
-                break;
-            default: CLUSTERS_PER_CELL = Math.round(Math.random() * 10 + 10);
-        }
-        return makeDots( poly, CLUSTERS_PER_CELL, 10 )
-    });
-
-    let foci = polygons.map( poly => d3.polygonCentroid(poly));
-    return {
-        sites : sites,
-        voronoi : voronoi,
-        diagram : diagram,
-        links : links,
-        polygons : polygons,
-        clusters : clusters,
-        foci: foci
-    }
-}
 
 function makeDots(polygon, numPoints, options) {
 
