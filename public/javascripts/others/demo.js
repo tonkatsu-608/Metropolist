@@ -411,3 +411,41 @@
 // context.moveTo(d.x + d.r, d.y);
 // context.arc(d.x, d.y, d.r, 0, 2 * Math.PI);
 // .force("repulsion", d3.forceManyBody().strength(-12).distanceMin(10).distanceMax(distance))
+
+// sites () {
+//     return d3.range(this.N).map( d => [Math.random() * this.width(), Math.random() * this.height()] );
+// },
+// voronoi (){
+//     return d3.voronoi( this.sites() ).extent([[2,2], [this.width() - 2, this.height() - 2]]);
+// },
+// diagram (){
+//     return this.voronoi()( this.sites() );
+// } ,
+// links () {
+//     return this.voronoi().links();
+// },
+// polygons () {
+//     return makePolygons(this.diagram());
+// },
+// clusters () {
+//     console.log(this.polygons())
+//     return this.polygons().map(makeCluster);
+// },
+// graphic () {
+//     let graph = {}
+//     graph.sites = d3.range(state.N).map( d => [Math.random() * state.width(), Math.random() * state.height()] );
+//     graph.voronoi = d3.voronoi().extent([[2,2], [state.width() - 2, state.height() - 2]]);
+//     graph.diagram = graph.voronoi( graph.sites );
+//     graph.links = graph.diagram.links();
+//     graph.polygons = makePolygons(graph.diagram);
+//     graph.clusters = graph.polygons.map(makeCluster);
+//     return graph;
+// },
+// polygons: this.graphics.polygons,
+// clusters: this.graphics.clusters,
+// polygons: function() {
+//     return makePolygons(this.graphics.diagram);
+// },
+// clusters: function() {
+//     return this.polygons.map(makeCluster);
+// }
