@@ -50,7 +50,7 @@ var state = {
     height () {
         return this.canvas.height;
     },
-    N: 30, // quantity of polygons
+    N: 20, // quantity of polygons
     stack: [],
     simulations: [],
     isDragSelected: false,
@@ -64,7 +64,7 @@ state.graphics = new Graphics();
 ======================================================================================================*/
 function Graphics() {
     this.sites = d3.range(state.N).map( d => [Math.random() * state.width(), Math.random() * state.height()] );
-    this.voronoi = d3.voronoi().extent([[20,20], [state.width()-20, state.height()-20]]);
+    this.voronoi = d3.voronoi().extent([[2,2], [state.width()-2, state.height()-2]]);
     this.diagram = this.voronoi( this.sites );
     this.links = this.diagram.links();
     this.polygons = makePolygons(this.diagram);
@@ -163,18 +163,11 @@ d3.select(state.canvas)
 function render() {
     state.context().clearRect(0, 0, state.width(), state.height());
 
-    //draw polygons
-    state.context().save();
-    state.context().beginPath();
-    for(let i = 0, n = state.graphics.polygons.length; i < n; i ++) {
-        drawCell(state.graphics.polygons[i].vertices);
-    }
-    state.context().lineWidth = 2;
-    state.context().strokeStyle = "#000";
-    // state.context().setLineDash([5,10]);
-    state.context().stroke();
-    state.context().closePath();
-    state.context().restore();
+    //// draw polygons
+    // drawCell(2, 'red');
+
+    //  draw paths
+    drawPaths( 2, 'black');
 
     // // draw links
     // state.context().beginPath();
@@ -593,18 +586,18 @@ function dragstarted() {
         state.simulations[d3.event.subject.parent.index]
             .force("center", d3.forceCenter(d3.event.x, d3.event.y))
             .restart();
-        makePointInside();
     }
     if (!d3.event.active) state.simulations[d3.event.subject.parent.index].alphaTarget(0.3).restart();
+    makePointInside();
 }
 
 function dragged() {
-    if(!state.isDragSelected && d3.event.subject) {
+    if(!state.isDragSelected) {
         state.simulations[d3.event.subject.parent.index]
             .force("center", d3.forceCenter(d3.event.x, d3.event.y))
             .restart();
-        makePointInside();
     }
+    makePointInside();
 }
 
 function dragended() {
@@ -641,16 +634,72 @@ function drawLink(link) {
 }
 
 // draw polygons
-function drawCell(cell) {
-    if (!cell) return false;
-    let lineCreator = d3.line()
-        .x(function(d) { return d[0]; })
-        .y(function(d) { return d[1]; })
-        .curve(d3.curveStep)
-        // .curve(d3.curveCatmullRom.alpha(0.5));
-
-    lineCreator.context(state.context());
-    lineCreator(cell);
+function drawCell(width, color) {
+    state.context().save();
+    state.context().beginPath();
+    for(let i = 0, n = state.graphics.polygons.length; i < n; i ++) {
+        let cell = state.graphics.polygons[i].vertices;
+        state.context().moveTo(cell[0][0], cell[0][1]);
+        for (var j = 1, m = cell.length; j < m; ++j) {
+            state.context().lineTo(cell[j][0], cell[j][1]);
+        }
+        state.context().closePath();
+    }
+    state.context().lineWidth = width;
+    state.context().strokeStyle = color;
+    // state.context().setLineDash([5,10]);
+    state.context().stroke();
     state.context().closePath();
-    return true;
+    state.context().restore();
+}
+
+// draw paths
+function drawPaths(width, color) {
+    state.context().save();
+    state.context().beginPath();
+
+    let pathSet = new Set();
+    let count = 0;
+    for(let i = 0; i < state.graphics.polygons.length; i ++) {
+        let lineCreator = d3.line()
+            .x(function(d) { return d[0]; })
+            .y(function(d) { return d[1]; })
+            .curve(d3.curveCatmullRom.alpha(0.5));
+            // .curve(d3.curveBasis);
+        lineCreator.context(state.context());
+
+        let vertices = state.graphics.polygons[i].vertices;
+        for(let j = 0; j < vertices.length; j ++) {
+            let k = (j+1) < vertices.length ? (j+1) : 0,
+                p1 = vertices[j],
+                p2 = vertices[k],
+                lineHash1 = lineToHash(p1, p2),
+                lineHash2 = lineToHash(p2, p1);
+            if(pathSet.has(lineHash1)){
+                count += 1;
+            }else{
+                lineCreator([p1, p2]);
+                state.context().closePath();
+                pathSet.add(lineHash1);
+                pathSet.add(lineHash2);
+            }
+        }
+        // lineCreator(vertices); // Array: [[x, y], [x, y], ..., [x, y]
+        // state.context().closePath();
+    }
+    console.log("size: ", pathSet.size, "| count: ", count)
+    state.context().lineWidth = width;
+    state.context().strokeStyle = color;
+    state.context().stroke();
+    state.context().restore();
+}
+
+function pointToHash(point) {
+    let x = Math.floor(point[0] * 1000);
+    let y = Math.floor(point[1] * 1000);
+    return x + y;
+}
+
+function lineToHash(point1, point2) {
+    return pointToHash(point1) + pointToHash(point2);
 }
