@@ -51,6 +51,7 @@ var state = {
         return this.canvas.height;
     },
     N: 20, // quantity of polygons
+    sign: Math.random() < 0.5 ? -1 : 1,
     stack: [],
     simulations: [],
     isDragSelected: false,
@@ -64,7 +65,7 @@ state.graphics = new Graphics();
 ======================================================================================================*/
 function Graphics() {
     this.sites = d3.range(state.N).map( d => [Math.random() * state.width(), Math.random() * state.height()] );
-    this.voronoi = d3.voronoi().extent([[2,2], [state.width()-2, state.height()-2]]);
+    this.voronoi = d3.voronoi().extent([[20, 20], [state.width() - 20, state.height() - 20]]);
     this.diagram = this.voronoi( this.sites );
     this.links = this.diagram.links();
     this.polygons = makePolygons(this.diagram);
@@ -163,7 +164,7 @@ d3.select(state.canvas)
 function render() {
     state.context().clearRect(0, 0, state.width(), state.height());
 
-    //// draw polygons
+    // draw polygons
     // drawCell(2, 'red');
 
     //  draw paths
@@ -637,14 +638,36 @@ function drawLink(link) {
 function drawCell(width, color) {
     state.context().save();
     state.context().beginPath();
-    for(let i = 0, n = state.graphics.polygons.length; i < n; i ++) {
+
+    let pathSet = new Set();
+    let count = 0;
+    for(let i = 0; i < state.graphics.polygons.length; i ++) {
         let cell = state.graphics.polygons[i].vertices;
-        state.context().moveTo(cell[0][0], cell[0][1]);
-        for (var j = 1, m = cell.length; j < m; ++j) {
-            state.context().lineTo(cell[j][0], cell[j][1]);
+        let p1 = cell[0];
+        state.context().moveTo(p1[0], p1[1]);
+
+        for(let j = 0; j < cell.length; j ++) {
+            let p2 = cell[j],
+                lineHash1 = lineToHash(p1, p2),
+                lineHash2 = lineToHash(p2, p1);
+            if(pathSet.has(lineHash1) || pathSet.has(lineHash2)){
+                count += 1;
+            }else{
+                // state.context().lineTo(p2[0], p2[1]);
+                state.context().quadraticCurveTo((p1[0] + p2[0])/2 + 10, (p1[1] + p2[1])/2 + 10, p2[0], p2[1]);
+                pathSet.add(lineHash1);
+                pathSet.add(lineHash2);
+            }
         }
-        state.context().closePath();
     }
+    // for(let i = 0, n = state.graphics.polygons.length; i < n; i ++) {
+    //     let cell = state.graphics.polygons[i].vertices;
+    //     state.context().moveTo(cell[0][0], cell[0][1]);
+    //     for (var j = 1, m = cell.length; j < m; ++j) {
+    //         state.context().lineTo(cell[j][0], cell[j][1]);
+    //     }
+    //     state.context().closePath();
+    // }
     state.context().lineWidth = width;
     state.context().strokeStyle = color;
     // state.context().setLineDash([5,10]);
@@ -664,8 +687,8 @@ function drawPaths(width, color) {
         let lineCreator = d3.line()
             .x(function(d) { return d[0]; })
             .y(function(d) { return d[1]; })
-            .curve(d3.curveCatmullRom.alpha(0.5));
-            // .curve(d3.curveBasis);
+            // .curve(d3.curveCatmullRom.alpha(0.5));
+            .curve(d3.curveBasis);
         lineCreator.context(state.context());
 
         let vertices = state.graphics.polygons[i].vertices;
@@ -675,31 +698,33 @@ function drawPaths(width, color) {
                 p2 = vertices[k],
                 lineHash1 = lineToHash(p1, p2),
                 lineHash2 = lineToHash(p2, p1);
-            if(pathSet.has(lineHash1)){
+
+            if(pathSet.has(lineHash1) || pathSet.has(lineHash2)){
                 count += 1;
             }else{
-                lineCreator([p1, p2]);
-                state.context().closePath();
+                lineCreator([p1, [(p1[0] + p2[0])/2 + 10 * state.sign, (p1[1] + p2[1])/2 + 10 * state.sign],  p2]);
+                // lineCreator(vertices);
+                // state.context().closePath();
                 pathSet.add(lineHash1);
                 pathSet.add(lineHash2);
             }
         }
-        // lineCreator(vertices); // Array: [[x, y], [x, y], ..., [x, y]
         // state.context().closePath();
     }
-    console.log("size: ", pathSet.size, "| count: ", count)
+    // console.log("size: ", pathSet.size, "| count: ", count)
     state.context().lineWidth = width;
     state.context().strokeStyle = color;
     state.context().stroke();
+    state.context().closePath();
     state.context().restore();
 }
 
 function pointToHash(point) {
-    let x = Math.floor(point[0] * 1000);
-    let y = Math.floor(point[1] * 1000);
-    return x + y;
+    let x = Math.round(point[0] * 10000);
+    let y = Math.round(point[1] * 10000);
+    return (x + y).toString();
 }
 
 function lineToHash(point1, point2) {
-    return pointToHash(point1) + pointToHash(point2);
+    return pointToHash(point1).concat(pointToHash(point2));
 }
