@@ -153,7 +153,7 @@ for(let i = 0; i < polygons.length; i ++){
     simulations[i] = d3.forceSimulation(clusters[i])
         .force("center", d3.forceCenter(foci[i][0], foci[i][1]))
         .force("collide", d3.forceCollide(20).iterations(2))
-        .force("polygonCollide", forceCollidePolygon(polygons[i]).radius(10).iterations(4))
+        .force("polygonCollide", forceCollidePolygon(polygons[i]).radius(10))
         .force("myForce", myForce().distanceMin(10).distanceMax(distance).iterations(4))
         .on("tick", render)
 }
@@ -660,7 +660,6 @@ function myForce() {
     force.strength = function(_) {
         return arguments.length ? (strength = typeof _ === "function" ? _ : constant(+_), initialize(), force) : strength;
     };
-
     return force;
 }
 

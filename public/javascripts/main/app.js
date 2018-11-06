@@ -3,13 +3,14 @@
     Polygon {
         index: Int,
         area: Float,
-        type : string in ['rich', 'medium','poor','plaza'],
-        vertices : [[x1, y1], [x2, y2], ..., [xn, yn]],
-        children: [Item, Item, Item, ..., Item],
-        buildings: Int,
         site: [x, y],
+        buildings: Int,
         center: [x, y],
-        simulation: Object
+        simulation: Object,
+        bounds: [width, height],
+        children: [Item, Item, Item, ..., Item],
+        vertices : [[x1, y1], [x2, y2], ..., [xn, yn]],
+        type : one of ['rich', 'medium', 'poor', 'plaza'],
     }
     clusters = [Item, Item, Item, ..., Item]
     Item {
@@ -21,14 +22,13 @@
         vx: Float,
         vy: Float,
         parent: Polygon,
-        orientation: Float
+        orientation: Float,
+        symbol: one of ['symbolCircle', 'symbolCross', 'symbolDiamond', 'symbolSquare', 'symbolStar', 'symbolTriangle', 'symbolWye']
     }
  */
 $(document).ready(function () {
     $('#render').click( function(e) {
-        state.N = $('#sites').val();
-        state.graphics = new Graphics();
-        startSimulations();
+        newGraphics();
     });
     $('#dragSwitch').on('change', function () {
         if (this.checked) {
@@ -40,24 +40,20 @@ $(document).ready(function () {
 });
 
 var state = {
-    canvas: d3.select("canvas").node(),
-    context () {
-        return this.canvas.getContext("2d");
-    },
-    width () {
-        return this.canvas.width;
-    },
-    height () {
-        return this.canvas.height;
-    },
     N: 20, // quantity of polygons
-    sign: Math.random() < 0.5 ? -1 : 1,
+    SIGN: Math.random() < 0.5 ? -1 : 1, // make positive or negative 1
     stack: [],
     simulations: [],
     isDragSelected: false,
     DRAGGED_SUBJECT: null,
+    canvas: d3.select("canvas").node(),
+    width () { return this.canvas.width; },
+    height () { return this.canvas.height; },
+    context () { return this.canvas.getContext("2d"); },
     COLOR: d3.scaleOrdinal().range(d3.schemeCategory20), // random color
     DISTRICT_TYPES: ['rich', 'medium','poor','plaza'], // four types of districts
+    SYMBOL_TYPES: ['symbolCircle', 'symbolCross', 'symbolDiamond', 'symbolSquare', 'symbolTriangle', 'symbolWye']
+
 }
 state.graphics = new Graphics();
 /*=====================================================================================================
@@ -85,6 +81,7 @@ function makePolygons(diagram) {
         polygon.index = index;
         polygon.vertices = vertices;
         polygon.children = null;
+        polygon.bounds = bounds(vertices);
         polygon.area = d3.polygonArea(vertices);
         polygon.type = state.DISTRICT_TYPES[Math.floor(Math.random() * 4)];
         polygon.center = {x: d3.polygonCentroid(vertices)[0], y: d3.polygonCentroid(vertices)[1]};
@@ -96,6 +93,8 @@ function makePolygons(diagram) {
 // make clusters(buildings)
 function makeCluster(poly) {
     let number = 0;
+    let width = poly.bounds.width;
+    let height = poly.bounds.height;
     switch (poly.type){
         case 'rich':
             number = Math.round(Math.random() * 5 + 5);
@@ -104,7 +103,7 @@ function makeCluster(poly) {
             number = Math.round(Math.random() * 5 + 10);
             break;
         case 'poor':
-            number = Math.round(Math.random() * 5 + 15);
+            number = Math.round(Math.random() * 5 + 20);
             break;
         case 'plaza':
             number = Math.round(Math.random() * 1 + 2);
@@ -120,26 +119,30 @@ function makeCluster(poly) {
         };
         switch (poly.type){
             case 'rich':
-                d.width = Math.round(Math.random() * 10 + 18);
-                d.height = Math.round(Math.random() * 10 + 18);
+                d.width = Math.round(Math.random() * 10 + width / 10);
+                d.height = Math.round(Math.random() * 10 + height / 10);
                 break;
             case 'medium':
-                d.width = Math.round(Math.random() * 10 + 12);
-                d.height = Math.round(Math.random() * 10 + 12);
+                d.width = Math.round(Math.random() * 10 + width / 20);
+                d.height = Math.round(Math.random() * 10 + height / 20);
                 break;
             case 'poor':
-                d.width = Math.round(Math.random() * 10 + 6);
-                d.height = Math.round(Math.random() * 10 + 6);
+                d.width = Math.round(Math.random() * 10 + width / 30);
+                d.height = Math.round(Math.random() * 10 + height / 30);
                 break;
             case 'plaza':
-                d.width = Math.round(Math.random() * 30 + 30);
-                d.height = Math.round(Math.random() * 30 + 30);
+                d.width = Math.round(Math.random() * 10 + width / number / 2);
+                d.height = Math.round(Math.random() * 10 + height / number / 2);
                 break;
             default:
-                d.width = Math.round(Math.random() * 10 + 10);
-                d.height = Math.round(Math.random() * 10 + 10);
+                d.width = Math.round(Math.random() * 10 + poly.bounds.width / number);
+                d.height = Math.round(Math.random() * 10 + poly.bounds.width / number);
         }
         d.radius = Math.sqrt(2) * (d.width + d.height) / 2;
+        d.symbol = d3.symbol()
+            .type(d3[state.SYMBOL_TYPES[Math.floor(Math.random() * 6)]])
+            .size(d.width * d.height)
+            .context(state.context());
         return d;
     });
     poly.children = dots;
@@ -158,16 +161,17 @@ d3.select(state.canvas)
         .on("start", dragstarted)
         .on("drag", dragged)
         .on("end", dragended))
-    .on('contextmenu', d3.contextMenu(menu));
+    .on("contextmenu", d3.contextMenu(menu))
+
+d3.select("body")
+    .on("keydown", onKeyDown);
 
 // render graphic
 function render() {
     state.context().clearRect(0, 0, state.width(), state.height());
 
-    // draw polygons
+    // draw paths
     // drawCell(2, 'red');
-
-    //  draw paths
     drawPaths( 2, 'black');
 
     // // draw links
@@ -178,7 +182,7 @@ function render() {
     // state.context().strokeStyle = "rgba(0,0,0,0.2)";
     // state.context().stroke();
 
-    // draw foci/site
+    // draw foci/sites
     state.context().save();
     state.context().beginPath();
     for (var i = 0, n = state.graphics.polygons.length; i < n; ++i) {
@@ -195,19 +199,20 @@ function render() {
     for(let k = 0; k <  state.graphics.polygons.length; k ++) {
         for (let i = 0; i < state.graphics.clusters[k].length; i ++) {
             let d = state.graphics.clusters[k][i];
-            //clicked part turn to circles
             state.context().save();
             state.context().translate(d.x, d.y);
             state.context().rotate(d.orientation);
             state.context().translate( -(d.x), -(d.y));
             state.context().beginPath();
-            state.context().rect(d.x - d.width / 2, d.y - d.height / 2, d.width, d.height);
+            // state.context().rect(d.x - d.width / 2, d.y - d.height / 2, d.width, d.height);
+            state.context().translate(d.x, d.y);
+            d.symbol();
+            state.context().translate(-d.x, -d.y);
             state.context().fillStyle = state.COLOR(k);
             state.context().fill();
             state.context().strokeStyle = "#333";
             state.context().lineWidth = 2;
             state.context().stroke();
-            state.context().closePath();
             state.context().restore();
         }
     }
@@ -216,9 +221,15 @@ function render() {
         let d = state.DRAGGED_SUBJECT;
         state.context().save();
         state.context().clearRect(d.x - d.width / 2, d.y - d.height / 2, d.width, d.height);
+        state.context().translate(d.x, d.y);
+        state.context().rotate(d.orientation);
+        state.context().translate( -(d.x), -(d.y));
         state.context().beginPath();
-        state.context().moveTo(d.x + d.radius / 2, d.y);
-        state.context().arc(d.x, d.y, d.radius / 2, 0, 2 * Math.PI);
+        // state.context().moveTo(d.x + d.radius / 2, d.y);
+        // state.context().arc(d.x, d.y, d.radius / 2, 0, 2 * Math.PI);
+        state.context().translate(d.x, d.y);
+        d.symbol();
+        state.context().translate(-d.x, -d.y);
         state.context().fillStyle = "#CBC5B9";
         state.context().fill();
         state.context().strokeStyle = "#000";
@@ -235,19 +246,44 @@ function render() {
 // start simulations
 function startSimulations() {
     for(let i = 0; i < state.graphics.polygons.length; i ++){
-        makeSimulations(state.graphics.polygons[i], state.graphics.clusters[i]);
+        makeSimulations(state.graphics.polygons[i], state.graphics.polygons[i].children);
     }
+}
+
+// render every n ticks;
+function onTick( n ) {
+    let tickCount = 0;
+
+    return () => {
+        tickCount++;
+
+        if( tickCount % n == 0 ) {
+            render();
+            tickCount = 0;
+        }else{
+            console.log("tick");
+            tickCount = 0;
+        }
+    }
+}
+
+function newGraphics() {
+    state.N = $('#sites').val();
+    state.simulations.forEach(s => s.stop());
+    state.graphics = new Graphics();
+    startSimulations();
 }
 
 // make simulations in using d3.forceSimulation
 function makeSimulations(polygon, cluster) {
-    let boundsPoint = bounds(polygon);
-    let distance = Math.max(boundsPoint.width, boundsPoint.height) / 2;
+    let collision = Math.sqrt(polygon.area / polygon.children.length) / Math.sqrt(2) / 2;
+    let distance = Math.max(polygon.bounds.width, polygon.bounds.height) / 2;
     state.simulations[polygon.index] = d3.forceSimulation(cluster)
         .force("center", d3.forceCenter(polygon.center.x, polygon.center.y))
-        .force("collide", d3.forceCollide(20).iterations(2))
+        .force("collide", d3.forceCollide(collision).iterations(2))
         .force("polygonCollide", forceCollidePolygon(polygon).radius(10))
-        .force("myForce", myForce().distanceMin(10).distanceMax(distance).iterations(1))
+        .force("myForce", myForce().distanceMin(collision).distanceMax(distance).iterations(4))
+        // .on("tick", () => Math.random() < .1 ? render() : 'render' );
         .on("tick", render);
     polygon.simulation = state.simulations[polygon.index];
 }
@@ -302,16 +338,13 @@ function remakeCluster(polygon) {
 
 // get bounds of a specific polygon
 function bounds( polygon ) {
-    let xs = polygon.vertices.map( p => p[0] );
-    let ys = polygon.vertices.map( p => p[1] );
-    // var minX = xs.reduce( (acc, val) => Math.min( (acc, val ), Infinity ));
-    // var maxX = xs.reduce( (acc, val) => Math.max( (acc, val), -Infinity ));
-    // var minY = ys.reduce( (acc, val) => Math.min( (acc, val), Infinity ));
-    // var maxY = ys.reduce( (acc, val) => Math.max( (acc, val), -Infinity ));
-    let minX = Math.min.apply( null, xs );
-    let maxX = Math.max.apply( null, xs );
-    let minY = Math.min.apply( null, ys );
-    let maxY = Math.max.apply( null, ys );
+    let xs = polygon.map( p => p[0] ),
+        ys = polygon.map( p => p[1] ),
+        minX = Math.min.apply( null, xs ),
+        maxX = Math.max.apply( null, xs ),
+        minY = Math.min.apply( null, ys ),
+        maxY = Math.max.apply( null, ys );
+
     return { width : maxX - minX, height : maxY - minY };
 }
 
@@ -457,13 +490,15 @@ function forceCollidePolygon(polygon, radius){
                     let d = distToSegment(point, vector);
                     distances.push(d);
 
-                    // set point orientation
-                    let indexOfNearestSegment = distances.indexOf(Math.min(...distances));
-                    let nearestSegment = {
-                        p1: polyPoints[indexOfNearestSegment] || polyPoints[0],
-                        p2: polyPoints[indexOfNearestSegment + 1] || polyPoints[0]
-                    };
-                    node.orientation = Math.atan2(nearestSegment.p2[1] - nearestSegment.p1[1], nearestSegment.p2[0] - nearestSegment.p1[0]);
+                    // check whether point is intersecting with polygon bounds
+                    inter = getLineIntersection(segment1.x, segment1.y, segment2.x, segment2.y, center.x, center.y, x, y);
+                    if (inter) {
+                        // d.x = (d.x + inter.x) * .5;
+                        // d.y = (d.y + inter.y) * .5;
+                        node.x = inter.x;
+                        node.y = inter.y;
+                        break;
+                    }
 
                     // set min distance between the point and its nearest polygon segment
                     if( d < 30 ) {
@@ -474,15 +509,13 @@ function forceCollidePolygon(polygon, radius){
                         node.vy += Math.sign(point.y - vector.y) * dvy;
                     }
 
-                    // check whether point is intersecting with polygon bounds
-                    inter = getLineIntersection(segment1.x, segment1.y, segment2.x, segment2.y, center.x, center.y, x, y);
-                    if (inter) {
-                        // d.x = (d.x + inter.x) * .5;
-                        // d.y = (d.y + inter.y) * .5;
-                        node.x = inter.x;
-                        node.y = inter.y;
-                        break;
-                    }
+                    // set point orientation
+                    let indexOfNearestSegment = distances.indexOf(Math.min(...distances));
+                    let nearestSegment = {
+                        p1: polyPoints[indexOfNearestSegment] || polyPoints[0],
+                        p2: polyPoints[indexOfNearestSegment + 1] || polyPoints[0]
+                    };
+                    node.orientation = Math.atan2(nearestSegment.p2[1] - nearestSegment.p1[1], nearestSegment.p2[0] - nearestSegment.p1[0]);
                 }
             }
         }
@@ -526,7 +559,8 @@ function getLineIntersection(p0_x, p0_y, p1_x, p1_y, p2_x, p2_y, p3_x, p3_y) {
 
 // took from d3-force/src/jiggle.js
 function jiggle() {
-    return (Math.random() - 0.5) * 1e-6;
+    // return (Math.random() - 0.5) * 1e-6;
+    return 0;
 }
 // took from d3-force/src/constant.js
 function constant(x){
@@ -575,7 +609,7 @@ function dragsubject() {
             break;
         }
     }
-    sbj = state.simulations[I].find(d3.event.x, d3.event.y);
+    try { sbj = state.simulations[I].find(d3.event.x, d3.event.y); } catch {}
     state.DRAGGED_SUBJECT = sbj;
     console.log("DRAGGED_SUBJECT: ",state.DRAGGED_SUBJECT);
     return sbj;
@@ -599,6 +633,7 @@ function dragged() {
             .restart();
     }
     makePointInside();
+    render();
 }
 
 function dragended() {
@@ -702,7 +737,7 @@ function drawPaths(width, color) {
             if(pathSet.has(lineHash1) || pathSet.has(lineHash2)){
                 count += 1;
             }else{
-                lineCreator([p1, [(p1[0] + p2[0])/2 + 10 * state.sign, (p1[1] + p2[1])/2 + 10 * state.sign],  p2]);
+                lineCreator([p1, [(p1[0] + p2[0])/2 + 10 * state.SIGN, (p1[1] + p2[1])/2 + 10 * state.SIGN],  p2]);
                 // lineCreator(vertices);
                 // state.context().closePath();
                 pathSet.add(lineHash1);
@@ -727,4 +762,14 @@ function pointToHash(point) {
 
 function lineToHash(point1, point2) {
     return pointToHash(point1).concat(pointToHash(point2));
+}
+/*=====================================================================================================
+                                        Key Functions
+======================================================================================================*/
+function onKeyDown() {
+    if(d3.event.keyCode === 13){
+        if($('#sites').val() != ""){
+            newGraphics();
+        }
+    }
 }
