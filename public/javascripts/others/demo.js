@@ -449,3 +449,8 @@
 // clusters: function() {
 //     return this.polygons.map(makeCluster);
 // }
+
+// state.context().translate(d.x, d.y);
+// d.symbol();
+// state.context().translate(-d.x, -d.y);
+// state.context().fillStyle = state.COLOR(k);

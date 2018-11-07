@@ -21,7 +21,6 @@
         y: Float,
         vx: Float,
         vy: Float,
-        offset: Int,
         parent: Polygon,
         orientation: Float,
         symbol: one of ['symbolCircle', 'symbolCross', 'symbolDiamond', 'symbolSquare', 'symbolStar', 'symbolTriangle', 'symbolWye']
@@ -140,7 +139,10 @@ function makeCluster(poly) {
                 d.height = Math.round(Math.random() * 10 + poly.bounds.width / number);
         }
         d.radius = Math.sqrt(2) * (d.width + d.height) / 2;
-        d.offset = {x: Math.round(Math.random() * d.width) / 2, y: Math.round(Math.random() * d.height / 2)}
+        d.symbol = d3.symbol()
+            .type(d3[state.SYMBOL_TYPES[Math.floor(Math.random() * 6)]])
+            .size(d.width * d.height)
+            .context(state.context());
         return d;
     });
     poly.children = dots;
@@ -167,11 +169,11 @@ d3.select("body")
 // render graphic
 function render() {
     state.context().clearRect(0, 0, state.width(), state.height());
+    // drawCell(2, 'red');
     // drawLink();
     drawPaths( 2, 'black');
     drawSites('black');
-
-    // draw clusters
+    // draw buildings
     for(let k = 0; k <  state.graphics.polygons.length; k ++) {
         for (let i = 0; i < state.graphics.clusters[k].length; i ++) {
             let d = state.graphics.clusters[k][i];
@@ -184,10 +186,10 @@ function render() {
 
             state.context().rect(d.x - d.width / 2, d.y - d.height / 2, d.width, d.height);
             state.context().globalCompositeOperation = 'destination-over';
-            state.context().rect(d.x - d.offset.x , d.y - d.offset.y, d.width - d.offset.x, d.height - d.offset.y);
+            state.context().rect(d.x - d.width / 2 + d.width / 2, d.y - d.height / 2 + d.width / 2, d.width, d.height);
 
-            // state.context().fillStyle = state.COLOR(k);
             state.context().fillStyle = "#98948b";
+            // state.context().fillStyle = state.COLOR(k);
             state.context().fill();
             state.context().strokeStyle = "#000";
             state.context().lineWidth = 3;
@@ -196,7 +198,7 @@ function render() {
             state.context().restore();
         }
     }
-    // draw dragging circle
+    // draw circle
     if(state.isDragSelected && state.DRAGGED_SUBJECT){
         let d = state.DRAGGED_SUBJECT;
         state.context().save();
@@ -637,7 +639,7 @@ function makePointInside() {
 /*=====================================================================================================
                                          Draw Functions
 ======================================================================================================*/
-// draw centers/sites
+// draw sites
 function drawSites(color) {
     state.context().save();
     state.context().beginPath();
@@ -666,6 +668,48 @@ function drawLink(link) {
     state.context().stroke();
 }
 
+// draw polygons
+function drawCell(width, color) {
+    state.context().save();
+    state.context().beginPath();
+
+    let pathSet = new Set();
+    let count = 0;
+    for(let i = 0; i < state.graphics.polygons.length; i ++) {
+        let cell = state.graphics.polygons[i].vertices;
+        let p1 = cell[0];
+        state.context().moveTo(p1[0], p1[1]);
+
+        for(let j = 0; j < cell.length; j ++) {
+            let p2 = cell[j],
+                lineHash1 = lineToHash(p1, p2),
+                lineHash2 = lineToHash(p2, p1);
+            if(pathSet.has(lineHash1) || pathSet.has(lineHash2)){
+                count += 1;
+            }else{
+                // state.context().lineTo(p2[0], p2[1]);
+                state.context().quadraticCurveTo((p1[0] + p2[0])/2 + 10, (p1[1] + p2[1])/2 + 10, p2[0], p2[1]);
+                pathSet.add(lineHash1);
+                pathSet.add(lineHash2);
+            }
+        }
+    }
+    // for(let i = 0, n = state.graphics.polygons.length; i < n; i ++) {
+    //     let cell = state.graphics.polygons[i].vertices;
+    //     state.context().moveTo(cell[0][0], cell[0][1]);
+    //     for (var j = 1, m = cell.length; j < m; ++j) {
+    //         state.context().lineTo(cell[j][0], cell[j][1]);
+    //     }
+    //     state.context().closePath();
+    // }
+    state.context().lineWidth = width;
+    state.context().strokeStyle = color;
+    // state.context().setLineDash([5,10]);
+    state.context().stroke();
+    state.context().closePath();
+    state.context().restore();
+}
+
 // draw paths
 function drawPaths(width, color) {
     state.context().save();
@@ -677,23 +721,46 @@ function drawPaths(width, color) {
         let lineCreator = d3.line()
             .x(function(d) { return d[0]; })
             .y(function(d) { return d[1]; })
-            .curve(d3.curveCatmullRom.alpha(0.5));
-            // .curve(d3.curveBasis);
+            // .curve(d3.curveCatmullRom.alpha(0.5));
+            .curve(d3.curveBasis);
         lineCreator.context(state.context());
 
         let vertices = state.graphics.polygons[i].vertices;
         for(let j = 0; j < vertices.length; j ++) {
             let k = (j+1) < vertices.length ? (j+1) : 0,
                 p1 = vertices[j],
-                p2 = vertices[k];
-            lineCreator([p1, [(p1[0] + p2[0])/2 + 10 * state.SIGN, (p1[1] + p2[1])/2 + 10 * state.SIGN],  p2]);
+                p2 = vertices[k],
+                lineHash1 = lineToHash(p1, p2),
+                lineHash2 = lineToHash(p2, p1);
+
+            if(pathSet.has(lineHash1) || pathSet.has(lineHash2)){
+                count += 1;
+            }else{
+                lineCreator([p1, [(p1[0] + p2[0])/2 + 10 * state.SIGN, (p1[1] + p2[1])/2 + 10 * state.SIGN],  p2]);
+                // lineCreator(vertices);
+                // state.context().closePath();
+                pathSet.add(lineHash1);
+                pathSet.add(lineHash2);
+            }
         }
+        // state.context().closePath();
     }
+    // console.log("size: ", pathSet.size, "| count: ", count)
     state.context().lineWidth = width;
     state.context().strokeStyle = color;
     state.context().stroke();
     state.context().closePath();
     state.context().restore();
+}
+
+function pointToHash(point) {
+    let x = Math.round(point[0] * 10000);
+    let y = Math.round(point[1] * 10000);
+    return (x + y).toString();
+}
+
+function lineToHash(point1, point2) {
+    return pointToHash(point1).concat(pointToHash(point2));
 }
 /*=====================================================================================================
                                         Key Functions
