@@ -6,7 +6,6 @@
         site: [x, y],
         buildings: Int,
         center: [x, y],
-        path: SVG path,
         simulation: Object,
         bounds: [width, height],
         children: [Item, Item, Item, ..., Item],
@@ -22,9 +21,7 @@
         y: Float,
         vx: Float,
         vy: Float,
-        sign: Int,
         offset: Int,
-        random: Float,
         parent: Polygon,
         orientation: Float,
         symbol: one of ['symbolCircle', 'symbolCross', 'symbolDiamond', 'symbolSquare', 'symbolStar', 'symbolTriangle', 'symbolWye']
@@ -44,7 +41,7 @@ $(document).ready(function () {
 });
 
 var state = {
-    N: 50, // quantity of polygons
+    N: 20, // quantity of polygons
     SIGN: Math.random() < 0.5 ? -1 : 1, // make positive or negative 1
     stack: [],
     simulations: [],
@@ -78,14 +75,14 @@ function Graphics() {
     this.voronoi = d3.voronoi().extent([[20, 20], [state.width() - 20, state.height() - 20]]);
     this.diagram = this.voronoi( this.sites );
     this.links = this.diagram.links();
-    this.polygons = makePolygons(this.diagram, this.clippingCircle);
+    this.polygons = makePolygons(this.diagram);
     this.clusters = this.polygons.map( makeCluster );
 }
 
 // make sites
 function makeSites(clippingCircle) {
     return d3.range(state.N).map( () => {
-        let len = (clippingCircle.r) * Math.sqrt(Math.random()),
+        let len = (clippingCircle.r - 50) * Math.sqrt(Math.random()),
             angle = Math.random() * 2 * Math.PI;
 
         return [
@@ -96,7 +93,7 @@ function makeSites(clippingCircle) {
 }
 
 // make polygons(districts)
-function makePolygons(diagram, clippingCircle) {
+function makePolygons(diagram) {
     let edges = diagram.edges;
     return diagram.cells.map(function(cell, index) {
         let polygon = {};
@@ -110,7 +107,6 @@ function makePolygons(diagram, clippingCircle) {
         polygon.vertices = vertices;
         polygon.bounds = bounds(vertices);
         polygon.area = d3.polygonArea(vertices);
-        polygon.path = new Path2D(clipCell(vertices, clippingCircle));
         polygon.type = state.DISTRICT_TYPES[Math.floor(Math.random() * 4)];
         polygon.center = {x: d3.polygonCentroid(vertices)[0], y: d3.polygonCentroid(vertices)[1]};
         return polygon;
@@ -124,19 +120,19 @@ function makeCluster(poly) {
     let height = poly.bounds.height;
     switch (poly.type){
         case 'rich':
-            number = classifyCluster(Math.round(Math.random() * Math.round(height / 35) + 2), Math.round(Math.random() * 1));
+            number = Math.round(Math.random() * Math.round(height / 35) + 5);
             break;
         case 'medium':
-            number = classifyCluster(Math.round(Math.random() * Math.round(height / 25) + 2), Math.round(Math.random() * 2));
+            number = Math.round(Math.random() * Math.round(height / 25) + 5);
             break;
         case 'poor':
-            number = classifyCluster(Math.round(Math.random() * Math.round(height / 20) + 5), Math.round(Math.random() * 3));
+            number = Math.round(Math.random() * Math.round(height / 20) + 5);
             break;
         case 'plaza':
-            number = classifyCluster(Math.round(Math.random() * 1 + 2), 0);
+            number = Math.round(Math.random() * 1 + 2);
             break;
         default:
-            number = Math.round(Math.random() * 10 + 5);
+            number = Math.round(Math.random() * 10 + 10);
     }
 
     let dots = d3.range(number).map(function () {
@@ -165,22 +161,12 @@ function makeCluster(poly) {
                 d.width = Math.round(Math.random() * 10 + poly.bounds.width / number);
                 d.height = Math.round(Math.random() * 10 + poly.bounds.width / number);
         }
-        d.random = Math.random();
-        d.sign = Math.random() < 0.5 ? -1 : 1;
         d.radius = Math.sqrt(2) * (d.width + d.height) / 2;
         d.offset = {x: Math.round(Math.random() * d.width) / 2, y: Math.round(Math.random() * d.height / 2)};
         return d;
     });
     poly.children = dots;
     return dots;
-
-    function classifyCluster(big, small) {
-        if(poly.center.x > state.width() / 4 && poly.center.x < state.width() * 4 / 5 && poly.center.y > state.height() / 4 && poly.center.y < state.height() * 4 / 5) {
-            return big;
-        } else {
-            return small;
-        }
-    }
 }
 /*=====================================================================================================
                                          Main Functions
@@ -200,43 +186,33 @@ d3.select(state.canvas)
 d3.select("body")
     .on("keydown", onKeyDown);
 
-// redraw graphic
-function tick() {
+// render graphic
+function render() {
     state.context().clearRect(0, 0, state.width(), state.height());
     // drawLink();
-    // drawSites('black');
     drawPaths( 2, 'black');
-    // drawCirclePaths( 2, 'black');
+    drawSites('black');
 
     // draw clusters
     for(let k = 0; k <  state.graphics.polygons.length; k ++) {
         for (let i = 0; i < state.graphics.clusters[k].length; i ++) {
             let d = state.graphics.clusters[k][i];
-            let offRadius = Math.sqrt(2) * (d.offset.x + d.offset.y) / 2;
             state.context().save();
             state.context().translate(d.x, d.y);
             state.context().rotate(d.orientation);
             state.context().translate( -(d.x), -(d.y));
             state.context().beginPath();
-            state.context().lineWidth = 3;
             // state.context().arc(d.x, d.y, d.radius / 2, 0, 2 * Math.PI);
 
-            if(d.random < .79) {
-                state.context().rect(d.x - d.width / 2, d.y - d.height / 2, d.width, d.height);
-                state.context().globalCompositeOperation = 'destination-over';
-                state.context().rect(d.x - d.offset.x , d.y - d.offset.y, d.width - d.offset.x, d.height - d.offset.y);
-            } else if(d.random > .8) {
-                state.context().rect(d.x - d.width / 2, d.y - d.height / 2, d.width, d.height);
-                state.context().globalCompositeOperation = 'destination-over';
-                state.context().arc(d.x + d.sign * d.offset.x, d.y + d.sign * d.offset.y, d.radius / 3, 0, 2 * Math.PI);
-            } else {
-                state.context().lineWidth = 1.5;
-                state.context().arc(d.x, d.y, d.radius / 2, 0, 2 * Math.PI);
-            }
+            state.context().rect(d.x - d.width / 2, d.y - d.height / 2, d.width, d.height);
+            state.context().globalCompositeOperation = 'destination-over';
+            state.context().rect(d.x - d.offset.x , d.y - d.offset.y, d.width - d.offset.x, d.height - d.offset.y);
 
+            // state.context().fillStyle = state.COLOR(k);
             state.context().fillStyle = "#98948b";
             state.context().fill();
             state.context().strokeStyle = "#000";
+            state.context().lineWidth = 3;
             state.context().stroke();
             state.context().closePath();
             state.context().restore();
@@ -305,11 +281,10 @@ function makeSimulations(polygon, cluster) {
         .force("center", d3.forceCenter(polygon.center.x, polygon.center.y))
         .force("myForce", myForce().distanceMin(collision).distanceMax(distance).iterations(4))
         .force("collide", d3.forceCollide(d => d.radius).iterations(2))
-        .force("polygonCollide", forceCollidePolygon(polygon))
-        // .force("collide", bboxCollide(d => [[d.x - d.width, d.y - d.height],[d.x + d.width, d.y + d.height]]))
+        // .force("collide", rectCollide().size(function (d) { return [d.radius * 2, d.radius * 2] }).iterations(2))
+        .force("polygonCollide", forceCollidePolygon(polygon).radius(10))
         // .on("tick", () => Math.random() < .1 ? render() : 'render' );
-        .on("tick", tick);
-
+        .on("tick", render);
     polygon.simulation = state.simulations[polygon.index];
 }
 
@@ -361,172 +336,100 @@ function remakeCluster(polygon) {
     makeSimulations(polygon, item);
 }
 
-// bbox force
-function bboxCollide (bbox) {
+// custom collision among buildings
+function rectCollide() {
+    var nodes, sizes, masses
+    var size = constant([0, 0])
+    var strength = 1
+    var iterations = 1
 
-    function x (d) {
-        return d.x + d.vx;
-    }
+    function force() {
+        var node, size, mass, xi, yi
+        var i = -1
+        while (++i < iterations) { iterate() }
 
-    function y (d) {
-        return d.y + d.vy;
-    }
+        function iterate() {
+            var j = -1
+            var tree = d3.quadtree(nodes, xCenter, yCenter).visitAfter(prepare)
 
-    function constant (x) {
-        return function () {
-            return x;
-        };
-    }
-
-    var nodes,
-        boundingBoxes,
-        strength = 1,
-        iterations = 1;
-
-    if (typeof bbox !== "function") {
-        bbox = constant(bbox === null ? [[0,0][1,1]] : bbox)
-    }
-
-    function force () {
-        var i,
-            tree,
-            node,
-            xi,
-            yi,
-            bbi,
-            nx1,
-            ny1,
-            nx2,
-            ny2
-
-        var cornerNodes = []
-        nodes.forEach(function (d, i) {
-            cornerNodes.push({node: d, vx: d.vx, vy: d.vy, x: d.x + (boundingBoxes[i][1][0] + boundingBoxes[i][0][0]) / 2, y: d.y + (boundingBoxes[i][0][1] + boundingBoxes[i][1][1]) / 2})
-            cornerNodes.push({node: d, vx: d.vx, vy: d.vy, x: d.x + boundingBoxes[i][0][0], y: d.y + boundingBoxes[i][0][1]})
-            cornerNodes.push({node: d, vx: d.vx, vy: d.vy, x: d.x + boundingBoxes[i][0][0], y: d.y + boundingBoxes[i][1][1]})
-            cornerNodes.push({node: d, vx: d.vx, vy: d.vy, x: d.x + boundingBoxes[i][1][0], y: d.y + boundingBoxes[i][0][1]})
-            cornerNodes.push({node: d, vx: d.vx, vy: d.vy, x: d.x + boundingBoxes[i][1][0], y: d.y + boundingBoxes[i][1][1]})
-        })
-        var cn = cornerNodes.length
-
-        for (var k = 0; k < iterations; ++k) {
-            tree = d3.quadtree(cornerNodes, x, y).visitAfter(prepareCorners);
-
-            for (i = 0; i < cn; ++i) {
-                var nodeI = ~~(i / 5);
-                node = nodes[nodeI]
-                bbi = boundingBoxes[nodeI]
-                xi = node.x + node.vx
-                yi = node.y + node.vy
-                nx1 = xi + bbi[0][0]
-                ny1 = yi + bbi[0][1]
-                nx2 = xi + bbi[1][0]
-                ny2 = yi + bbi[1][1]
-                tree.visit(apply);
+            while (++j < nodes.length) {
+                node = nodes[j]
+                size = sizes[j]
+                mass = masses[j]
+                xi = xCenter(node)
+                yi = yCenter(node)
+                tree.visit(apply)
             }
         }
 
-        function apply (quad, x0, y0, x1, y1) {
+        function apply(quad, x0, y0, x1, y1) {
             var data = quad.data
+            var xSize = (size[0] + quad.size[0]) / 2
+            var ySize = (size[1] + quad.size[1]) / 2
             if (data) {
-                var bWidth = bbLength(bbi, 0),
-                    bHeight = bbLength(bbi, 1);
+                if (data.index > node.index) {
+                    var x = xi - xCenter(data)
+                    var y = yi - yCenter(data)
+                    var xd = Math.abs(x) - xSize
+                    var yd = Math.abs(y) - ySize
 
-                if (data.node.index !== nodeI) {
-                    var dataNode = data.node
-                    var bbj = boundingBoxes[dataNode.index],
-                        dnx1 = dataNode.x + dataNode.vx + bbj[0][0],
-                        dny1 = dataNode.y + dataNode.vy + bbj[0][1],
-                        dnx2 = dataNode.x + dataNode.vx + bbj[1][0],
-                        dny2 = dataNode.y + dataNode.vy + bbj[1][1],
-                        dWidth = bbLength(bbj, 0),
-                        dHeight = bbLength(bbj, 1)
+                    if (xd < 0 && yd < 0) {
+                        var l = Math.sqrt(x * x + y * y)
+                        var m = masses[data.index] / (mass + masses[data.index])
 
-                    if (nx1 <= dnx2 && dnx1 <= nx2 && ny1 <= dny2 && dny1 <= ny2) {
-
-                        var xSize = [Math.min.apply(null, [dnx1, dnx2, nx1, nx2]), Math.max.apply(null, [dnx1, dnx2, nx1, nx2])]
-                        var ySize = [Math.min.apply(null, [dny1, dny2, ny1, ny2]), Math.max.apply(null, [dny1, dny2, ny1, ny2])]
-
-                        var xOverlap = bWidth + dWidth - (xSize[1] - xSize[0])
-                        var yOverlap = bHeight + dHeight - (ySize[1] - ySize[0])
-
-                        var xBPush = xOverlap * strength * (yOverlap / bHeight)
-                        var yBPush = yOverlap * strength * (xOverlap / bWidth)
-
-                        var xDPush = xOverlap * strength * (yOverlap / dHeight)
-                        var yDPush = yOverlap * strength * (xOverlap / dWidth)
-
-                        if ((nx1 + nx2) / 2 < (dnx1 + dnx2) / 2) {
-                            node.vx -= xBPush
-                            dataNode.vx += xDPush
-                        }
-                        else {
-                            node.vx += xBPush
-                            dataNode.vx -= xDPush
-                        }
-                        if ((ny1 + ny2) / 2 < (dny1 + dny2) / 2) {
-                            node.vy -= yBPush
-                            dataNode.vy += yDPush
-                        }
-                        else {
-                            node.vy += yBPush
-                            dataNode.vy -= yDPush
+                        if (Math.abs(xd) < Math.abs(yd)) {
+                            node.vx -= (x *= xd / l * strength) * m;
+                            data.vx += x * (1 - m);
+                        } else {
+                            node.vy -= (y *= yd / l * strength) * m;
+                            data.vy += y * (1 - m);
                         }
                     }
-
                 }
-                return;
+                return
             }
-
-            return x0 > nx2 || x1 < nx1 || y0 > ny2 || y1 < ny1;
+            return x0 > xi + xSize || y0 > yi + ySize || x1 < xi - xSize || y1 < yi - ySize
         }
 
-    }
-
-    function prepareCorners (quad) {
-
-        if (quad.data) {
-            return quad.bb = boundingBoxes[quad.data.node.index]
-        }
-        quad.bb = [[0,0],[0,0]]
-        for (var i = 0; i < 4; ++i) {
-            if (quad[i] && quad[i].bb[0][0] < quad.bb[0][0]) {
-                quad.bb[0][0] = quad[i].bb[0][0]
-            }
-            if (quad[i] && quad[i].bb[0][1] < quad.bb[0][1]) {
-                quad.bb[0][1] = quad[i].bb[0][1]
-            }
-            if (quad[i] && quad[i].bb[1][0] > quad.bb[1][0]) {
-                quad.bb[1][0] = quad[i].bb[1][0]
-            }
-            if (quad[i] && quad[i].bb[1][1] > quad.bb[1][1]) {
-                quad.bb[1][1] = quad[i].bb[1][1]
+        function prepare(quad) {
+            if (quad.data) {
+                quad.size = sizes[quad.data.index]
+            } else {
+                quad.size = [0, 0]
+                var i = -1
+                while (++i < 4) {
+                    if (quad[i] && quad[i].size) {
+                        quad.size[0] = Math.max(quad.size[0], quad[i].size[0])
+                        quad.size[1] = Math.max(quad.size[1], quad[i].size[1])
+                    }
+                }
             }
         }
     }
 
-    function bbLength (bbox, heightWidth) {
-        return bbox[1][heightWidth] - bbox[0][heightWidth]
-    }
+    function xCenter(d) { return d.x + d.vx + sizes[d.index][0] / 2 }
+    function yCenter(d) { return d.y + d.vy + sizes[d.index][1] / 2 }
 
     force.initialize = function (_) {
-        var i, n = (nodes = _).length; boundingBoxes = new Array(n);
-        for (i = 0; i < n; ++i) boundingBoxes[i] = bbox(nodes[i], i, nodes);
-    };
+        sizes = (nodes = _).map(size)
+        masses = sizes.map(function (d) { return d[0] * d[1] })
+    }
 
-    force.iterations = function (_) {
-        return arguments.length ? (iterations = +_, force) : iterations;
-    };
+    force.size = function (_) {
+        return (arguments.length
+            ? (size = typeof _ === 'function' ? _ : constant(_), force)
+            : size)
+    }
 
     force.strength = function (_) {
-        return arguments.length ? (strength = +_, force) : strength;
-    };
+        return (arguments.length ? (strength = +_, force) : strength)
+    }
 
-    force.bbox = function (_) {
-        return arguments.length ? (bbox = typeof _ === "function" ? _ : constant(+_), force) : bbox;
-    };
+    force.iterations = function (_) {
+        return (arguments.length ? (iterations = +_, force) : iterations)
+    }
 
-    return force;
+    return force
 }
 
 // custom force
@@ -838,7 +741,7 @@ function dragged() {
             .restart();
     }
     makePointInside();
-    tick();
+    render();
 }
 
 function dragended() {
@@ -866,184 +769,6 @@ function makePointInside() {
             d3.event.subject.fx = d3.event.x;
             d3.event.subject.fy = d3.event.y;
         }
-    }
-}
-
-function clipCell (cell, clippingCircle) {
-    var clippingCenter = [clippingCircle.cx, clippingCircle.cy];
-    var r = clippingCircle.r;
-    if (allVertecesInsideClippingCircle(cell, clippingCircle)) {
-        return "M"+cell.join("L")+"Z";
-    } else {
-        var path = "";
-        var p0TooFar = firstPointTooFar = pointTooFarFromClippingCircle(cell[0], clippingCircle);
-        var p0, p1, intersections;
-        var openingArcPoint, lastClosingArcPoint;
-
-        //begin: loop through all segments to compute path
-        for (var iseg=0; iseg<cell.length; iseg++) {
-            p0 = cell[iseg];
-            p1 = cell[(iseg+1)%cell.length];
-            // compute intersections between segment and maxDistance circle
-            intersections = segmentCircleIntersections (p0, p1, clippingCenter ,r);
-            // complete the path (with lines or arc) depending on:
-            // intersection count (0, 1, or 2)
-            // if the segment is the first to start the path
-            // if the first point of the segment is inside or outside of the maxDistance circle
-            if (intersections.length===2) {
-                if (p0TooFar) {
-                    if (path==="") {
-                        // entire path will finish with an arc
-                        // store first intersection to close last arc
-                        lastClosingArcPoint = intersections[0];
-                        // init path at 1st intersection
-                        path += "M"+intersections[0];
-                    } else {
-                        //close arc at first intersection
-                        path += largeArc(openingArcPoint, intersections[0], clippingCenter)+" 0 "+intersections[0];
-                    }
-                    // then line to 2nd intersection, then initiliaze an arc
-                    path += "L"+intersections[1];
-                    path += "A "+r+" "+r+" 0 ";
-                    openingArcPoint = intersections[1];
-                } else {
-                    // THIS CASE IS IMPOSSIBLE AND SHOULD NOT ARISE
-                    console.error("What's the f**k");
-                }
-            } else if (intersections.length===1) {
-                if (p0TooFar) {
-                    if (path==="") {
-                        // entire path will finish with an arc
-                        // store first intersection to close last arc
-                        lastClosingArcPoint = intersections[0];
-                        // init path at first intersection
-                        path += "M"+intersections[0];
-                    } else {
-                        // close the arc at intersection
-                        path += largeArc(openingArcPoint, intersections[0], clippingCenter)+" 0 "+intersections[0];
-                    }
-                    // then line to next point (1st out, 2nd in)
-                    path += "L"+p1;
-                } else {
-                    if (path==="") {
-                        // init path at p0
-                        path += "M"+p0;
-                    }
-                    // line to intersection, then initiliaze arc (1st in, 2nd out)
-                    path += "L"+intersections[0];
-                    path += "A "+r+" "+r+" 0 ";
-                    openingArcPoint = intersections[0];
-                }
-                p0TooFar = !p0TooFar;
-            } else {
-                if (p0TooFar) {
-                    // entire segment too far, nothing to do
-                } else {
-                    // entire segment in maxDistance
-                    if (path==="") {
-                        // init path at p0
-                        path += "M"+p0;
-                    }
-                    // line to next point
-                    path += "L"+p1;
-                }
-            }
-        }//end: loop through all segments
-
-        if (path === '') {
-            // special case: no segment intersects the clipping circle
-            // cell perimeter is entirely outside the clipping circle
-            // path is empty
-            path = "M"+[clippingCenter[0]+r,clippingCenter[1]];
-        } else {
-            // if final segment ends with an opened arc, close it
-            if (firstPointTooFar) {
-                path += largeArc(openingArcPoint, lastClosingArcPoint, clippingCenter)+" 0 "+lastClosingArcPoint;
-            }
-            path+="Z";
-        }
-
-        return path;
-    }
-
-    function allVertecesInsideClippingCircle (cell, clippingCircle) {
-        var result = true;
-        var p;
-        for (var ip=0; ip<cell.length; ip++) {
-            result &= !pointTooFarFromClippingCircle(cell[ip], clippingCircle);
-        }
-        return result;
-    }
-
-    function pointTooFarFromClippingCircle(p, clippingCircle) {
-        return (Math.pow(p[0]-clippingCircle.cx,2)+Math.pow(p[1]-clippingCircle.cy,2)>Math.pow(clippingCircle.r, 2));
-    }
-
-    function largeArc(p0, p1, seed) {
-        var v1 = [p0[0] - seed[0], p0[1] - seed[1]],
-            v2 = [p1[0] - seed[0], p1[1] - seed[1]];
-        // from http://stackoverflow.com/questions/2150050/finding-signed-angle-between-vectors
-        var angle = Math.atan2( v1[0]*v2[1] - v1[1]*v2[0], v1[0]*v2[0] + v1[1]*v2[1] );
-        return (angle<0)? 0 : 1;
-    }
-};
-
-function segmentCircleIntersections (A, B, C, r) {
-    /*
-      from http://stackoverflow.com/questions/1073336/circle-line-segment-collision-detection-algorithm
-      */
-    var Ax = A[0], Ay = A[1],
-        Bx = B[0], By = B[1],
-        Cx = C[0], Cy = C[1];
-
-    // compute the euclidean distance between A and B
-    LAB = Math.sqrt(Math.pow(Bx-Ax, 2)+Math.pow(By-Ay, 2));
-
-    // compute the direction vector D from A to B
-    var Dx = (Bx-Ax)/LAB;
-    var Dy = (By-Ay)/LAB;
-
-    // Now the line equation is x = Dx*t + Ax, y = Dy*t + Ay with 0 <= t <= 1.
-
-    // compute the value t of the closest point to the circle center (Cx, Cy)
-    var t = Dx*(Cx-Ax) + Dy*(Cy-Ay);
-
-    // This is the projection of C on the line from A to B.
-
-    // compute the coordinates of the point E on line and closest to C
-    var Ex = t*Dx+Ax;
-    var Ey = t*Dy+Ay;
-
-    // compute the euclidean distance from E to C
-    var LEC = Math.sqrt(Math.pow(Ex-Cx, 2)+Math.pow(Ey-Cy, 2));
-
-    // test if the line intersects the circle
-    if( LEC < r )
-    {
-        // compute distance from t to circle intersection point
-        var dt = Math.sqrt(Math.pow(r, 2)-Math.pow(LEC, 2));
-        var tF = (t-dt); // t of first intersection point
-        var tG = (t+dt); // t of second intersection point
-
-        var result = [];
-        if ((tF>0)&&(tF<LAB)) { // test if first intersection point in segment
-            // compute first intersection point
-            var Fx = (t-dt)*Dx + Ax;
-            var Fy = (t-dt)*Dy + Ay;
-            result.push([Fx, Fy])
-        }
-        if ((tG>0)&&(tG<LAB)) { // test if second intersection point in segment
-            // compute second intersection point
-            var Gx = (t+dt)*Dx + Ax;
-            var Gy = (t+dt)*Dy + Ay;
-            result.push([Gx, Gy])
-        }
-        return  result;
-    } else {
-        // either (LEC === r), tangent point to circle is E
-        // or (LEC < r), line doesn't touch circle
-        // in both cases, returning nothing is OK
-        return [];
     }
 }
 /*=====================================================================================================
@@ -1078,22 +803,6 @@ function drawLink() {
     state.context().stroke();
 }
 
-// draw circle paths
-function drawCirclePaths(width, color) {
-    let path = null;
-
-    for(let i = 0; i < state.graphics.polygons.length; i ++) {
-        state.context().save();
-        state.context().beginPath();
-        path = state.graphics.polygons[i].path;
-        state.context().lineWidth = width;
-        state.context().strokeStyle = color;
-        state.context().stroke(path);
-        state.context().closePath();
-        state.context().restore();
-    }
-}
-
 // draw paths
 function drawPaths(width, color) {
     state.context().save();
@@ -1103,7 +812,7 @@ function drawPaths(width, color) {
         let lineCreator = d3.line()
             .x(function(d) { return d[0]; })
             .y(function(d) { return d[1]; })
-            .curve(d3.curveCatmullRom.alpha(1));
+            .curve(d3.curveCatmullRom.alpha(0.5));
         // .curve(d3.curveBasis);
         lineCreator.context(state.context());
 
@@ -1112,7 +821,7 @@ function drawPaths(width, color) {
             let k = (j+1) < vertices.length ? (j+1) : 0,
                 p1 = vertices[j],
                 p2 = vertices[k];
-            lineCreator([p1, [(p1[0] + p2[0])/2 + 5 * state.SIGN, (p1[1] + p2[1])/2 + 5 * state.SIGN],  p2]);
+            lineCreator([p1, [(p1[0] + p2[0])/2 + 10 * state.SIGN, (p1[1] + p2[1])/2 + 10 * state.SIGN],  p2]);
         }
     }
     state.context().lineWidth = width;

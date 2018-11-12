@@ -66,7 +66,7 @@ var state = {
     isDragSelected = false,
     DRAGGED_SUBJECT = null;
 
-const N = 20; // quantity of polygons
+const N = ; // quantity of polygons
 const DISTRICT_TYPES = ['rich', 'medium','poor','plaza']; // four types of districts
 const COLOR = d3.scaleOrdinal().range(d3.schemeCategory20);
 /*=====================================================================================================
