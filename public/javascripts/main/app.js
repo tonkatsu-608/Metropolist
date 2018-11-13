@@ -41,6 +41,7 @@ $(document).ready(function () {
             state.isDragSelected = false;
         }
     });
+    window.addEventListener("resize", tick);
 });
 
 var state = {
@@ -55,7 +56,7 @@ var state = {
     height () { return this.canvas.height; },
     context () { return this.canvas.getContext("2d"); },
     COLOR: d3.scaleOrdinal().range(d3.schemeCategory20), // random color
-    DISTRICT_TYPES: ['rich', 'medium','poor','plaza'], // four types of districts
+    DISTRICT_TYPES: ['rich', 'medium','poor','plaza', 'empty'], // four types of districts
     SYMBOL_TYPES: ['symbolCircle', 'symbolCross', 'symbolDiamond', 'symbolSquare', 'symbolTriangle', 'symbolWye']
 
 };
@@ -64,6 +65,9 @@ state.graphics = new Graphics();
 // 1. Add more shapes of buildings
 // 2. Correct boundary collision
 // 3. Make city looks more likes a city
+
+// 4. fix roads, if it has no buildings, make edges empty
+// 5. make buildings fit in circle
 /*=====================================================================================================
                                      Constructor Functions
 ======================================================================================================*/
@@ -73,8 +77,8 @@ function Graphics() {
         cy: state.height() / 2,
         r: Math.min(state.width(), state.height()) / 2
     };
-    this.sites = makeSites(this.clippingCircle);
-    // this.sites = d3.range(state.N).map( s => [Math.random() * state.width(), Math.random() * state.height()] );
+    // this.sites = makeSites(this.clippingCircle);
+    this.sites = d3.range(state.N).map( s => [Math.random() * state.width(), Math.random() * state.height()] );
     this.voronoi = d3.voronoi().extent([[20, 20], [state.width() - 20, state.height() - 20]]);
     this.diagram = this.voronoi( this.sites );
     this.links = this.diagram.links();
@@ -111,8 +115,8 @@ function makePolygons(diagram, clippingCircle) {
         polygon.bounds = bounds(vertices);
         polygon.area = d3.polygonArea(vertices);
         polygon.path = new Path2D(clipCell(vertices, clippingCircle));
-        polygon.type = state.DISTRICT_TYPES[Math.floor(Math.random() * 4)];
         polygon.center = {x: d3.polygonCentroid(vertices)[0], y: d3.polygonCentroid(vertices)[1]};
+        polygon.type = getType(polygon);
         return polygon;
     });
 }
@@ -124,16 +128,19 @@ function makeCluster(poly) {
     let height = poly.bounds.height;
     switch (poly.type){
         case 'rich':
-            number = classifyCluster(Math.round(Math.random() * Math.round(height / 35) + 2), Math.round(Math.random() * 1));
+            number = classifyCluster(Math.round(Math.random() * Math.round(height / 35) + 2), Math.round(Math.random() * 1) + 1);
             break;
         case 'medium':
-            number = classifyCluster(Math.round(Math.random() * Math.round(height / 25) + 2), Math.round(Math.random() * 2));
+            number = classifyCluster(Math.round(Math.random() * Math.round(height / 25) + 2), Math.round(Math.random() * 1) + 2);
             break;
         case 'poor':
-            number = classifyCluster(Math.round(Math.random() * Math.round(height / 20) + 5), Math.round(Math.random() * 3));
+            number = classifyCluster(Math.round(Math.random() * Math.round(height / 20) + 5), Math.round(Math.random() * 2) + 2);
             break;
         case 'plaza':
-            number = classifyCluster(Math.round(Math.random() * 1 + 2), 0);
+            number = classifyCluster(Math.round(Math.random() * 1 + 2), Math.round(Math.random() * 1 + 1));
+            break;
+        case 'empty':
+            number = 0;
             break;
         default:
             number = Math.round(Math.random() * 10 + 5);
@@ -158,27 +165,27 @@ function makeCluster(poly) {
                 d.height = Math.round(Math.random() * 10 + height / 30);
                 break;
             case 'plaza':
-                d.width = Math.round(Math.random() * 10 + width / number / 2);
-                d.height = Math.round(Math.random() * 10 + height / number / 2);
+                d.width = Math.round(Math.random() * 10 + width / number / 2.8);
+                d.height = Math.round(Math.random() * 10 + height / number / 2.8);
                 break;
             default:
                 d.width = Math.round(Math.random() * 10 + poly.bounds.width / number);
                 d.height = Math.round(Math.random() * 10 + poly.bounds.width / number);
         }
         d.random = Math.random();
-        d.sign = Math.random() < 0.5 ? -1 : 1;
-        d.radius = Math.sqrt(2) * (d.width + d.height) / 2;
-        d.offset = {x: Math.round(Math.random() * d.width) / 2, y: Math.round(Math.random() * d.height / 2)};
+        d.sign = d.random < 0.5 ? -1 : 1;
+        d.offset = {x: Math.round(Math.random() * d.width / 2), y: Math.round(Math.random() * d.height / 2)};
+        d.radius = Math.sqrt(sqr(d.width) + sqr(d.height));
         return d;
     });
     poly.children = dots;
     return dots;
 
-    function classifyCluster(big, small) {
+    function classifyCluster(more, less) {
         if(poly.center.x > state.width() / 4 && poly.center.x < state.width() * 4 / 5 && poly.center.y > state.height() / 4 && poly.center.y < state.height() * 4 / 5) {
-            return big;
+            return more;
         } else {
-            return small;
+            return less;
         }
     }
 }
@@ -219,21 +226,18 @@ function tick() {
             state.context().translate( -(d.x), -(d.y));
             state.context().beginPath();
             state.context().lineWidth = 3;
-            // state.context().arc(d.x, d.y, d.radius / 2, 0, 2 * Math.PI);
-
             if(d.random < .79) {
                 state.context().rect(d.x - d.width / 2, d.y - d.height / 2, d.width, d.height);
                 state.context().globalCompositeOperation = 'destination-over';
-                state.context().rect(d.x - d.offset.x , d.y - d.offset.y, d.width - d.offset.x, d.height - d.offset.y);
+                state.context().rect(d.x - d.offset.x, d.y - d.offset.y, d.width - d.offset.x, d.height - d.offset.y);
             } else if(d.random > .8) {
                 state.context().rect(d.x - d.width / 2, d.y - d.height / 2, d.width, d.height);
                 state.context().globalCompositeOperation = 'destination-over';
-                state.context().arc(d.x + d.sign * d.offset.x, d.y + d.sign * d.offset.y, d.radius / 3, 0, 2 * Math.PI);
+                state.context().arc(d.x + d.sign * d.offset.x, d.y + d.sign * d.offset.y, d.radius / 4, 0, 2 * Math.PI);
             } else {
                 state.context().lineWidth = 1.5;
                 state.context().arc(d.x, d.y, d.radius / 2, 0, 2 * Math.PI);
             }
-
             state.context().fillStyle = "#98948b";
             state.context().fill();
             state.context().strokeStyle = "#000";
@@ -251,8 +255,8 @@ function tick() {
         state.context().rotate(d.orientation);
         state.context().translate( -(d.x), -(d.y));
         state.context().beginPath();
-        state.context().moveTo(d.x + d.radius / 2, d.y);
-        state.context().arc(d.x, d.y, d.radius / 2, 0, 2 * Math.PI);
+        state.context().moveTo(d.x + d.radius, d.y);
+        state.context().arc(d.x, d.y, d.radius, 0, 2 * Math.PI);
         state.context().fillStyle = "#CBC5B9";
         state.context().fill();
         state.context().strokeStyle = "#000";
@@ -303,10 +307,9 @@ function makeSimulations(polygon, cluster) {
     let distance = Math.max(polygon.bounds.width, polygon.bounds.height) / 2;
     state.simulations[polygon.index] = d3.forceSimulation(cluster)
         .force("center", d3.forceCenter(polygon.center.x, polygon.center.y))
+        .force("collide", d3.forceCollide(d => d.radius + 0.5).iterations(2))
         .force("myForce", myForce().distanceMin(collision).distanceMax(distance).iterations(4))
-        .force("collide", d3.forceCollide(d => d.radius).iterations(2))
         .force("polygonCollide", forceCollidePolygon(polygon))
-        // .force("collide", bboxCollide(d => [[d.x - d.width, d.y - d.height],[d.x + d.width, d.y + d.height]]))
         // .on("tick", () => Math.random() < .1 ? render() : 'render' );
         .on("tick", tick);
 
@@ -350,6 +353,13 @@ function menu(d) {
                 polygon.type = 'plaza';
                 remakeCluster(polygon);
             }
+        },
+        {
+            title: 'Change type to Empty',
+            action: function() {
+                polygon.type = 'empty';
+                remakeCluster(polygon);
+            }
         }];
     return content;
 };
@@ -361,172 +371,17 @@ function remakeCluster(polygon) {
     makeSimulations(polygon, item);
 }
 
-// bbox force
-function bboxCollide (bbox) {
+function getType(poly) {
+    let x = Math.abs(poly.center.x - state.width() / 2);
+    let y = Math.abs(poly.center.y - state.height() / 2);
+    let distance = Math.sqrt(x * x + y * y);
+    distance = distance / Math.sqrt( (state.width() * state.width())/4 + (state.height() * state.height())/4 );
 
-    function x (d) {
-        return d.x + d.vx;
+    if(distance > .6) {
+        return 'empty';
+    } else {
+        return state.DISTRICT_TYPES[Math.floor(Math.random() * 4)];
     }
-
-    function y (d) {
-        return d.y + d.vy;
-    }
-
-    function constant (x) {
-        return function () {
-            return x;
-        };
-    }
-
-    var nodes,
-        boundingBoxes,
-        strength = 1,
-        iterations = 1;
-
-    if (typeof bbox !== "function") {
-        bbox = constant(bbox === null ? [[0,0][1,1]] : bbox)
-    }
-
-    function force () {
-        var i,
-            tree,
-            node,
-            xi,
-            yi,
-            bbi,
-            nx1,
-            ny1,
-            nx2,
-            ny2
-
-        var cornerNodes = []
-        nodes.forEach(function (d, i) {
-            cornerNodes.push({node: d, vx: d.vx, vy: d.vy, x: d.x + (boundingBoxes[i][1][0] + boundingBoxes[i][0][0]) / 2, y: d.y + (boundingBoxes[i][0][1] + boundingBoxes[i][1][1]) / 2})
-            cornerNodes.push({node: d, vx: d.vx, vy: d.vy, x: d.x + boundingBoxes[i][0][0], y: d.y + boundingBoxes[i][0][1]})
-            cornerNodes.push({node: d, vx: d.vx, vy: d.vy, x: d.x + boundingBoxes[i][0][0], y: d.y + boundingBoxes[i][1][1]})
-            cornerNodes.push({node: d, vx: d.vx, vy: d.vy, x: d.x + boundingBoxes[i][1][0], y: d.y + boundingBoxes[i][0][1]})
-            cornerNodes.push({node: d, vx: d.vx, vy: d.vy, x: d.x + boundingBoxes[i][1][0], y: d.y + boundingBoxes[i][1][1]})
-        })
-        var cn = cornerNodes.length
-
-        for (var k = 0; k < iterations; ++k) {
-            tree = d3.quadtree(cornerNodes, x, y).visitAfter(prepareCorners);
-
-            for (i = 0; i < cn; ++i) {
-                var nodeI = ~~(i / 5);
-                node = nodes[nodeI]
-                bbi = boundingBoxes[nodeI]
-                xi = node.x + node.vx
-                yi = node.y + node.vy
-                nx1 = xi + bbi[0][0]
-                ny1 = yi + bbi[0][1]
-                nx2 = xi + bbi[1][0]
-                ny2 = yi + bbi[1][1]
-                tree.visit(apply);
-            }
-        }
-
-        function apply (quad, x0, y0, x1, y1) {
-            var data = quad.data
-            if (data) {
-                var bWidth = bbLength(bbi, 0),
-                    bHeight = bbLength(bbi, 1);
-
-                if (data.node.index !== nodeI) {
-                    var dataNode = data.node
-                    var bbj = boundingBoxes[dataNode.index],
-                        dnx1 = dataNode.x + dataNode.vx + bbj[0][0],
-                        dny1 = dataNode.y + dataNode.vy + bbj[0][1],
-                        dnx2 = dataNode.x + dataNode.vx + bbj[1][0],
-                        dny2 = dataNode.y + dataNode.vy + bbj[1][1],
-                        dWidth = bbLength(bbj, 0),
-                        dHeight = bbLength(bbj, 1)
-
-                    if (nx1 <= dnx2 && dnx1 <= nx2 && ny1 <= dny2 && dny1 <= ny2) {
-
-                        var xSize = [Math.min.apply(null, [dnx1, dnx2, nx1, nx2]), Math.max.apply(null, [dnx1, dnx2, nx1, nx2])]
-                        var ySize = [Math.min.apply(null, [dny1, dny2, ny1, ny2]), Math.max.apply(null, [dny1, dny2, ny1, ny2])]
-
-                        var xOverlap = bWidth + dWidth - (xSize[1] - xSize[0])
-                        var yOverlap = bHeight + dHeight - (ySize[1] - ySize[0])
-
-                        var xBPush = xOverlap * strength * (yOverlap / bHeight)
-                        var yBPush = yOverlap * strength * (xOverlap / bWidth)
-
-                        var xDPush = xOverlap * strength * (yOverlap / dHeight)
-                        var yDPush = yOverlap * strength * (xOverlap / dWidth)
-
-                        if ((nx1 + nx2) / 2 < (dnx1 + dnx2) / 2) {
-                            node.vx -= xBPush
-                            dataNode.vx += xDPush
-                        }
-                        else {
-                            node.vx += xBPush
-                            dataNode.vx -= xDPush
-                        }
-                        if ((ny1 + ny2) / 2 < (dny1 + dny2) / 2) {
-                            node.vy -= yBPush
-                            dataNode.vy += yDPush
-                        }
-                        else {
-                            node.vy += yBPush
-                            dataNode.vy -= yDPush
-                        }
-                    }
-
-                }
-                return;
-            }
-
-            return x0 > nx2 || x1 < nx1 || y0 > ny2 || y1 < ny1;
-        }
-
-    }
-
-    function prepareCorners (quad) {
-
-        if (quad.data) {
-            return quad.bb = boundingBoxes[quad.data.node.index]
-        }
-        quad.bb = [[0,0],[0,0]]
-        for (var i = 0; i < 4; ++i) {
-            if (quad[i] && quad[i].bb[0][0] < quad.bb[0][0]) {
-                quad.bb[0][0] = quad[i].bb[0][0]
-            }
-            if (quad[i] && quad[i].bb[0][1] < quad.bb[0][1]) {
-                quad.bb[0][1] = quad[i].bb[0][1]
-            }
-            if (quad[i] && quad[i].bb[1][0] > quad.bb[1][0]) {
-                quad.bb[1][0] = quad[i].bb[1][0]
-            }
-            if (quad[i] && quad[i].bb[1][1] > quad.bb[1][1]) {
-                quad.bb[1][1] = quad[i].bb[1][1]
-            }
-        }
-    }
-
-    function bbLength (bbox, heightWidth) {
-        return bbox[1][heightWidth] - bbox[0][heightWidth]
-    }
-
-    force.initialize = function (_) {
-        var i, n = (nodes = _).length; boundingBoxes = new Array(n);
-        for (i = 0; i < n; ++i) boundingBoxes[i] = bbox(nodes[i], i, nodes);
-    };
-
-    force.iterations = function (_) {
-        return arguments.length ? (iterations = +_, force) : iterations;
-    };
-
-    force.strength = function (_) {
-        return arguments.length ? (strength = +_, force) : strength;
-    };
-
-    force.bbox = function (_) {
-        return arguments.length ? (bbox = typeof _ === "function" ? _ : constant(+_), force) : bbox;
-    };
-
-    return force;
 }
 
 // custom force
@@ -801,73 +656,6 @@ function bounds( polygon ) {
 
     return { width : maxX - minX, height : maxY - minY };
 }
-/*=====================================================================================================
-                                         Drag Functions
-======================================================================================================*/
-function dragsubject() {
-    let sbj, I, isInside;
-    let point = [d3.event.x, d3.event.y];
-    for(let i = 0; i < state.graphics.polygons.length; i ++){
-        isInside = d3.polygonContains(state.graphics.polygons[i].vertices, point);
-        if(isInside){
-            I = i;
-            break;
-        }
-    }
-    try { sbj = state.simulations[I].find(d3.event.x, d3.event.y); } catch {}
-    state.DRAGGED_SUBJECT = sbj;
-    console.log("DRAGGED_SUBJECT: ",state.DRAGGED_SUBJECT);
-    return sbj;
-}
-
-function dragstarted() {
-    d3.contextMenu('close');
-    if(!state.isDragSelected) {
-        state.simulations[d3.event.subject.parent.index]
-            .force("center", d3.forceCenter(d3.event.x, d3.event.y))
-            .restart();
-    }
-    if (!d3.event.active) state.simulations[d3.event.subject.parent.index].alphaTarget(0.3).restart();
-    makePointInside();
-}
-
-function dragged() {
-    if(!state.isDragSelected) {
-        state.simulations[d3.event.subject.parent.index]
-            .force("center", d3.forceCenter(d3.event.x, d3.event.y))
-            .restart();
-    }
-    makePointInside();
-    tick();
-}
-
-function dragended() {
-    if (!d3.event.active) state.simulations[d3.event.subject.parent.index].alphaTarget(0);
-    d3.event.subject.fx = null;
-    d3.event.subject.fy = null;
-    state.DRAGGED_SUBJECT = null;
-}
-
-function makePointInside() {
-    let center = d3.event.subject.parent.center;
-    let polyPoints = d3.event.subject.parent.vertices;
-
-    for(let j = 0; j < polyPoints.length; j++) {
-        let n = (j + 1) < polyPoints.length ? (j + 1) : 0;
-        let segment1 = {x: polyPoints[j][0], y: polyPoints[j][1]};
-        let segment2 = {x: polyPoints[n][0], y: polyPoints[n][1]};
-        // check whether point is intersecting with polygon bounds
-        let inter = getLineIntersection(segment1.x, segment1.y, segment2.x, segment2.y, center.x, center.y, d3.event.x, d3.event.y);
-        if (inter) {
-            d3.event.subject.fx = inter.x;
-            d3.event.subject.fy = inter.y;
-            break;
-        } else {
-            d3.event.subject.fx = d3.event.x;
-            d3.event.subject.fy = d3.event.y;
-        }
-    }
-}
 
 function clipCell (cell, clippingCircle) {
     var clippingCenter = [clippingCircle.cx, clippingCircle.cy];
@@ -1047,6 +835,73 @@ function segmentCircleIntersections (A, B, C, r) {
     }
 }
 /*=====================================================================================================
+                                         Drag Functions
+======================================================================================================*/
+function dragsubject() {
+    let sbj, I, isInside;
+    let point = [d3.event.x, d3.event.y];
+    for(let i = 0; i < state.graphics.polygons.length; i ++){
+        isInside = d3.polygonContains(state.graphics.polygons[i].vertices, point);
+        if(isInside){
+            I = i;
+            break;
+        }
+    }
+    try { sbj = state.simulations[I].find(d3.event.x, d3.event.y); } catch {}
+    state.DRAGGED_SUBJECT = sbj;
+    console.log("DRAGGED_SUBJECT: ",state.DRAGGED_SUBJECT);
+    return sbj;
+}
+
+function dragstarted() {
+    d3.contextMenu('close');
+    if(!state.isDragSelected) {
+        state.simulations[d3.event.subject.parent.index]
+            .force("center", d3.forceCenter(d3.event.x, d3.event.y))
+            .restart();
+    }
+    if (!d3.event.active) state.simulations[d3.event.subject.parent.index].alphaTarget(0.3).restart();
+    makePointInside();
+}
+
+function dragged() {
+    if(!state.isDragSelected) {
+        state.simulations[d3.event.subject.parent.index]
+            .force("center", d3.forceCenter(d3.event.x, d3.event.y))
+            .restart();
+    }
+    makePointInside();
+    tick();
+}
+
+function dragended() {
+    if (!d3.event.active) state.simulations[d3.event.subject.parent.index].alphaTarget(0);
+    d3.event.subject.fx = null;
+    d3.event.subject.fy = null;
+    state.DRAGGED_SUBJECT = null;
+}
+
+function makePointInside() {
+    let center = d3.event.subject.parent.center;
+    let polyPoints = d3.event.subject.parent.vertices;
+
+    for(let j = 0; j < polyPoints.length; j++) {
+        let n = (j + 1) < polyPoints.length ? (j + 1) : 0;
+        let segment1 = {x: polyPoints[j][0], y: polyPoints[j][1]};
+        let segment2 = {x: polyPoints[n][0], y: polyPoints[n][1]};
+        // check whether point is intersecting with polygon bounds
+        let inter = getLineIntersection(segment1.x, segment1.y, segment2.x, segment2.y, center.x, center.y, d3.event.x, d3.event.y);
+        if (inter) {
+            d3.event.subject.fx = inter.x;
+            d3.event.subject.fy = inter.y;
+            break;
+        } else {
+            d3.event.subject.fx = d3.event.x;
+            d3.event.subject.fy = d3.event.y;
+        }
+    }
+}
+/*=====================================================================================================
                                          Draw Functions
 ======================================================================================================*/
 // draw centers/sites
@@ -1098,12 +953,12 @@ function drawCirclePaths(width, color) {
 function drawPaths(width, color) {
     state.context().save();
     state.context().beginPath();
-
     for(let i = 0; i < state.graphics.polygons.length; i ++) {
+        let length = state.graphics.polygons[i].children.length;
         let lineCreator = d3.line()
             .x(function(d) { return d[0]; })
             .y(function(d) { return d[1]; })
-            .curve(d3.curveCatmullRom.alpha(1));
+        // .curve(d3.curveCatmullRom.alpha(1));
         // .curve(d3.curveBasis);
         lineCreator.context(state.context());
 
@@ -1112,7 +967,14 @@ function drawPaths(width, color) {
             let k = (j+1) < vertices.length ? (j+1) : 0,
                 p1 = vertices[j],
                 p2 = vertices[k];
-            lineCreator([p1, [(p1[0] + p2[0])/2 + 5 * state.SIGN, (p1[1] + p2[1])/2 + 5 * state.SIGN],  p2]);
+            if(length !== 0) {
+                lineCreator([p1,  p2]);
+                // lineCreator([p1, [(p1[0] + p2[0])/2 + 5 * state.SIGN, (p1[1] + p2[1])/2 + 5 * state.SIGN],  p2]);
+            } else {
+                // state.context().moveTo(p1[0], p1[1]);
+                // state.context().lineTo(p2[0], p2[1]);
+                // state.context().setLineDash([5,10]);
+            }
         }
     }
     state.context().lineWidth = width;
