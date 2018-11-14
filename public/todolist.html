@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Metropolist</title>
+    <link rel="shortcut icon" type="image/x-icon" href="images/metro.ico" media="screen" />
+    <link rel="Bookmark" href="images/metro.ico" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="stylesheets/materialize.min.css">
+    <link rel="stylesheet" href="stylesheets/d3-context-menu.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+</head>
+<body>
+<nav class="grey lighten-3">
+    <div class="nav-wrapper">
+        <a href="#" class="brand-logo" style="max-height: 80px;">
+            <img id="test" src="https://fontmeme.com/permalink/180923/7d95b1af3bc6a2edd6b5c31370e73e2d.png" height="80%" width="80%" alt="pixel-fonts" border="0">
+        </a>
+    </div>
+</nav>
+<br>
+<div class="container">
+    <h2>To do list</h2>
+    <hr>
+    <div class="row">
+        <div class="col s12">
+            <!--User-->
+            <div class="row">
+                <h5>User:</h5>
+                <ol>
+                    <li>
+                        <p>
+                            <label>
+                                <input type="checkbox" class="filled-in"/>
+                                <span class="black-text">Users can create/edit/delete a map</span>
+                            </label>
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            <label>
+                                <input type="checkbox" class="filled-in"/>
+                                <span class="black-text">Users can determine the number of city districts by inputting or selecting three modes: small, medium and large.</span>
+                            </label>
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            <label>
+                                <input type="checkbox" class="filled-in" checked="checked"/>
+                                <span class="black-text">Users can drag buildings in a district(polygon) to reset their locations in "multiple" mode or drag one building in "single" mode.</span>
+                            </label>
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            <label>
+                                <input type="checkbox" class="filled-in"/>
+                                <span class="black-text">Users can annotate a map.</span>
+                                <!--<ol>-->
+                                    <!--<p><li>Tag buildings with details related to the building.</li></p>-->
+                                    <!--<p><li>Include virtual-people as owners, residents, or others.</li></p>-->
+                                    <!--<p><li>Include relationship between virtual-peoples (family, business, sentiments)</li></p>-->
+                                <!--</ol>-->
+                            </label>
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            <label>
+                                <input type="checkbox" class="filled-in"/>
+                                <span class="black-text">Users can warp the district by select its vertices in "warp" mode.</span>
+                            </label>
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            <label>
+                                <input type="checkbox" class="filled-in"/>
+                                <span class="black-text">Users can determine the styles of buildings, districts or roads using "options" in menu.</span>
+                            </label>
+                        </p>
+                    </li>
+                    <hr>
+                    <li>
+                        <p>
+                            <label>
+                                <input type="checkbox" class="filled-in"/>
+                                <span class="black-text">Users can sign up.</span>
+                            </label>
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            <label>
+                                <input type="checkbox" class="filled-in"/>
+                                <span class="black-text">Users can log in.</span>
+                            </label>
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            <label>
+                                <input type="checkbox" class="filled-in"/>
+                                <span class="black-text">Users can log out</span>
+                            </label>
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            <label>
+                                <input type="checkbox" class="filled-in"/>
+                                <span class="black-text">Users can edit his/her profile.</span>
+                            </label>
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            <label>
+                                <input type="checkbox" class="filled-in"/>
+                                <span class="black-text">Users can view and search-for other users using any combination of email, username, first name and last name.</span>
+                            </label>
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            <label>
+                                <input type="checkbox" class="filled-in"/>
+                                <span class="black-text">Users can view a page that lists all of his/her maps.</span>
+                            </label>
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            <label>
+                                <input type="checkbox" class="filled-in"/>
+                                <span class="black-text">Users can make maps public, private, or viewable by only a select list of users.</span>
+                            </label>
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            <label>
+                                <input type="checkbox" class="filled-in"/>
+                                <span class="black-text">Users can download maps of either his own or others.</span>
+                            </label>
+                        </p>
+                    </li>
+                </ol>
+            </div>
+
+            <!--Administrator-->
+            <div class="row">
+                <h5>Administrator:</h5>
+                <ol>
+                    <li>
+                        <p>
+                            <label>
+                                <input type="checkbox" class="filled-in"/>
+                                <span class="black-text">Admin can log in.</span>
+                            </label>
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            <label>
+                                <input type="checkbox" class="filled-in"/>
+                                <span class="black-text">Admin can log out.</span>
+                            </label>
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            <label>
+                                <input type="checkbox" class="filled-in"/>
+                                <span class="black-text">Admin can edit his/her profile.</span>
+                            </label>
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            <label>
+                                <input type="checkbox" class="filled-in"/>
+                                <span class="black-text">Admin can search for a user using any combination of email, username, first name and last name.</span>
+                            </label>
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            <label>
+                                <input type="checkbox" class="filled-in"/>
+                                <span class="black-text">Admin can enable or disable any user (not including admins).</span>
+                            </label>
+                        </p>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

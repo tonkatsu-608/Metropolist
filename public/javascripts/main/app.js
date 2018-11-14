@@ -521,8 +521,8 @@ function forceCollidePolygon(polygon, radius){
                     let n = (j+1) < polyPoints.length ? (j+1) : 0;
                     let segment1 = { x: polyPoints[j][0], y: polyPoints[j][1] };
                     let segment2 = { x: polyPoints[n][0], y: polyPoints[n][1] };
-                    let vector = pointToSegment(point, segment1, segment2);
-                    let d = distToSegment(point, vector);
+                    let vector = point2Segment(point, segment1, segment2);
+                    let d = dist2Segment(point, vector);
 
                     vectors.push(vector)
                     distances.push(d);
@@ -624,7 +624,7 @@ function dist2(v, w) {
     return sqr(v.x - w.x) + sqr(v.y - w.y);
 }
 
-function pointToSegment(p, v, w) {
+function point2Segment(p, v, w) {
     let l2 = dist2(v, w);
 
     if (l2 === 0) return dist2(p, v);
@@ -637,7 +637,7 @@ function pointToSegment(p, v, w) {
     return { x: v.x + t * (w.x - v.x), y: v.y + t * (w.y - v.y) };
 }
 
-function distToSegment(point, vector) {
+function dist2Segment(point, vector) {
     return Math.sqrt(dist2(point, vector));
 }
 
