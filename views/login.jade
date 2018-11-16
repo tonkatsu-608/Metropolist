@@ -4,6 +4,11 @@ block content
 
     h1= "login"
     form(action="/auth/login", method="post")
-        input(type="text", name="username")
+        p Email
+        input(type="email", name="username")
+
+        p Password
         input(type="password", name="password")
+
+        p
         input(type="submit", value="Log in")

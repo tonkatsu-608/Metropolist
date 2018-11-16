@@ -9,7 +9,7 @@ var session = require('express-session');
 var bodyParser = require('body-parser');
 var passport = require('passport');
 
-require('./passport')(passport)
+require('./passport')(passport);
 
 mongoose.connect('mongodb://localhost:27017/metropolist', { useNewUrlParser: true });
 
@@ -34,7 +34,7 @@ app.use(sassMiddleware({
 }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
-    secret: 'cat',
+    secret: 'metro',
     saveUninitialized: false,
     resave: false,
 }));

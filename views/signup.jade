@@ -4,6 +4,17 @@ block content
 
     h1= "sign up"
     form(action="/auth/signup", method="post")
-        input(type="text", name="username")
+        p Email
+        input(type="email", name="email")
+
+        p First name
+        input(type="text", name="firstname")
+
+        p Last Name
+        input(type="text", name="lastname")
+
+        p Password
         input(type="password", name="password")
+
+        p
         input(type="submit", value="Sign up")

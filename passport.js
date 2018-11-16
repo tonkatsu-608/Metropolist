@@ -10,25 +10,15 @@ module.exports = function (passport) {
         done(null, user);
     });
 
-    passport.use(new localStrategy(function (username, password, done) {
-        User.findOne({username: username}, function (err, doc) {
-            if(err) {
-                done(err);
-            } else {
-                if(doc) {
-                    let valid = doc.comparePassword(password, doc.password);
-                    if(valid) {
-                        done(null, {
-                            username: doc.username,
-                            password: doc.password
-                        });
-                    } else {
-                        done(null, false);
-                    }
-                } else {
-                    done(null, false);
-                }
-            }
-        })
-    }))
+    passport.use(new localStrategy(
+        function (username, password, done) {
+
+            User.findByEmail(username, function (err, user) {
+                if (err) { return done(err); }
+                if (!user) { return done(null, false); }
+                if (!user.verifyPassword(password, user.password)) { return done(null, false); }
+
+                return done(null, user);
+            });
+        }));
 }
