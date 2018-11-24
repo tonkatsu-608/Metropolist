@@ -8,15 +8,21 @@ var mongoose = require('mongoose');
 var session = require('express-session');
 var bodyParser = require('body-parser');
 var passport = require('passport');
+var cors = require('cors')
 
 require('./passport')(passport);
-
 mongoose.connect('mongodb://localhost:27017/metropolist', { useNewUrlParser: true });
 
 var indexRouter = require('./routes/index');
 var auth = require('./routes/auth')(passport);
-
+var corsOptions = {
+    origin: 'http://localhost:4200',
+    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+};
 var app = express();
+// app.listen(8000, () => {
+//     console.log('Port: 8000 started!');
+// });
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -41,6 +47,7 @@ app.use(session({
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(cors(corsOptions));
 
 app.use('/', indexRouter);
 app.use('/auth', auth);

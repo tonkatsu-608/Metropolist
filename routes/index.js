@@ -1,11 +1,10 @@
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
+const User = require('../db/User');
 
-var loggedIn = function (req, res, next) {
+let loggedIn = function (req, res, next) {
     if(req.isAuthenticated()) {
         next();
-    } else {
-        res.redirect('/login');
     }
 }
 
@@ -14,38 +13,21 @@ router.get('/', function(req, res, next) {
     res.render('index', { title: 'Express' });
 });
 
-router.get('/signup', function(req, res, next) {
-    res.render('signup');
+router.get('/failure', function(req, res, next) {
+    res.status(500).json({ msg : 'Invalid email or password' });
 });
 
-router.get('/login', function(req, res, next) {
-    res.render('login');
-});
-
-router.get('/logout', function (req, res) {
-    req.logout();
-    res.redirect('/login');
-});
-
-router.get('/dashboard', loggedIn, function(req, res, next) {
-    let user = req.session.passport.user;
-    if(user) {
-        if(user.role === 'user') {
-            res.redirect('/dashboard/user');
-        } else if(user.role === 'admin') {
-            res.redirect('/dashboard/admin');
+router.put('/metro/api/v1/update', function (req, res) {
+    let user = req.body;
+    User.update(user, function (err, doc) {
+        if (err) {
+            res.status(500).send({msg: 'error occur in update'});
+        } else {
+            if(doc) {
+                res.status(200).send({msg: 'update user successfully'});
+            }
         }
-    } else {
-        res.send('failed logged in');
-    }
-});
-
-router.get('/dashboard/user', function (req, res, next) {
-    res.render('user-dashboard');
-});
-
-router.get('/dashboard/admin', function (req, res, next) {
-    res.render('admin-dashboard');
+    });
 });
 
 router.get('/app', function(req, res, next) {
@@ -55,5 +37,26 @@ router.get('/app', function(req, res, next) {
 router.get('/todolist', function(req, res, next) {
     res.sendFile('todolist.html', {root: __dirname + "/../public"});
 });
+
+router.get('/api/users', function(req, res, next) {
+    User.findAll( function(error, users) {
+        if( error ) {
+            res.status(500).json( error);
+        } else {
+            res.json( users.map(function (user) {
+                return new User().transformUser(user);
+            }));
+        }
+    });
+});
+
+router.get('/api/maps', function (req, res, next) {
+    // let uid = req.params.uid;
+});
+
+// router.get('/logout', function (req, res) {
+//     req.logout();
+//     res.redirect('/login');
+// });
 
 module.exports = router;

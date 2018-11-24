@@ -12,7 +12,6 @@ module.exports = function (passport) {
 
     passport.use(new localStrategy(
         function (username, password, done) {
-
             User.findByEmail(username, function (err, user) {
                 if (err) { return done(err); }
                 if (!user) { return done(null, false); }
