@@ -45,13 +45,13 @@ $(document).ready(function () {
 });
 
 var state = {
-    N: 50, // quantity of polygons
+    N: 30, // quantity of polygons
     SIGN: Math.random() < 0.5 ? -1 : 1, // make positive or negative 1
     stack: [],
     simulations: [],
     isDragSelected: false,
     DRAGGED_SUBJECT: null,
-    canvas: d3.select("canvas").node(),
+    canvas: d3.select("#myCanvas").node(),
     width () { return this.canvas.width; },
     height () { return this.canvas.height; },
     context () { return this.canvas.getContext("2d"); },
@@ -219,7 +219,6 @@ function tick() {
     for(let k = 0; k <  state.graphics.polygons.length; k ++) {
         for (let i = 0; i < state.graphics.clusters[k].length; i ++) {
             let d = state.graphics.clusters[k][i];
-            let offRadius = Math.sqrt(2) * (d.offset.x + d.offset.y) / 2;
             state.context().save();
             state.context().translate(d.x, d.y);
             state.context().rotate(d.orientation);
@@ -696,7 +695,7 @@ function clipCell (cell, clippingCircle) {
                     openingArcPoint = intersections[1];
                 } else {
                     // THIS CASE IS IMPOSSIBLE AND SHOULD NOT ARISE
-                    console.error("What's the f**k");
+                    console.error("unexpected error");
                 }
             } else if (intersections.length===1) {
                 if (p0TooFar) {
