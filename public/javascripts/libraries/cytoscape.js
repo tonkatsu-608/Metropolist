@@ -20503,7 +20503,7 @@ PSF LICENSE AGREEMENT FOR PYTHON 2.7.2
 
 1. This LICENSE AGREEMENT is between the Python Software Foundation (“PSF”), and the Individual or Organization (“Licensee”) accessing and otherwise using Python 2.7.2 software in source or binary form and its associated documentation.
 2. Subject to the terms and conditions of this License Agreement, PSF hereby grants Licensee a nonexclusive, royalty-free, world-wide license to reproduce, analyze, test, perform and/or display publicly, prepare derivative works, distribute, and otherwise use Python 2.7.2 alone or in any derivative version, provided, however, that PSF’s License Agreement and PSF’s notice of copyright, i.e., “Copyright © 2001-2012 Python Software Foundation; All Rights Reserved” are retained in Python 2.7.2 alone or in any derivative version prepared by Licensee.
-3. In the event Licensee prepares a derivative work that is based on or incorporates Python 2.7.2 or any part thereof, and wants to make the derivative work available to libraries as provided herein, then Licensee hereby agrees to include in any such work a brief summary of the changes made to Python 2.7.2.
+3. In the event Licensee prepares a derivative work that is based on or incorporates Python 2.7.2 or any part thereof, and wants to make the derivative work available to others as provided herein, then Licensee hereby agrees to include in any such work a brief summary of the changes made to Python 2.7.2.
 4. PSF is making Python 2.7.2 available to Licensee on an “AS IS” basis. PSF MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED. BY WAY OF EXAMPLE, BUT NOT LIMITATION, PSF MAKES NO AND DISCLAIMS ANY REPRESENTATION OR WARRANTY OF MERCHANTABILITY OR FITNESS FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF PYTHON 2.7.2 WILL NOT INFRINGE ANY THIRD PARTY RIGHTS.
 5. PSF SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON 2.7.2 FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR LOSS AS A RESULT OF MODIFYING, DISTRIBUTING, OR OTHERWISE USING PYTHON 2.7.2, OR ANY DERIVATIVE THEREOF, EVEN IF ADVISED OF THE POSSIBILITY THEREOF.
 6. This License Agreement will automatically terminate upon a material breach of its terms and conditions.
@@ -21921,4 +21921,5020 @@ PSF LICENSE AGREEMENT FOR PYTHON 2.7.2
 
             var a = d[0] * d[0] + d[1] * d[1];
             var b = 2 * (f[0] * d[0] + f[1] * d[1]);
-            var c = (f[0] *
+            var c = (f[0] * f[0] + f[1] * f[1]) - radius * radius ;
+
+            var discriminant = b * b - 4 * a * c;
+
+            if( discriminant < 0 ){
+                return [];
+            }
+
+            var t1 = (-b + Math.sqrt( discriminant )) / (2 * a);
+            var t2 = (-b - Math.sqrt( discriminant )) / (2 * a);
+
+            var tMin = Math.min( t1, t2 );
+            var tMax = Math.max( t1, t2 );
+            var inRangeParams = [];
+
+            if( tMin >= 0 && tMin <= 1 ){
+                inRangeParams.push( tMin );
+            }
+
+            if( tMax >= 0 && tMax <= 1 ){
+                inRangeParams.push( tMax );
+            }
+
+            if( inRangeParams.length === 0 ){
+                return [];
+            }
+
+            var nearIntersectionX = inRangeParams[0] * d[0] + x1;
+            var nearIntersectionY = inRangeParams[0] * d[1] + y1;
+
+            if( inRangeParams.length > 1 ){
+
+                if( inRangeParams[0] == inRangeParams[1] ){
+                    return [ nearIntersectionX, nearIntersectionY ];
+                } else {
+
+                    var farIntersectionX = inRangeParams[1] * d[0] + x1;
+                    var farIntersectionY = inRangeParams[1] * d[1] + y1;
+
+                    return [ nearIntersectionX, nearIntersectionY, farIntersectionX, farIntersectionY ];
+                }
+
+            } else {
+                return [ nearIntersectionX, nearIntersectionY ];
+            }
+
+        };
+
+        math.findCircleNearPoint = function( centerX, centerY,
+                                             radius, farX, farY ){
+
+            var displacementX = farX - centerX;
+            var displacementY = farY - centerY;
+            var distance = Math.sqrt( displacementX * displacementX
+                + displacementY * displacementY );
+
+            var unitDisplacementX = displacementX / distance;
+            var unitDisplacementY = displacementY / distance;
+
+            return [ centerX + unitDisplacementX * radius,
+                centerY + unitDisplacementY * radius ];
+        };
+
+        math.findMaxSqDistanceToOrigin = function( points ){
+            var maxSqDistance = 0.000001;
+            var sqDistance;
+
+            for( var i = 0; i < points.length / 2; i++ ){
+
+                sqDistance = points[ i * 2] * points[ i * 2]
+                    + points[ i * 2 + 1] * points[ i * 2 + 1];
+
+                if( sqDistance > maxSqDistance ){
+                    maxSqDistance = sqDistance;
+                }
+            }
+
+            return maxSqDistance;
+        };
+
+        math.finiteLinesIntersect = function(
+            x1, y1, x2, y2, x3, y3, x4, y4, infiniteLines ){
+
+            var ua_t = (x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3);
+            var ub_t = (x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3);
+            var u_b = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
+
+            if( u_b !== 0 ){
+                var ua = ua_t / u_b;
+                var ub = ub_t / u_b;
+
+                if( 0 <= ua && ua <= 1 && 0 <= ub && ub <= 1 ){
+                    return [ x1 + ua * (x2 - x1), y1 + ua * (y2 - y1) ];
+
+                } else {
+                    if( !infiniteLines ){
+                        return [];
+                    } else {
+                        return [ x1 + ua * (x2 - x1), y1 + ua * (y2 - y1) ];
+                    }
+                }
+            } else {
+                if( ua_t === 0 || ub_t === 0 ){
+
+                    // Parallel, coincident lines. Check if overlap
+
+                    // Check endpoint of second line
+                    if( [ x1, x2, x4 ].sort()[1] === x4 ){
+                        return [ x4, y4 ];
+                    }
+
+                    // Check start point of second line
+                    if( [ x1, x2, x3 ].sort()[1] === x3 ){
+                        return [ x3, y3 ];
+                    }
+
+                    // Endpoint of first line
+                    if( [ x3, x4, x2 ].sort()[1] === x2 ){
+                        return [ x2, y2 ];
+                    }
+
+                    return [];
+                } else {
+
+                    // Parallel, non-coincident
+                    return [];
+                }
+            }
+        };
+
+        math.polygonIntersectLine = function(
+            x, y, basePoints, centerX, centerY, width, height, padding ){
+
+            var intersections = [];
+            var intersection;
+
+            var transformedPoints = new Array( basePoints.length );
+
+            for( var i = 0; i < transformedPoints.length / 2; i++ ){
+                transformedPoints[ i * 2] = basePoints[ i * 2] * width + centerX;
+                transformedPoints[ i * 2 + 1] = basePoints[ i * 2 + 1] * height + centerY;
+            }
+
+            var points;
+
+            if( padding > 0 ){
+                var expandedLineSet = math.expandPolygon(
+                    transformedPoints,
+                    -padding );
+
+                points = math.joinLines( expandedLineSet );
+            } else {
+                points = transformedPoints;
+            }
+            // var points = transformedPoints;
+
+            var currentX, currentY, nextX, nextY;
+
+            for( var i = 0; i < points.length / 2; i++ ){
+
+                currentX = points[ i * 2];
+                currentY = points[ i * 2 + 1];
+
+                if( i < points.length / 2 - 1 ){
+                    nextX = points[ (i + 1) * 2];
+                    nextY = points[ (i + 1) * 2 + 1];
+                } else {
+                    nextX = points[0];
+                    nextY = points[1];
+                }
+
+                intersection = this.finiteLinesIntersect(
+                    x, y, centerX, centerY,
+                    currentX, currentY,
+                    nextX, nextY );
+
+                if( intersection.length !== 0 ){
+                    intersections.push( intersection[0], intersection[1] );
+                }
+            }
+
+            return intersections;
+        };
+
+        math.shortenIntersection = function(
+            intersection, offset, amount ){
+
+            var disp = [ intersection[0] - offset[0], intersection[1] - offset[1] ];
+
+            var length = Math.sqrt( disp[0] * disp[0] + disp[1] * disp[1] );
+
+            var lenRatio = (length - amount) / length;
+
+            if( lenRatio < 0 ){
+                lenRatio = 0.00001;
+            }
+
+            return [ offset[0] + lenRatio * disp[0], offset[1] + lenRatio * disp[1] ];
+        };
+
+        math.generateUnitNgonPointsFitToSquare = function( sides, rotationRadians ){
+            var points = math.generateUnitNgonPoints( sides, rotationRadians );
+            points = math.fitPolygonToSquare( points );
+
+            return points;
+        };
+
+        math.fitPolygonToSquare = function( points ){
+            var x, y;
+            var sides = points.length / 2;
+            var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+            for( var i = 0; i < sides; i++ ){
+                x = points[2 * i ];
+                y = points[2 * i + 1];
+
+                minX = Math.min( minX, x );
+                maxX = Math.max( maxX, x );
+                minY = Math.min( minY, y );
+                maxY = Math.max( maxY, y );
+            }
+
+            // stretch factors
+            var sx = 2 / (maxX - minX);
+            var sy = 2 / (maxY - minY);
+
+            for( var i = 0; i < sides; i++ ){
+                x = points[2 * i ] = points[2 * i ] * sx;
+                y = points[2 * i + 1] = points[2 * i + 1] * sy;
+
+                minX = Math.min( minX, x );
+                maxX = Math.max( maxX, x );
+                minY = Math.min( minY, y );
+                maxY = Math.max( maxY, y );
+            }
+
+            if( minY < -1 ){
+                for( var i = 0; i < sides; i++ ){
+                    y = points[2 * i + 1] = points[2 * i + 1] + (-1 - minY);
+                }
+            }
+
+            return points;
+        };
+
+        math.generateUnitNgonPoints = function( sides, rotationRadians ){
+
+            var increment = 1.0 / sides * 2 * Math.PI;
+            var startAngle = sides % 2 === 0 ?
+                Math.PI / 2.0 + increment / 2.0 : Math.PI / 2.0;
+            //    console.log(nodeShapes['square']);
+            startAngle += rotationRadians;
+
+            var points = new Array( sides * 2 );
+
+            var currentAngle, x, y;
+            for( var i = 0; i < sides; i++ ){
+                currentAngle = i * increment + startAngle;
+
+                x = points[2 * i ] = Math.cos( currentAngle );// * (1 + i/2);
+                y = points[2 * i + 1] = Math.sin( -currentAngle );//  * (1 + i/2);
+            }
+
+            return points;
+        };
+
+        math.getRoundRectangleRadius = function( width, height ){
+
+            // Set the default radius, unless half of width or height is smaller than default
+            return Math.min( width / 4, height / 4, 8 );
+        };
+
+        module.exports = math;
+
+    },{}],86:[function(_dereq_,module,exports){
+        /*!
+Embeddable Minimum Strictly-Compliant Promises/A+ 1.1.1 Thenable
+Copyright (c) 2013-2014 Ralf S. Engelschall (http://engelschall.com)
+Licensed under The MIT License (http://opensource.org/licenses/MIT)
+*/
+
+        'use strict';
+
+        /*  promise states [Promises/A+ 2.1]  */
+        var STATE_PENDING   = 0;                                         /*  [Promises/A+ 2.1.1]  */
+        var STATE_FULFILLED = 1;                                         /*  [Promises/A+ 2.1.2]  */
+        var STATE_REJECTED  = 2;                                         /*  [Promises/A+ 2.1.3]  */
+
+        /*  promise object constructor  */
+        var api = function( executor ){
+            /*  optionally support non-constructor/plain-function call  */
+            if( !(this instanceof api) )
+                return new api( executor );
+
+            /*  initialize object  */
+            this.id           = 'Thenable/1.0.7';
+            this.state        = STATE_PENDING; /*  initial state  */
+            this.fulfillValue = undefined;     /*  initial value  */     /*  [Promises/A+ 1.3, 2.1.2.2]  */
+            this.rejectReason = undefined;     /*  initial reason */     /*  [Promises/A+ 1.5, 2.1.3.2]  */
+            this.onFulfilled  = [];            /*  initial handlers  */
+            this.onRejected   = [];            /*  initial handlers  */
+
+            /*  provide optional information-hiding proxy  */
+            this.proxy = {
+                then: this.then.bind( this )
+            };
+
+            /*  support optional executor function  */
+            if( typeof executor === 'function' )
+                executor.call( this, this.fulfill.bind( this ), this.reject.bind( this ) );
+        };
+
+        /*  promise API methods  */
+        api.prototype = {
+            /*  promise resolving methods  */
+            fulfill: function( value ){ return deliver( this, STATE_FULFILLED, 'fulfillValue', value ); },
+            reject:  function( value ){ return deliver( this, STATE_REJECTED,  'rejectReason', value ); },
+
+            /*  "The then Method" [Promises/A+ 1.1, 1.2, 2.2]  */
+            then: function( onFulfilled, onRejected ){
+                var curr = this;
+                var next = new api();                                    /*  [Promises/A+ 2.2.7]  */
+                curr.onFulfilled.push(
+                    resolver( onFulfilled, next, 'fulfill' ) );             /*  [Promises/A+ 2.2.2/2.2.6]  */
+                curr.onRejected.push(
+                    resolver( onRejected,  next, 'reject' ) );             /*  [Promises/A+ 2.2.3/2.2.6]  */
+                execute( curr );
+                return next.proxy;                                       /*  [Promises/A+ 2.2.7, 3.3]  */
+            }
+        };
+
+        /*  deliver an action  */
+        var deliver = function( curr, state, name, value ){
+            if( curr.state === STATE_PENDING ){
+                curr.state = state;                                      /*  [Promises/A+ 2.1.2.1, 2.1.3.1]  */
+                curr[ name ] = value;                                      /*  [Promises/A+ 2.1.2.2, 2.1.3.2]  */
+                execute( curr );
+            }
+            return curr;
+        };
+
+        /*  execute all handlers  */
+        var execute = function( curr ){
+            if( curr.state === STATE_FULFILLED )
+                execute_handlers( curr, 'onFulfilled', curr.fulfillValue );
+            else if( curr.state === STATE_REJECTED )
+                execute_handlers( curr, 'onRejected',  curr.rejectReason );
+        };
+
+        /*  execute particular set of handlers  */
+        var execute_handlers = function( curr, name, value ){
+            /* global setImmediate: true */
+            /* global setTimeout: true */
+
+            /*  short-circuit processing  */
+            if( curr[ name ].length === 0 )
+                return;
+
+            /*  iterate over all handlers, exactly once  */
+            var handlers = curr[ name ];
+            curr[ name ] = [];                                             /*  [Promises/A+ 2.2.2.3, 2.2.3.3]  */
+            var func = function(){
+                for( var i = 0; i < handlers.length; i++ )
+                    handlers[ i ]( value );                                  /*  [Promises/A+ 2.2.5]  */
+            };
+
+            /*  execute procedure asynchronously  */                     /*  [Promises/A+ 2.2.4, 3.1]  */
+            if( typeof setImmediate === 'function' )
+                setImmediate( func );
+            else
+                setTimeout( func, 0 );
+        };
+
+        /*  generate a resolver function  */
+        var resolver = function( cb, next, method ){
+            return function( value ){
+                if( typeof cb !== 'function' )                            /*  [Promises/A+ 2.2.1, 2.2.7.3, 2.2.7.4]  */
+                    next[ method ].call( next, value );                      /*  [Promises/A+ 2.2.7.3, 2.2.7.4]  */
+                else {
+                    var result;
+                    try { result = cb( value ); }                          /*  [Promises/A+ 2.2.2.1, 2.2.3.1, 2.2.5, 3.2]  */
+                    catch( e ){
+                        next.reject( e );                                  /*  [Promises/A+ 2.2.7.2]  */
+                        return;
+                    }
+                    resolve( next, result );                               /*  [Promises/A+ 2.2.7.1]  */
+                }
+            };
+        };
+
+        /*  "Promise Resolution Procedure"  */                           /*  [Promises/A+ 2.3]  */
+        var resolve = function( promise, x ){
+            /*  sanity check arguments  */                               /*  [Promises/A+ 2.3.1]  */
+            if( promise === x || promise.proxy === x ){
+                promise.reject( new TypeError( 'cannot resolve promise with itself' ) );
+                return;
+            }
+
+            /*  surgically check for a "then" method
+    (mainly to just call the "getter" of "then" only once)  */
+            var then;
+            if( (typeof x === 'object' && x !== null) || typeof x === 'function' ){
+                try { then = x.then; }                                   /*  [Promises/A+ 2.3.3.1, 3.5]  */
+                catch( e ){
+                    promise.reject( e );                                   /*  [Promises/A+ 2.3.3.2]  */
+                    return;
+                }
+            }
+
+            /*  handle own Thenables    [Promises/A+ 2.3.2]
+    and similar "thenables" [Promises/A+ 2.3.3]  */
+            if( typeof then === 'function' ){
+                var resolved = false;
+                try {
+                    /*  call retrieved "then" method */                  /*  [Promises/A+ 2.3.3.3]  */
+                    then.call( x,
+                        /*  resolvePromise  */                           /*  [Promises/A+ 2.3.3.3.1]  */
+                        function( y ){
+                            if( resolved ) return; resolved = true;       /*  [Promises/A+ 2.3.3.3.3]  */
+                            if( y === x )                                 /*  [Promises/A+ 3.6]  */
+                                promise.reject( new TypeError( 'circular thenable chain' ) );
+                            else
+                                resolve( promise, y );
+                        },
+
+                        /*  rejectPromise  */                            /*  [Promises/A+ 2.3.3.3.2]  */
+                        function( r ){
+                            if( resolved ) return; resolved = true;       /*  [Promises/A+ 2.3.3.3.3]  */
+                            promise.reject( r );
+                        }
+                    );
+                }
+                catch( e ){
+                    if( !resolved )                                       /*  [Promises/A+ 2.3.3.3.3]  */
+                        promise.reject( e );                               /*  [Promises/A+ 2.3.3.3.4]  */
+                }
+                return;
+            }
+
+            /*  handle other values  */
+            promise.fulfill( x );                                          /*  [Promises/A+ 2.3.4, 2.3.3.4]  */
+        };
+
+// so we always have Promise.all()
+        api.all = function( ps ){
+            return new api(function( resolveAll, rejectAll ){
+                var vals = new Array( ps.length );
+                var doneCount = 0;
+
+                var fulfill = function( i, val ){
+                    vals[ i ] = val;
+                    doneCount++;
+
+                    if( doneCount === ps.length ){
+                        resolveAll( vals );
+                    }
+                };
+
+                for( var i = 0; i < ps.length; i++ ){
+                    (function( i ){
+                        var p = ps[i];
+                        var isPromise = p != null && p.then != null;
+
+                        if( isPromise ){
+                            p.then( function( val ){
+                                fulfill( i, val );
+                            }, function( err ){
+                                rejectAll( err );
+                            } );
+                        } else {
+                            var val = p;
+                            fulfill( i, val );
+                        }
+                    })( i );
+                }
+
+            } );
+        };
+
+        api.resolve = function( val ){
+            return new api(function( resolve, reject ){ resolve( val ); });
+        };
+
+        api.reject = function( val ){
+            return new api(function( resolve, reject ){ reject( val ); });
+        };
+
+        module.exports = typeof Promise !== 'undefined' ? Promise : api;
+
+    },{}],87:[function(_dereq_,module,exports){
+        'use strict';
+
+        var is = _dereq_( './is' );
+        var util = _dereq_( './util' );
+
+        var Selector = function( selector ){
+
+            if( !(this instanceof Selector) ){
+                return new Selector( selector );
+            }
+
+            var self = this;
+
+            self._private = {
+                selectorText: null,
+                invalid: true
+            };
+
+            // storage for parsed queries
+            var newQuery = function(){
+                return {
+                    classes: [],
+                    colonSelectors: [],
+                    data: [],
+                    group: null,
+                    ids: [],
+                    meta: [],
+
+                    // fake selectors
+                    collection: null, // a collection to match against
+                    filter: null, // filter function
+
+                    // these are defined in the upward direction rather than down (e.g. child)
+                    // because we need to go up in Selector.filter()
+                    parent: null, // parent query obj
+                    ancestor: null, // ancestor query obj
+                    subject: null, // defines subject in compound query (subject query obj; points to self if subject)
+
+                    // use these only when subject has been defined
+                    child: null,
+                    descendant: null
+                };
+            };
+
+            if( !selector || ( is.string( selector ) && selector.match( /^\s*$/ ) ) ){
+
+                self.length = 0;
+
+            } else if( selector === '*' || selector === 'edge' || selector === 'node' ){
+
+                // make single, group-only selectors cheap to make and cheap to filter
+
+                self[0] = newQuery();
+                self[0].group = selector === '*' ? selector : selector + 's';
+                self[0].groupOnly = true;
+                self._private.invalid = false;
+                self._private.selectorText = selector;
+                self.length = 1;
+
+            } else if( is.elementOrCollection( selector ) ){
+
+                var collection = selector.collection();
+
+                self[0] = newQuery();
+                self[0].collection = collection;
+                self.length = 1;
+
+            } else if( is.fn( selector ) ){
+
+                self[0] = newQuery();
+                self[0].filter = selector;
+                self.length = 1;
+
+            } else if( is.string( selector ) ){
+
+                // the current subject in the query
+                var currentSubject = null;
+
+                // tokens in the query language
+                var tokens = {
+                    metaChar: '[\\!\\"\\#\\$\\%\\&\\\'\\(\\)\\*\\+\\,\\.\\/\\:\\;\\<\\=\\>\\?\\@\\[\\]\\^\\`\\{\\|\\}\\~]', // chars we need to escape in var names, etc
+                    comparatorOp: '=|\\!=|>|>=|<|<=|\\$=|\\^=|\\*=', // binary comparison op (used in data selectors)
+                    boolOp: '\\?|\\!|\\^', // boolean (unary) operators (used in data selectors)
+                    string: '"(?:\\\\"|[^"])+"' + '|' + "'(?:\\\\'|[^'])+'", // string literals (used in data selectors) -- doublequotes | singlequotes
+                    number: util.regex.number, // number literal (used in data selectors) --- e.g. 0.1234, 1234, 12e123
+                    meta: 'degree|indegree|outdegree', // allowed metadata fields (i.e. allowed functions to use from Collection)
+                    separator: '\\s*,\\s*', // queries are separated by commas, e.g. edge[foo = 'bar'], node.someClass
+                    descendant: '\\s+',
+                    child: '\\s+>\\s+',
+                    subject: '\\$'
+                };
+                tokens.variable = '(?:[\\w-]|(?:\\\\' + tokens.metaChar + '))+'; // a variable name
+                tokens.value = tokens.string + '|' + tokens.number; // a value literal, either a string or number
+                tokens.className = tokens.variable; // a class name (follows variable conventions)
+                tokens.id = tokens.variable; // an element id (follows variable conventions)
+
+                // when a token like a variable has escaped meta characters, we need to clean the backslashes out
+                // so that values get compared properly in Selector.filter()
+                var cleanMetaChars = function( str ){
+                    return str.replace( new RegExp( '\\\\(' + tokens.metaChar + ')', 'g' ), function( match, $1, offset, original ){
+                        return $1;
+                    } );
+                };
+
+                // add @ variants to comparatorOp
+                var ops = tokens.comparatorOp.split( '|' );
+                for( var i = 0; i < ops.length; i++ ){
+                    var op = ops[ i ];
+                    tokens.comparatorOp += '|@' + op;
+                }
+
+                // add ! variants to comparatorOp
+                var ops = tokens.comparatorOp.split( '|' );
+                for( var i = 0; i < ops.length; i++ ){
+                    var op = ops[ i ];
+
+                    if( op.indexOf( '!' ) >= 0 ){ continue; } // skip ops that explicitly contain !
+                    if( op === '=' ){ continue; } // skip = b/c != is explicitly defined
+
+                    tokens.comparatorOp += '|\\!' + op;
+                }
+
+                // NOTE: add new expression syntax here to have it recognised by the parser;
+                // - a query contains all adjacent (i.e. no separator in between) expressions;
+                // - the current query is stored in self[i] --- you can use the reference to `this` in the populate function;
+                // - you need to check the query objects in Selector.filter() for it actually filter properly, but that's pretty straight forward
+                // - when you add something here, also add to Selector.toString()
+                var exprs = [
+                    {
+                        name: 'group',
+                        query: true,
+                        regex: '(node|edge|\\*)',
+                        populate: function( group ){
+                            this.group = group === '*' ? group : group + 's';
+                        }
+                    },
+
+                    {
+                        name: 'state',
+                        query: true,
+                        // NB: if one colon selector is a substring of another from its start, place the longer one first
+                        // e.g. :foobar|:foo
+                        regex: '(:selected|:unselected|:locked|:unlocked|:visible|:hidden|:transparent|:grabbed|:free|:removed|:inside|:grabbable|:ungrabbable|:animated|:unanimated|:selectable|:unselectable|:orphan|:nonorphan|:parent|:child|:loop|:simple|:active|:inactive|:touch|:backgrounding|:nonbackgrounding)',
+                        populate: function( state ){
+                            this.colonSelectors.push( state );
+                        }
+                    },
+
+                    {
+                        name: 'id',
+                        query: true,
+                        regex: '\\#(' + tokens.id + ')',
+                        populate: function( id ){
+                            this.ids.push( cleanMetaChars( id ) );
+                        }
+                    },
+
+                    {
+                        name: 'className',
+                        query: true,
+                        regex: '\\.(' + tokens.className + ')',
+                        populate: function( className ){
+                            this.classes.push( cleanMetaChars( className ) );
+                        }
+                    },
+
+                    {
+                        name: 'dataExists',
+                        query: true,
+                        regex: '\\[\\s*(' + tokens.variable + ')\\s*\\]',
+                        populate: function( variable ){
+                            this.data.push( {
+                                field: cleanMetaChars( variable )
+                            } );
+                        }
+                    },
+
+                    {
+                        name: 'dataCompare',
+                        query: true,
+                        regex: '\\[\\s*(' + tokens.variable + ')\\s*(' + tokens.comparatorOp + ')\\s*(' + tokens.value + ')\\s*\\]',
+                        populate: function( variable, comparatorOp, value ){
+                            var valueIsString = new RegExp( '^' + tokens.string + '$' ).exec( value ) != null;
+
+                            if( valueIsString ){
+                                value = value.substring( 1, value.length - 1 );
+                            } else {
+                                value = parseFloat( value );
+                            }
+
+                            this.data.push( {
+                                field: cleanMetaChars( variable ),
+                                operator: comparatorOp,
+                                value: value
+                            } );
+                        }
+                    },
+
+                    {
+                        name: 'dataBool',
+                        query: true,
+                        regex: '\\[\\s*(' + tokens.boolOp + ')\\s*(' + tokens.variable + ')\\s*\\]',
+                        populate: function( boolOp, variable ){
+                            this.data.push( {
+                                field: cleanMetaChars( variable ),
+                                operator: boolOp
+                            } );
+                        }
+                    },
+
+                    {
+                        name: 'metaCompare',
+                        query: true,
+                        regex: '\\[\\[\\s*(' + tokens.meta + ')\\s*(' + tokens.comparatorOp + ')\\s*(' + tokens.number + ')\\s*\\]\\]',
+                        populate: function( meta, comparatorOp, number ){
+                            this.meta.push( {
+                                field: cleanMetaChars( meta ),
+                                operator: comparatorOp,
+                                value: parseFloat( number )
+                            } );
+                        }
+                    },
+
+                    {
+                        name: 'nextQuery',
+                        separator: true,
+                        regex: tokens.separator,
+                        populate: function(){
+                            // go on to next query
+                            self[ ++i ] = newQuery();
+                            currentSubject = null;
+                        }
+                    },
+
+                    {
+                        name: 'child',
+                        separator: true,
+                        regex: tokens.child,
+                        populate: function(){
+                            // this query is the parent of the following query
+                            var childQuery = newQuery();
+                            childQuery.parent = this;
+                            childQuery.subject = currentSubject;
+
+                            // we're now populating the child query with expressions that follow
+                            self[ i ] = childQuery;
+                        }
+                    },
+
+                    {
+                        name: 'descendant',
+                        separator: true,
+                        regex: tokens.descendant,
+                        populate: function(){
+                            // this query is the ancestor of the following query
+                            var descendantQuery = newQuery();
+                            descendantQuery.ancestor = this;
+                            descendantQuery.subject = currentSubject;
+
+                            // we're now populating the descendant query with expressions that follow
+                            self[ i ] = descendantQuery;
+                        }
+                    },
+
+                    {
+                        name: 'subject',
+                        modifier: true,
+                        regex: tokens.subject,
+                        populate: function(){
+                            if( currentSubject != null && this.subject != this ){
+                                util.error( 'Redefinition of subject in selector `' + selector + '`' );
+                                return false;
+                            }
+
+                            currentSubject = this;
+                            this.subject = this;
+                        }
+
+                    }
+                ];
+
+                self._private.selectorText = selector;
+                var remaining = selector;
+                var i = 0;
+
+                // of all the expressions, find the first match in the remaining text
+                var consumeExpr = function( expectation ){
+                    var expr;
+                    var match;
+                    var name;
+
+                    for( var j = 0; j < exprs.length; j++ ){
+                        var e = exprs[ j ];
+                        var n = e.name;
+
+                        // ignore this expression if it doesn't meet the expectation function
+                        if( is.fn( expectation ) && !expectation( n, e ) ){ continue; }
+
+                        var m = remaining.match( new RegExp( '^' + e.regex ) );
+
+                        if( m != null ){
+                            match = m;
+                            expr = e;
+                            name = n;
+
+                            var consumed = m[0];
+                            remaining = remaining.substring( consumed.length );
+
+                            break; // we've consumed one expr, so we can return now
+                        }
+                    }
+
+                    return {
+                        expr: expr,
+                        match: match,
+                        name: name
+                    };
+                };
+
+                // consume all leading whitespace
+                var consumeWhitespace = function(){
+                    var match = remaining.match( /^\s+/ );
+
+                    if( match ){
+                        var consumed = match[0];
+                        remaining = remaining.substring( consumed.length );
+                    }
+                };
+
+                self[0] = newQuery(); // get started
+
+                consumeWhitespace(); // get rid of leading whitespace
+                for( ;; ){
+                    var check = consumeExpr();
+
+                    if( check.expr == null ){
+                        util.error( 'The selector `' + selector + '`is invalid' );
+                        return;
+                    } else {
+                        var args = [];
+                        for( var j = 1; j < check.match.length; j++ ){
+                            args.push( check.match[ j ] );
+                        }
+
+                        // let the token populate the selector object (i.e. in self[i])
+                        var ret = check.expr.populate.apply( self[ i ], args );
+
+                        if( ret === false ){ return; } // exit if population failed
+                    }
+
+                    // we're done when there's nothing left to parse
+                    if( remaining.match( /^\s*$/ ) ){
+                        break;
+                    }
+                }
+
+                self.length = i + 1;
+
+                // adjust references for subject
+                for( var j = 0; j < self.length; j++ ){
+                    var query = self[ j ];
+
+                    if( query.subject != null ){
+                        // go up the tree until we reach the subject
+                        for( ;; ){
+                            if( query.subject == query ){ break; } // done if subject is self
+
+                            if( query.parent != null ){ // swap parent/child reference
+                                var parent = query.parent;
+                                var child = query;
+
+                                child.parent = null;
+                                parent.child = child;
+
+                                query = parent; // go up the tree
+                            } else if( query.ancestor != null ){ // swap ancestor/descendant
+                                var ancestor = query.ancestor;
+                                var descendant = query;
+
+                                descendant.ancestor = null;
+                                ancestor.descendant = descendant;
+
+                                query = ancestor; // go up the tree
+                            } else {
+                                util.error( 'When adjusting references for the selector `' + query + '`, neither parent nor ancestor was found' );
+                                break;
+                            }
+                        } // for
+
+                        self[ j ] = query.subject; // subject should be the root query
+                    } // if
+                } // for
+
+            } else {
+                util.error( 'A selector must be created from a string; found ' + selector );
+                return;
+            }
+
+            self._private.invalid = false;
+
+        };
+
+        var selfn = Selector.prototype;
+
+        selfn.size = function(){
+            return this.length;
+        };
+
+        selfn.eq = function( i ){
+            return this[ i ];
+        };
+
+        var queryMatches = function( query, ele ){
+            var ele_p = ele._private;
+
+            // make single group-only selectors really cheap to check since they're the most common ones
+            if( query.groupOnly ){
+                return query.group === '*' || query.group === ele_p.group;
+            }
+
+            // check group
+            if( query.group != null && query.group != '*' && query.group != ele_p.group ){
+                return false;
+            }
+
+            var cy = ele.cy();
+
+            // check colon selectors
+            var allColonSelectorsMatch = true;
+            for( var k = 0; k < query.colonSelectors.length; k++ ){
+                var sel = query.colonSelectors[ k ];
+
+                switch( sel ){
+                    case ':selected':
+                        allColonSelectorsMatch = ele.selected();
+                        break;
+                    case ':unselected':
+                        allColonSelectorsMatch = !ele.selected();
+                        break;
+                    case ':selectable':
+                        allColonSelectorsMatch = ele.selectable();
+                        break;
+                    case ':unselectable':
+                        allColonSelectorsMatch = !ele.selectable();
+                        break;
+                    case ':locked':
+                        allColonSelectorsMatch = ele.locked();
+                        break;
+                    case ':unlocked':
+                        allColonSelectorsMatch = !ele.locked();
+                        break;
+                    case ':visible':
+                        allColonSelectorsMatch = ele.visible();
+                        break;
+                    case ':hidden':
+                        allColonSelectorsMatch = !ele.visible();
+                        break;
+                    case ':transparent':
+                        allColonSelectorsMatch = ele.transparent();
+                        break;
+                    case ':grabbed':
+                        allColonSelectorsMatch = ele.grabbed();
+                        break;
+                    case ':free':
+                        allColonSelectorsMatch = !ele.grabbed();
+                        break;
+                    case ':removed':
+                        allColonSelectorsMatch = ele.removed();
+                        break;
+                    case ':inside':
+                        allColonSelectorsMatch = !ele.removed();
+                        break;
+                    case ':grabbable':
+                        allColonSelectorsMatch = ele.grabbable();
+                        break;
+                    case ':ungrabbable':
+                        allColonSelectorsMatch = !ele.grabbable();
+                        break;
+                    case ':animated':
+                        allColonSelectorsMatch = ele.animated();
+                        break;
+                    case ':unanimated':
+                        allColonSelectorsMatch = !ele.animated();
+                        break;
+                    case ':parent':
+                        allColonSelectorsMatch = ele.isNode() && ele.children().nonempty();
+                        break;
+                    case ':child':
+                    case ':nonorphan':
+                        allColonSelectorsMatch = ele.isNode() && ele.parent().nonempty();
+                        break;
+                    case ':orphan':
+                        allColonSelectorsMatch = ele.isNode() && ele.parent().empty();
+                        break;
+                    case ':loop':
+                        allColonSelectorsMatch = ele.isEdge() && ele.data( 'source' ) === ele.data( 'target' );
+                        break;
+                    case ':simple':
+                        allColonSelectorsMatch = ele.isEdge() && ele.data( 'source' ) !== ele.data( 'target' );
+                        break;
+                    case ':active':
+                        allColonSelectorsMatch = ele.active();
+                        break;
+                    case ':inactive':
+                        allColonSelectorsMatch = !ele.active();
+                        break;
+                    case ':touch':
+                        allColonSelectorsMatch = is.touch();
+                        break;
+                    case ':backgrounding':
+                        allColonSelectorsMatch = ele.backgrounding();
+                        break;
+                    case ':nonbackgrounding':
+                        allColonSelectorsMatch = !ele.backgrounding();
+                        break;
+                }
+
+                if( !allColonSelectorsMatch ) break;
+            }
+            if( !allColonSelectorsMatch ) return false;
+
+            // check id
+            var allIdsMatch = true;
+            for( var k = 0; k < query.ids.length; k++ ){
+                var id = query.ids[ k ];
+                var actualId = ele_p.data.id;
+
+                allIdsMatch = allIdsMatch && (id == actualId);
+
+                if( !allIdsMatch ) break;
+            }
+            if( !allIdsMatch ) return false;
+
+            // check classes
+            var allClassesMatch = true;
+            for( var k = 0; k < query.classes.length; k++ ){
+                var cls = query.classes[ k ];
+
+                allClassesMatch = allClassesMatch && ele.hasClass( cls );
+
+                if( !allClassesMatch ) break;
+            }
+            if( !allClassesMatch ) return false;
+
+            // generic checking for data/metadata
+            var operandsMatch = function( params ){
+                var allDataMatches = true;
+                for( var k = 0; k < query[ params.name ].length; k++ ){
+                    var data = query[ params.name ][ k ];
+                    var operator = data.operator;
+                    var value = data.value;
+                    var field = data.field;
+                    var matches;
+
+                    if( operator != null && value != null ){
+
+                        var fieldVal = params.fieldValue( field );
+                        var fieldStr = !is.string( fieldVal ) && !is.number( fieldVal ) ? '' : '' + fieldVal;
+                        var valStr = '' + value;
+
+                        var caseInsensitive = false;
+                        if( operator.indexOf( '@' ) >= 0 ){
+                            fieldStr = fieldStr.toLowerCase();
+                            valStr = valStr.toLowerCase();
+
+                            operator = operator.replace( '@', '' );
+                            caseInsensitive = true;
+                        }
+
+                        var notExpr = false;
+                        var handledNotExpr = false;
+                        if( operator.indexOf( '!' ) >= 0 ){
+                            operator = operator.replace( '!', '' );
+                            notExpr = true;
+                        }
+
+                        // if we're doing a case insensitive comparison, then we're using a STRING comparison
+                        // even if we're comparing numbers
+                        if( caseInsensitive ){
+                            value = valStr.toLowerCase();
+                            fieldVal = fieldStr.toLowerCase();
+                        }
+
+                        switch( operator ){
+                            case '*=':
+                                matches = fieldStr.search( valStr ) >= 0;
+                                break;
+                            case '$=':
+                                matches = new RegExp( valStr + '$' ).exec( fieldStr ) != null;
+                                break;
+                            case '^=':
+                                matches = new RegExp( '^' + valStr ).exec( fieldStr ) != null;
+                                break;
+                            case '=':
+                                matches = fieldVal === value;
+                                break;
+                            case '!=':
+                                matches = fieldVal !== value;
+                                break;
+                            case '>':
+                                matches = !notExpr ? fieldVal > value : fieldVal <= value;
+                                handledNotExpr = true;
+                                break;
+                            case '>=':
+                                matches = !notExpr ? fieldVal >= value : fieldVal < value;
+                                handledNotExpr = true;
+                                break;
+                            case '<':
+                                matches = !notExpr ? fieldVal < value : fieldVal >= value;
+                                handledNotExpr = true;
+                                break;
+                            case '<=':
+                                matches = !notExpr ? fieldVal <= value : fieldVal > value;
+                                handledNotExpr = true;
+                                break;
+                            default:
+                                matches = false;
+                                break;
+
+                        }
+                    } else if( operator != null ){
+                        switch( operator ){
+                            case '?':
+                                matches = params.fieldTruthy( field );
+                                break;
+                            case '!':
+                                matches = !params.fieldTruthy( field );
+                                break;
+                            case '^':
+                                matches = params.fieldUndefined( field );
+                                break;
+                        }
+                    } else {
+                        matches = !params.fieldUndefined( field );
+                    }
+
+                    if( notExpr && !handledNotExpr ){
+                        matches = !matches;
+                        handledNotExpr = true;
+                    }
+
+                    if( !matches ){
+                        allDataMatches = false;
+                        break;
+                    }
+                } // for
+
+                return allDataMatches;
+            }; // operandsMatch
+
+            // check data matches
+            var allDataMatches = operandsMatch( {
+                name: 'data',
+                fieldValue: function( field ){
+                    return ele_p.data[ field ];
+                },
+                fieldUndefined: function( field ){
+                    return ele_p.data[ field ] === undefined;
+                },
+                fieldTruthy: function( field ){
+                    if( ele_p.data[ field ] ){
+                        return true;
+                    }
+                    return false;
+                }
+            } );
+
+            if( !allDataMatches ){
+                return false;
+            }
+
+            // check metadata matches
+            var allMetaMatches = operandsMatch( {
+                name: 'meta',
+                fieldValue: function( field ){
+                    return ele[ field ]();
+                },
+                fieldUndefined: function( field ){
+                    return ele[ field ]() == null;
+                },
+                fieldTruthy: function( field ){
+                    if( ele[ field ]() ){
+                        return true;
+                    }
+                    return false;
+                }
+            } );
+
+            if( !allMetaMatches ){
+                return false;
+            }
+
+            // check collection
+            if( query.collection != null ){
+                var matchesAny = query.collection.hasElementWithId( ele.id() );
+
+                if( !matchesAny ){
+                    return false;
+                }
+            }
+
+            // check filter function
+            if( query.filter != null && ele.collection().filter( query.filter ).size() === 0 ){
+                return false;
+            }
+
+            // check parent/child relations
+            var confirmRelations = function( query, eles ){
+                if( query != null ){
+                    var matches = false;
+
+                    if( !cy.hasCompoundNodes() ){
+                        return false;
+                    }
+
+                    eles = eles(); // save cycles if query == null
+
+                    // query must match for at least one element (may be recursive)
+                    for( var i = 0; i < eles.length; i++ ){
+                        if( queryMatches( query, eles[ i ] ) ){
+                            matches = true;
+                            break;
+                        }
+                    }
+
+                    return matches;
+                } else {
+                    return true;
+                }
+            };
+
+            if( !confirmRelations( query.parent, function(){
+                    return ele.parent();
+                } ) ){ return false; }
+
+            if( !confirmRelations( query.ancestor, function(){
+                    return ele.parents();
+                } ) ){ return false; }
+
+            if( !confirmRelations( query.child, function(){
+                    return ele.children();
+                } ) ){ return false; }
+
+            if( !confirmRelations( query.descendant, function(){
+                    return ele.descendants();
+                } ) ){ return false; }
+
+            // we've reached the end, so we've matched everything for this query
+            return true;
+        }; // queryMatches
+
+// filter an existing collection
+        selfn.filter = function( collection ){
+            var self = this;
+            var cy = collection.cy();
+
+            // don't bother trying if it's invalid
+            if( self._private.invalid ){
+                return cy.collection();
+            }
+
+            var selectorFunction = function( i, element ){
+                for( var j = 0; j < self.length; j++ ){
+                    var query = self[ j ];
+
+                    if( queryMatches( query, element ) ){
+                        return true;
+                    }
+                }
+
+                return false;
+            };
+
+            if( self._private.selectorText == null ){
+                selectorFunction = function(){ return true; };
+            }
+
+            var filteredCollection = collection.filter( selectorFunction );
+
+            return filteredCollection;
+        }; // filter
+
+// does selector match a single element?
+        selfn.matches = function( ele ){
+            var self = this;
+
+            // don't bother trying if it's invalid
+            if( self._private.invalid ){
+                return false;
+            }
+
+            for( var j = 0; j < self.length; j++ ){
+                var query = self[ j ];
+
+                if( queryMatches( query, ele ) ){
+                    return true;
+                }
+            }
+
+            return false;
+        }; // filter
+
+// ith query to string
+        selfn.toString = selfn.selector = function(){
+
+            var str = '';
+
+            var clean = function( obj, isValue ){
+                if( is.string( obj ) ){
+                    return isValue ? '"' + obj + '"' : obj;
+                }
+                return '';
+            };
+
+            var queryToString = function( query ){
+                var str = '';
+
+                if( query.subject === query ){
+                    str += '$';
+                }
+
+                var group = clean( query.group );
+                str += group.substring( 0, group.length - 1 );
+
+                for( var j = 0; j < query.data.length; j++ ){
+                    var data = query.data[ j ];
+
+                    if( data.value ){
+                        str += '[' + data.field + clean( data.operator ) + clean( data.value, true ) + ']';
+                    } else {
+                        str += '[' + clean( data.operator ) + data.field + ']';
+                    }
+                }
+
+                for( var j = 0; j < query.meta.length; j++ ){
+                    var meta = query.meta[ j ];
+                    str += '[[' + meta.field + clean( meta.operator ) + clean( meta.value, true ) + ']]';
+                }
+
+                for( var j = 0; j < query.colonSelectors.length; j++ ){
+                    var sel = query.colonSelectors[ i ];
+                    str += sel;
+                }
+
+                for( var j = 0; j < query.ids.length; j++ ){
+                    var sel = '#' + query.ids[ i ];
+                    str += sel;
+                }
+
+                for( var j = 0; j < query.classes.length; j++ ){
+                    var sel = '.' + query.classes[ j ];
+                    str += sel;
+                }
+
+                if( query.parent != null ){
+                    str = queryToString( query.parent ) + ' > ' + str;
+                }
+
+                if( query.ancestor != null ){
+                    str = queryToString( query.ancestor ) + ' ' + str;
+                }
+
+                if( query.child != null ){
+                    str += ' > ' + queryToString( query.child );
+                }
+
+                if( query.descendant != null ){
+                    str += ' ' + queryToString( query.descendant );
+                }
+
+                return str;
+            };
+
+            for( var i = 0; i < this.length; i++ ){
+                var query = this[ i ];
+
+                str += queryToString( query );
+
+                if( this.length > 1 && i < this.length - 1 ){
+                    str += ', ';
+                }
+            }
+
+            return str;
+        };
+
+        module.exports = Selector;
+
+    },{"./is":83,"./util":100}],88:[function(_dereq_,module,exports){
+        'use strict';
+
+        var util = _dereq_( '../util' );
+        var is = _dereq_( '../is' );
+
+        var styfn = {};
+
+// (potentially expensive calculation)
+// apply the style to the element based on
+// - its bypass
+// - what selectors match it
+        styfn.apply = function( eles ){
+            var self = this;
+            var _p = self._private;
+
+            if( self._private.newStyle ){ // clear style caches
+                _p.contextStyles = {};
+                _p.propDiffs = {};
+            }
+
+            for( var ie = 0; ie < eles.length; ie++ ){
+                var ele = eles[ ie ];
+
+                if( self._private.newStyle ){ // clear style from old sheets
+                    ele._private.style = {};
+                }
+
+                var cxtMeta = self.getContextMeta( ele );
+                var cxtStyle = self.getContextStyle( cxtMeta );
+                var app = self.applyContextStyle( cxtMeta, cxtStyle, ele );
+
+                self.enforceCompoundSizing( ele );
+                self.updateTransitions( ele, app.diffProps );
+                self.updateStyleHints( ele );
+
+            } // for elements
+
+            _p.newStyle = false;
+        };
+
+        styfn.getPropertiesDiff = function( oldCxtKey, newCxtKey ){
+            var self = this;
+            var cache = self._private.propDiffs = self._private.propDiffs || {};
+            var dualCxtKey = oldCxtKey + '-' + newCxtKey;
+            var cachedVal = cache[ dualCxtKey ];
+
+            if( cachedVal ){
+                return cachedVal;
+            }
+
+            var diffProps = [];
+            var addedProp = {};
+
+            for( var i = 0; i < self.length; i++ ){
+                var cxt = self[ i ];
+                var oldHasCxt = oldCxtKey[ i ] === 't';
+                var newHasCxt = newCxtKey[ i ] === 't';
+                var cxtHasDiffed = oldHasCxt !== newHasCxt;
+                var cxtHasMappedProps = cxt.mappedProperties.length > 0;
+
+                if( cxtHasDiffed || cxtHasMappedProps ){
+                    var props;
+
+                    if( cxtHasDiffed && cxtHasMappedProps ){
+                        props = cxt.properties; // suffices b/c mappedProperties is a subset of properties
+                    } else if( cxtHasDiffed ){
+                        props = cxt.properties; // need to check them all
+                    } else if( cxtHasMappedProps ){
+                        props = cxt.mappedProperties; // only need to check mapped
+                    }
+
+                    for( var j = 0; j < props.length; j++ ){
+                        var prop = props[ j ];
+                        var name = prop.name;
+
+                        // if a later context overrides this property, then the fact that this context has switched/diffed doesn't matter
+                        // (semi expensive check since it makes this function O(n^2) on context length, but worth it since overall result
+                        // is cached)
+                        var laterCxtOverrides = false;
+                        for( var k = i + 1; k < self.length; k++ ){
+                            var laterCxt = self[ k ];
+                            var hasLaterCxt = newCxtKey[ k ] === 't';
+
+                            if( !hasLaterCxt ){ continue; } // can't override unless the context is active
+
+                            laterCxtOverrides = laterCxt.properties[ prop.name ] != null;
+
+                            if( laterCxtOverrides ){ break; } // exit early as long as one later context overrides
+                        }
+
+                        if( !addedProp[ name ] && !laterCxtOverrides ){
+                            addedProp[ name ] = true;
+                            diffProps.push( name );
+                        }
+                    } // for props
+                } // if
+
+            } // for contexts
+
+            cache[ dualCxtKey ] = diffProps;
+            return diffProps;
+        };
+
+        styfn.getContextMeta = function( ele ){
+            var self = this;
+            var cxtKey = '';
+            var diffProps;
+            var prevKey = ele._private.styleCxtKey || '';
+
+            if( self._private.newStyle ){
+                prevKey = ''; // since we need to apply all style if a fresh stylesheet
+            }
+
+            // get the cxt key
+            for( var i = 0; i < self.length; i++ ){
+                var context = self[ i ];
+                var contextSelectorMatches = context.selector && context.selector.matches( ele ); // NB: context.selector may be null for 'core'
+
+                if( contextSelectorMatches ){
+                    cxtKey += 't';
+                } else {
+                    cxtKey += 'f';
+                }
+            } // for context
+
+            diffProps = self.getPropertiesDiff( prevKey, cxtKey );
+
+            ele._private.styleCxtKey = cxtKey;
+
+            return {
+                key: cxtKey,
+                diffPropNames: diffProps
+            };
+        };
+
+// gets a computed ele style object based on matched contexts
+        styfn.getContextStyle = function( cxtMeta ){
+            var cxtKey = cxtMeta.key;
+            var self = this;
+            var cxtStyles = this._private.contextStyles = this._private.contextStyles || {};
+
+            // if already computed style, returned cached copy
+            if( cxtStyles[ cxtKey ] ){ return cxtStyles[ cxtKey ]; }
+
+            var style = {
+                _private: {
+                    key: cxtKey
+                }
+            };
+
+            for( var i = 0; i < self.length; i++ ){
+                var cxt = self[ i ];
+                var hasCxt = cxtKey[ i ] === 't';
+
+                if( !hasCxt ){ continue; }
+
+                for( var j = 0; j < cxt.properties.length; j++ ){
+                    var prop = cxt.properties[ j ];
+                    var styProp = style[ prop.name ] = prop;
+
+                    styProp.context = cxt;
+                }
+            }
+
+            cxtStyles[ cxtKey ] = style;
+            return style;
+        };
+
+        styfn.applyContextStyle = function( cxtMeta, cxtStyle, ele ){
+            var self = this;
+            var diffProps = cxtMeta.diffPropNames;
+            var retDiffProps = {};
+
+            for( var i = 0; i < diffProps.length; i++ ){
+                var diffPropName = diffProps[ i ];
+                var cxtProp = cxtStyle[ diffPropName ];
+                var eleProp = ele.pstyle( diffPropName );
+
+                if( !cxtProp ){ // no context prop means delete
+                    if( eleProp.bypass ){
+                        cxtProp = { name: diffPropName, deleteBypassed: true };
+                    } else {
+                        cxtProp = { name: diffPropName, delete: true };
+                    }
+                }
+
+                // save cycles when the context prop doesn't need to be applied
+                if( eleProp === cxtProp ){ continue; }
+
+                var retDiffProp = retDiffProps[ diffPropName ] = {
+                    prev: eleProp
+                };
+
+                self.applyParsedProperty( ele, cxtProp );
+
+                retDiffProp.next = ele.pstyle( diffPropName );
+
+                if( retDiffProp.next && retDiffProp.next.bypass ){
+                    retDiffProp.next = retDiffProp.next.bypassed;
+                }
+            }
+
+            return {
+                diffProps: retDiffProps
+            };
+        };
+
+// because a node can become and unbecome a parent, it's safer to enforce auto sizing manually
+// (i.e. the style context diff could be empty, meaning the autosizing is stale)
+        styfn.enforceCompoundSizing = function(ele){
+            var self = this;
+
+            if( ele.isParent() ){
+                self.applyParsedProperty( ele, self.parse('width', 'auto') );
+                self.applyParsedProperty( ele, self.parse('height', 'auto') );
+            }
+        };
+
+        styfn.updateStyleHints = function(ele){
+            var _p = ele._private;
+            var self = this;
+
+            if( ele.removed() ){ return; }
+
+            // set whether has pie or not; for greater efficiency
+            var hasPie = false;
+            if( _p.group === 'nodes' ){
+                for( var i = 1; i <= self.pieBackgroundN; i++ ){ // 1..N
+                    var size = ele.pstyle( 'pie-' + i + '-background-size' ).value;
+
+                    if( size > 0 ){
+                        hasPie = true;
+                        break;
+                    }
+                }
+            }
+
+            _p.hasPie = hasPie;
+
+            var transform = ele.pstyle( 'text-transform' ).strValue;
+            var content = ele.pstyle( 'label' ).strValue;
+            var srcContent = ele.pstyle( 'source-label' ).strValue;
+            var tgtContent = ele.pstyle( 'target-label' ).strValue;
+            var fStyle = ele.pstyle( 'font-style' ).strValue;
+            var size = ele.pstyle( 'font-size' ).pfValue + 'px';
+            var family = ele.pstyle( 'font-family' ).strValue;
+            // var variant = style['font-variant'].strValue;
+            var weight = ele.pstyle( 'font-weight' ).strValue;
+            var valign = ele.pstyle( 'text-valign' ).strValue;
+            var halign = ele.pstyle( 'text-valign' ).strValue;
+            var oWidth = ele.pstyle( 'text-outline-width' ).pfValue;
+            var wrap = ele.pstyle( 'text-wrap' ).strValue;
+            var wrapW = ele.pstyle( 'text-max-width' ).pfValue;
+            var labelStyleKey = fStyle + '$' + size + '$' + family + '$' + weight + '$' + transform + '$' + valign + '$' + halign + '$' + oWidth + '$' + wrap + '$' + wrapW;
+            _p.labelStyleKey = labelStyleKey;
+            _p.sourceLabelKey = labelStyleKey + '$' + srcContent;
+            _p.targetLabelKey = labelStyleKey + '$' + tgtContent;
+            _p.labelKey = labelStyleKey + '$' + content;
+            _p.fontKey = fStyle + '$' + weight + '$' + size + '$' + family;
+
+            _p.styleKey = Date.now();
+        };
+
+// apply a property to the style (for internal use)
+// returns whether application was successful
+//
+// now, this function flattens the property, and here's how:
+//
+// for parsedProp:{ bypass: true, deleteBypass: true }
+// no property is generated, instead the bypass property in the
+// element's style is replaced by what's pointed to by the `bypassed`
+// field in the bypass property (i.e. restoring the property the
+// bypass was overriding)
+//
+// for parsedProp:{ mapped: truthy }
+// the generated flattenedProp:{ mapping: prop }
+//
+// for parsedProp:{ bypass: true }
+// the generated flattenedProp:{ bypassed: parsedProp }
+        styfn.applyParsedProperty = function( ele, parsedProp ){
+            var self = this;
+            var prop = parsedProp;
+            var style = ele._private.style;
+            var fieldVal, flatProp;
+            var types = self.types;
+            var type = self.properties[ prop.name ].type;
+            var propIsBypass = prop.bypass;
+            var origProp = style[ prop.name ];
+            var origPropIsBypass = origProp && origProp.bypass;
+            var _p = ele._private;
+
+            // can't apply auto to width or height unless it's a parent node
+            if( (parsedProp.name === 'height' || parsedProp.name === 'width') && ele.isNode() ){
+                if( parsedProp.value === 'auto' && !ele.isParent() ){
+                    return false;
+                } else if( parsedProp.value !== 'auto' && ele.isParent() ){
+                    prop = parsedProp = this.parse( parsedProp.name, 'auto', propIsBypass );
+                }
+            }
+
+            // edges connected to compound nodes can not be haystacks
+            if(
+                parsedProp.name === 'curve-style'
+                && parsedProp.value === 'haystack'
+                && ele.isEdge()
+                && ( ele.isLoop() || ele.source().isParent() || ele.target().isParent() )
+            ){
+                prop = parsedProp = this.parse( parsedProp.name, 'bezier', propIsBypass );
+            }
+
+            if( prop.delete ){ // delete the property and use the default value on falsey value
+                style[ prop.name ] = undefined;
+
+                return true;
+            }
+
+            if( prop.deleteBypassed ){ // delete the property that the
+                if( !origProp ){
+                    return true; // can't delete if no prop
+
+                } else if( origProp.bypass ){ // delete bypassed
+                    origProp.bypassed = undefined;
+                    return true;
+
+                } else {
+                    return false; // we're unsuccessful deleting the bypassed
+                }
+            }
+
+            // check if we need to delete the current bypass
+            if( prop.deleteBypass ){ // then this property is just here to indicate we need to delete
+                if( !origProp ){
+                    return true; // property is already not defined
+
+                } else if( origProp.bypass ){ // then replace the bypass property with the original
+                    // because the bypassed property was already applied (and therefore parsed), we can just replace it (no reapplying necessary)
+                    style[ prop.name ] = origProp.bypassed;
+                    return true;
+
+                } else {
+                    return false; // we're unsuccessful deleting the bypass
+                }
+            }
+
+            var printMappingErr = function(){
+                util.error( 'Do not assign mappings to elements without corresponding data (e.g. ele `' + ele.id() + '` for property `' + prop.name + '` with data field `' + prop.field + '`); try a `[' + prop.field + ']` selector to limit scope to elements with `' + prop.field + '` defined' );
+            };
+
+            // put the property in the style objects
+            switch( prop.mapped ){ // flatten the property if mapped
+                case types.mapData:
+                case types.mapLayoutData:
+                case types.mapScratch:
+
+                    var isLayout = prop.mapped === types.mapLayoutData;
+                    var isScratch = prop.mapped === types.mapScratch;
+
+                    // flatten the field (e.g. data.foo.bar)
+                    var fields = prop.field.split( '.' );
+                    var fieldVal;
+
+                    if( isScratch || isLayout ){
+                        fieldVal = _p.scratch;
+                    } else {
+                        fieldVal = _p.data;
+                    }
+
+                    for( var i = 0; i < fields.length && fieldVal; i++ ){
+                        var field = fields[ i ];
+                        fieldVal = fieldVal[ field ];
+                    }
+
+                    var percent;
+                    if( !is.number( fieldVal ) ){ // then keep the mapping but assume 0% for now
+                        percent = 0;
+                    } else {
+                        percent = (fieldVal - prop.fieldMin) / (prop.fieldMax - prop.fieldMin);
+                    }
+
+                    // make sure to bound percent value
+                    if( percent < 0 ){
+                        percent = 0;
+                    } else if( percent > 1 ){
+                        percent = 1;
+                    }
+
+                    if( type.color ){
+                        var r1 = prop.valueMin[0];
+                        var r2 = prop.valueMax[0];
+                        var g1 = prop.valueMin[1];
+                        var g2 = prop.valueMax[1];
+                        var b1 = prop.valueMin[2];
+                        var b2 = prop.valueMax[2];
+                        var a1 = prop.valueMin[3] == null ? 1 : prop.valueMin[3];
+                        var a2 = prop.valueMax[3] == null ? 1 : prop.valueMax[3];
+
+                        var clr = [
+                            Math.round( r1 + (r2 - r1) * percent ),
+                            Math.round( g1 + (g2 - g1) * percent ),
+                            Math.round( b1 + (b2 - b1) * percent ),
+                            Math.round( a1 + (a2 - a1) * percent )
+                        ];
+
+                        flatProp = { // colours are simple, so just create the flat property instead of expensive string parsing
+                            bypass: prop.bypass, // we're a bypass if the mapping property is a bypass
+                            name: prop.name,
+                            value: clr,
+                            strValue: 'rgb(' + clr[0] + ', ' + clr[1] + ', ' + clr[2] + ')'
+                        };
+
+                    } else if( type.number ){
+                        var calcValue = prop.valueMin + (prop.valueMax - prop.valueMin) * percent;
+                        flatProp = this.parse( prop.name, calcValue, prop.bypass, true );
+
+                    } else {
+                        return false; // can only map to colours and numbers
+                    }
+
+                    if( !flatProp ){ // if we can't flatten the property, then use the origProp so we still keep the mapping itself
+                        flatProp = this.parse( prop.name, origProp.strValue, prop.bypass, true );
+                    }
+
+                    if( !flatProp ){ printMappingErr(); }
+                    flatProp.mapping = prop; // keep a reference to the mapping
+                    prop = flatProp; // the flattened (mapped) property is the one we want
+
+                    break;
+
+                // direct mapping
+                case types.data:
+                case types.layoutData:
+                case types.scratch:
+                    var isLayout = prop.mapped === types.layoutData;
+                    var isScratch = prop.mapped === types.scratch;
+
+                    // flatten the field (e.g. data.foo.bar)
+                    var fields = prop.field.split( '.' );
+                    var fieldVal;
+
+                    if( isScratch || isLayout ){
+                        fieldVal = _p.scratch;
+                    } else {
+                        fieldVal = _p.data;
+                    }
+
+                    if( fieldVal ){ for( var i = 0; i < fields.length; i++ ){
+                        var field = fields[ i ];
+                        fieldVal = fieldVal[ field ];
+                    } }
+
+                    flatProp = this.parse( prop.name, fieldVal, prop.bypass, true );
+
+                    if( !flatProp ){ // if we can't flatten the property, then use the origProp so we still keep the mapping itself
+                        var flatPropVal = origProp ? origProp.strValue : '';
+
+                        flatProp = this.parse( prop.name, flatPropVal, prop.bypass, true );
+                    }
+
+                    if( !flatProp ){ printMappingErr(); }
+                    flatProp.mapping = prop; // keep a reference to the mapping
+                    prop = flatProp; // the flattened (mapped) property is the one we want
+
+                    break;
+
+                case types.fn:
+                    var fn = prop.value;
+                    var fnRetVal = fn( ele );
+
+                    flatProp = this.parse( prop.name, fnRetVal, prop.bypass, true );
+                    flatProp.mapping = prop; // keep a reference to the mapping
+                    prop = flatProp; // the flattened (mapped) property is the one we want
+
+                    break;
+
+                case undefined:
+                    break; // just set the property
+
+                default:
+                    return false; // not a valid mapping
+            }
+
+            // if the property is a bypass property, then link the resultant property to the original one
+            if( propIsBypass ){
+                if( origPropIsBypass ){ // then this bypass overrides the existing one
+                    prop.bypassed = origProp.bypassed; // steal bypassed prop from old bypass
+                } else { // then link the orig prop to the new bypass
+                    prop.bypassed = origProp;
+                }
+
+                style[ prop.name ] = prop; // and set
+
+            } else { // prop is not bypass
+                if( origPropIsBypass ){ // then keep the orig prop (since it's a bypass) and link to the new prop
+                    origProp.bypassed = prop;
+                } else { // then just replace the old prop with the new one
+                    style[ prop.name ] = prop;
+                }
+            }
+
+            return true;
+        };
+
+// updates the visual style for all elements (useful for manual style modification after init)
+        styfn.update = function(){
+            var cy = this._private.cy;
+            var eles = cy.elements();
+
+            eles.updateStyle();
+        };
+
+// just update the functional properties (i.e. mappings) in the elements'
+// styles (less expensive than recalculation)
+        styfn.updateMappers = function( eles ){
+            var self = this;
+
+            for( var i = 0; i < eles.length; i++ ){ // for each ele
+                var ele = eles[ i ];
+                var style = ele._private.style;
+
+                for( var j = 0; j < self.properties.length; j++ ){ // for each prop
+                    var prop = self.properties[ j ];
+                    var propInStyle = style[ prop.name ];
+
+                    if( propInStyle && propInStyle.mapping ){
+                        var mapping = propInStyle.mapping;
+                        this.applyParsedProperty( ele, mapping ); // reapply the mapping property
+                    }
+                }
+
+                this.updateStyleHints( ele );
+            }
+        };
+
+// diffProps : { name => { prev, next } }
+        styfn.updateTransitions = function( ele, diffProps, isBypass ){
+            var self = this;
+            var _p = ele._private;
+            var props = ele.pstyle( 'transition-property' ).value;
+            var duration = ele.pstyle( 'transition-duration' ).pfValue;
+            var delay = ele.pstyle( 'transition-delay' ).pfValue;
+
+            if( props.length > 0 && duration > 0 ){
+
+                var css = {};
+
+                // build up the style to animate towards
+                var anyPrev = false;
+                for( var i = 0; i < props.length; i++ ){
+                    var prop = props[ i ];
+                    var styProp = ele.pstyle( prop );
+                    var diffProp = diffProps[ prop ];
+
+                    if( !diffProp ){ continue; }
+
+                    var prevProp = diffProp.prev;
+                    var fromProp = prevProp;
+                    var toProp = diffProp.next != null ? diffProp.next : styProp;
+                    var diff = false;
+                    var initVal;
+                    var initDt = 0.000001; // delta time % value for initVal (allows animating out of init zero opacity)
+
+                    if( !fromProp ){ continue; }
+
+                    // consider px values
+                    if( is.number( fromProp.pfValue ) && is.number( toProp.pfValue ) ){
+                        diff = toProp.pfValue - fromProp.pfValue; // nonzero is truthy
+                        initVal = fromProp.pfValue + initDt * diff;
+
+                        // consider numerical values
+                    } else if( is.number( fromProp.value ) && is.number( toProp.value ) ){
+                        diff = toProp.value - fromProp.value; // nonzero is truthy
+                        initVal = fromProp.value + initDt * diff;
+
+                        // consider colour values
+                    } else if( is.array( fromProp.value ) && is.array( toProp.value ) ){
+                        diff = fromProp.value[0] !== toProp.value[0]
+                            || fromProp.value[1] !== toProp.value[1]
+                            || fromProp.value[2] !== toProp.value[2]
+                        ;
+
+                        initVal = fromProp.strValue;
+                    }
+
+                    // the previous value is good for an animation only if it's different
+                    if( diff ){
+                        css[ prop ] = toProp.strValue; // to val
+                        this.applyBypass( ele, prop, initVal ); // from val
+                        anyPrev = true;
+                    }
+
+                } // end if props allow ani
+
+                // can't transition if there's nothing previous to transition from
+                if( !anyPrev ){ return; }
+
+                _p.transitioning = true;
+
+                ele.stop();
+
+                if( delay > 0 ){
+                    ele.delay( delay );
+                }
+
+                ele.animate( {
+                    css: css
+                }, {
+                    duration: duration,
+                    easing: ele.pstyle( 'transition-timing-function' ).value,
+                    queue: false,
+                    complete: function(){
+                        if( !isBypass ){
+                            self.removeBypasses( ele, props );
+                        }
+
+                        _p.transitioning = false;
+                    }
+                } );
+
+            } else if( _p.transitioning ){
+                ele.stop();
+
+                this.removeBypasses( ele, props );
+
+                _p.transitioning = false;
+            }
+        };
+
+        module.exports = styfn;
+
+    },{"../is":83,"../util":100}],89:[function(_dereq_,module,exports){
+        'use strict';
+
+        var is = _dereq_( '../is' );
+        var util = _dereq_( '../util' );
+
+        var styfn = {};
+
+// bypasses are applied to an existing style on an element, and just tacked on temporarily
+// returns true iff application was successful for at least 1 specified property
+        styfn.applyBypass = function( eles, name, value, updateTransitions ){
+            var self = this;
+            var props = [];
+            var isBypass = true;
+
+            // put all the properties (can specify one or many) in an array after parsing them
+            if( name === '*' || name === '**' ){ // apply to all property names
+
+                if( value !== undefined ){
+                    for( var i = 0; i < self.properties.length; i++ ){
+                        var prop = self.properties[ i ];
+                        var name = prop.name;
+
+                        var parsedProp = this.parse( name, value, true );
+
+                        if( parsedProp ){
+                            props.push( parsedProp );
+                        }
+                    }
+                }
+
+            } else if( is.string( name ) ){ // then parse the single property
+                var parsedProp = this.parse( name, value, true );
+
+                if( parsedProp ){
+                    props.push( parsedProp );
+                }
+            } else if( is.plainObject( name ) ){ // then parse each property
+                var specifiedProps = name;
+                updateTransitions = value;
+
+                for( var i = 0; i < self.properties.length; i++ ){
+                    var prop = self.properties[ i ];
+                    var name = prop.name;
+                    var value = specifiedProps[ name ];
+
+                    if( value === undefined ){ // try camel case name too
+                        value = specifiedProps[ util.dash2camel( name ) ];
+                    }
+
+                    if( value !== undefined ){
+                        var parsedProp = this.parse( name, value, true );
+
+                        if( parsedProp ){
+                            props.push( parsedProp );
+                        }
+                    }
+                }
+            } else { // can't do anything without well defined properties
+                return false;
+            }
+
+            // we've failed if there are no valid properties
+            if( props.length === 0 ){ return false; }
+
+            // now, apply the bypass properties on the elements
+            var ret = false; // return true if at least one succesful bypass applied
+            for( var i = 0; i < eles.length; i++ ){ // for each ele
+                var ele = eles[ i ];
+                var diffProps = {};
+                var diffProp;
+
+                for( var j = 0; j < props.length; j++ ){ // for each prop
+                    var prop = props[ j ];
+
+                    if( updateTransitions ){
+                        var prevProp = ele.pstyle( prop.name );
+                        diffProp = diffProps[ prop.name ] = { prev: prevProp };
+                    }
+
+                    ret = this.applyParsedProperty( ele, prop ) || ret;
+
+                    if( updateTransitions ){
+                        diffProp.next = ele.pstyle( prop.name );
+                    }
+
+                } // for props
+
+                if( ret ){
+                    this.updateStyleHints( ele );
+                }
+
+                if( updateTransitions ){
+                    this.updateTransitions( ele, diffProps, isBypass );
+                }
+            } // for eles
+
+            return ret;
+        };
+
+// only useful in specific cases like animation
+        styfn.overrideBypass = function( eles, name, value ){
+            name = util.camel2dash( name );
+
+            for( var i = 0; i < eles.length; i++ ){
+                var ele = eles[ i ];
+                var prop = ele._private.style[ name ];
+                var type = this.properties[ name ].type;
+                var isColor = type.color;
+                var isMulti = type.mutiple;
+
+                if( !prop || !prop.bypass ){ // need a bypass if one doesn't exist
+                    this.applyBypass( ele, name, value );
+                    continue;
+                }
+
+                prop.value = value;
+
+                if( prop.pfValue != null ){
+                    prop.pfValue = value;
+                }
+
+                if( isColor ){
+                    prop.strValue = 'rgb(' + value.join( ',' ) + ')';
+                } else if( isMulti ){
+                    prop.strValue = value.join( ' ' );
+                } else {
+                    prop.strValue = '' + value;
+                }
+            }
+        };
+
+        styfn.removeAllBypasses = function( eles, updateTransitions ){
+            return this.removeBypasses( eles, this.propertyNames, updateTransitions );
+        };
+
+        styfn.removeBypasses = function( eles, props, updateTransitions ){
+            var isBypass = true;
+
+            for( var j = 0; j < eles.length; j++ ){
+                var ele = eles[ j ];
+                var diffProps = {};
+
+                for( var i = 0; i < props.length; i++ ){
+                    var name = props[ i ];
+                    var prop = this.properties[ name ];
+                    var prevProp = ele.pstyle( prop.name );
+
+                    if( !prevProp || !prevProp.bypass ){
+                        // if a bypass doesn't exist for the prop, nothing needs to be removed
+                        continue;
+                    }
+
+                    var value = ''; // empty => remove bypass
+                    var parsedProp = this.parse( name, value, true );
+                    var diffProp = diffProps[ prop.name ] = { prev: prevProp };
+
+                    this.applyParsedProperty( ele, parsedProp );
+
+                    diffProp.next = ele.pstyle( prop.name );
+                } // for props
+
+                this.updateStyleHints( ele );
+
+                if( updateTransitions ){
+                    this.updateTransitions( ele, diffProps, isBypass );
+                }
+            } // for eles
+        };
+
+        module.exports = styfn;
+
+    },{"../is":83,"../util":100}],90:[function(_dereq_,module,exports){
+        'use strict';
+
+        var window = _dereq_( '../window' );
+
+        var styfn = {};
+
+// gets what an em size corresponds to in pixels relative to a dom element
+        styfn.getEmSizeInPixels = function(){
+            var px = this.containerCss( 'font-size' );
+
+            if( px != null ){
+                return parseFloat( px );
+            } else {
+                return 1; // for headless
+            }
+        };
+
+// gets css property from the core container
+        styfn.containerCss = function( propName ){
+            var cy = this._private.cy;
+            var domElement = cy.container();
+
+            if( window && domElement && window.getComputedStyle ){
+                return window.getComputedStyle( domElement ).getPropertyValue( propName );
+            }
+        };
+
+        module.exports = styfn;
+
+    },{"../window":107}],91:[function(_dereq_,module,exports){
+        'use strict';
+
+        var util = _dereq_( '../util' );
+        var is = _dereq_( '../is' );
+
+        var styfn = {};
+
+// gets the rendered style for an element
+        styfn.getRenderedStyle = function( ele ){
+            return this.getRawStyle( ele, true );
+        };
+
+// gets the raw style for an element
+        styfn.getRawStyle = function( ele, isRenderedVal ){
+            var self = this;
+            var ele = ele[0]; // insure it's an element
+
+            if( ele ){
+                var rstyle = {};
+
+                for( var i = 0; i < self.properties.length; i++ ){
+                    var prop = self.properties[ i ];
+                    var val = self.getStylePropertyValue( ele, prop.name, isRenderedVal );
+
+                    if( val ){
+                        rstyle[ prop.name ] = val;
+                        rstyle[ util.dash2camel( prop.name ) ] = val;
+                    }
+                }
+
+                return rstyle;
+            }
+        };
+
+        styfn.getStylePropertyValue = function( ele, propName, isRenderedVal ){
+            var self = this;
+            var ele = ele[0]; // insure it's an element
+
+            if( ele ){
+                var prop = self.properties[ propName ];
+                var type = prop.type;
+                var styleProp = ele.pstyle( prop.name );
+                var zoom = ele.cy().zoom();
+
+                if( styleProp ){
+                    var units = styleProp.units ? type.implicitUnits || 'px' : null;
+                    var val = units ? [].concat( styleProp.pfValue ).map( function( pfValue ){
+                        return ( pfValue * (isRenderedVal ? zoom : 1) ) + units;
+                    } ).join( ' ' ) : styleProp.strValue;
+
+                    return val;
+                }
+            }
+        };
+
+        styfn.getAnimationStartStyle = function( ele, aniProps ){
+            var rstyle = {};
+
+            for( var i = 0; i < aniProps.length; i++ ){
+                var aniProp = aniProps[ i ];
+                var name = aniProp.name;
+
+                var styleProp = ele.pstyle( name );
+
+                if( styleProp !== undefined ){ // then make a prop of it
+                    if( is.plainObject( styleProp ) ){
+                        styleProp = this.parse( name, styleProp.strValue );
+                    } else {
+                        styleProp = this.parse( name, styleProp );
+                    }
+                }
+
+                if( styleProp ){
+                    rstyle[ name ] = styleProp;
+                }
+            }
+
+            return rstyle;
+        };
+
+        styfn.getPropsList = function( propsObj ){
+            var self = this;
+            var rstyle = [];
+            var style = propsObj;
+            var props = self.properties;
+
+            if( style ){
+                for( var name in style ){
+                    var val = style[ name ];
+                    var prop = props[ name ] || props[ util.camel2dash( name ) ];
+                    var styleProp = this.parse( prop.name, val );
+
+                    rstyle.push( styleProp );
+                }
+            }
+
+            return rstyle;
+        };
+
+        module.exports = styfn;
+
+    },{"../is":83,"../util":100}],92:[function(_dereq_,module,exports){
+        'use strict';
+
+        var is = _dereq_( '../is' );
+        var util = _dereq_( '../util' );
+        var Selector = _dereq_( '../selector' );
+
+        var Style = function( cy ){
+
+            if( !(this instanceof Style) ){
+                return new Style( cy );
+            }
+
+            if( !is.core( cy ) ){
+                util.error( 'A style must have a core reference' );
+                return;
+            }
+
+            this._private = {
+                cy: cy,
+                coreStyle: {},
+                newStyle: true
+            };
+
+            this.length = 0;
+
+            this.addDefaultStylesheet();
+        };
+
+        var styfn = Style.prototype;
+
+        styfn.instanceString = function(){
+            return 'style';
+        };
+
+// remove all contexts
+        styfn.clear = function(){
+            for( var i = 0; i < this.length; i++ ){
+                this[ i ] = undefined;
+            }
+            this.length = 0;
+            this._private.newStyle = true;
+
+            return this; // chaining
+        };
+
+        styfn.resetToDefault = function(){
+            this.clear();
+            this.addDefaultStylesheet();
+
+            return this;
+        };
+
+// builds a style object for the 'core' selector
+        styfn.core = function(){
+            return this._private.coreStyle;
+        };
+
+// create a new context from the specified selector string and switch to that context
+        styfn.selector = function( selectorStr ){
+            // 'core' is a special case and does not need a selector
+            var selector = selectorStr === 'core' ? null : new Selector( selectorStr );
+
+            var i = this.length++; // new context means new index
+            this[ i ] = {
+                selector: selector,
+                properties: [],
+                mappedProperties: [],
+                index: i
+            };
+
+            return this; // chaining
+        };
+
+// add one or many css rules to the current context
+        styfn.css = function(){
+            var self = this;
+            var args = arguments;
+
+            switch( args.length ){
+                case 1:
+                    var map = args[0];
+
+                    for( var i = 0; i < self.properties.length; i++ ){
+                        var prop = self.properties[ i ];
+                        var mapVal = map[ prop.name ];
+
+                        if( mapVal === undefined ){
+                            mapVal = map[ util.dash2camel( prop.name ) ];
+                        }
+
+                        if( mapVal !== undefined ){
+                            this.cssRule( prop.name, mapVal );
+                        }
+                    }
+
+                    break;
+
+                case 2:
+                    this.cssRule( args[0], args[1] );
+                    break;
+
+                default:
+                    break; // do nothing if args are invalid
+            }
+
+            return this; // chaining
+        };
+        styfn.style = styfn.css;
+
+// add a single css rule to the current context
+        styfn.cssRule = function( name, value ){
+            // name-value pair
+            var property = this.parse( name, value );
+
+            // add property to current context if valid
+            if( property ){
+                var i = this.length - 1;
+                this[ i ].properties.push( property );
+                this[ i ].properties[ property.name ] = property; // allow access by name as well
+
+                if( property.name.match( /pie-(\d+)-background-size/ ) && property.value ){
+                    this._private.hasPie = true;
+                }
+
+                if( property.mapped ){
+                    this[ i ].mappedProperties.push( property );
+                }
+
+                // add to core style if necessary
+                var currentSelectorIsCore = !this[ i ].selector;
+                if( currentSelectorIsCore ){
+                    this._private.coreStyle[ property.name ] = property;
+                }
+            }
+
+            return this; // chaining
+        };
+
+// static function
+        Style.fromJson = function( cy, json ){
+            var style = new Style( cy );
+
+            style.fromJson( json );
+
+            return style;
+        };
+
+        Style.fromString = function( cy, string ){
+            return new Style( cy ).fromString( string );
+        };
+
+        [
+            _dereq_( './apply' ),
+            _dereq_( './bypass' ),
+            _dereq_( './container' ),
+            _dereq_( './get-for-ele' ),
+            _dereq_( './json' ),
+            _dereq_( './string-sheet' ),
+            _dereq_( './properties' ),
+            _dereq_( './parse' )
+        ].forEach( function( props ){
+            util.extend( styfn, props );
+        } );
+
+
+        Style.types = styfn.types;
+        Style.properties = styfn.properties;
+
+        module.exports = Style;
+
+    },{"../is":83,"../selector":87,"../util":100,"./apply":88,"./bypass":89,"./container":90,"./get-for-ele":91,"./json":93,"./parse":94,"./properties":95,"./string-sheet":96}],93:[function(_dereq_,module,exports){
+        'use strict';
+
+        var styfn = {};
+
+        styfn.applyFromJson = function( json ){
+            var style = this;
+
+            for( var i = 0; i < json.length; i++ ){
+                var context = json[ i ];
+                var selector = context.selector;
+                var props = context.style || context.css;
+
+                style.selector( selector ); // apply selector
+
+                for( var name in props ){
+                    var value = props[ name ];
+
+                    style.css( name, value ); // apply property
+                }
+            }
+
+            return style;
+        };
+
+// accessible cy.style() function
+        styfn.fromJson = function( json ){
+            var style = this;
+
+            style.resetToDefault();
+            style.applyFromJson( json );
+
+            return style;
+        };
+
+// get json from cy.style() api
+        styfn.json = function(){
+            var json = [];
+
+            for( var i = this.defaultLength; i < this.length; i++ ){
+                var cxt = this[ i ];
+                var selector = cxt.selector;
+                var props = cxt.properties;
+                var css = {};
+
+                for( var j = 0; j < props.length; j++ ){
+                    var prop = props[ j ];
+                    css[ prop.name ] = prop.strValue;
+                }
+
+                json.push( {
+                    selector: !selector ? 'core' : selector.toString(),
+                    style: css
+                } );
+            }
+
+            return json;
+        };
+
+        module.exports = styfn;
+
+    },{}],94:[function(_dereq_,module,exports){
+        'use strict';
+
+        var util = _dereq_( '../util' );
+        var is = _dereq_( '../is' );
+        var math = _dereq_( '../math' );
+
+        var styfn = {};
+
+// a caching layer for property parsing
+        styfn.parse = function( name, value, propIsBypass, propIsFlat ){
+            var self = this;
+
+            // function values can't be cached in all cases, and there isn't much benefit of caching them anyway
+            if( is.fn( value ) ){
+                return self.parseImpl( name, value, propIsBypass, propIsFlat );
+            }
+
+            var argHash = [ name, value, propIsBypass, propIsFlat ].join( '$' );
+            var propCache = self.propCache = self.propCache || {};
+            var ret;
+
+            if( !(ret = propCache[ argHash ]) ){
+                ret = propCache[ argHash ] = self.parseImpl( name, value, propIsBypass, propIsFlat );
+            }
+
+            // always need a copy since props are mutated later in their lifecycles
+            ret = util.copy( ret );
+
+            if( ret ){
+                ret.value = util.copy( ret.value ); // because it could be an array, e.g. colour
+            }
+
+            return ret;
+        };
+
+// parse a property; return null on invalid; return parsed property otherwise
+// fields :
+// - name : the name of the property
+// - value : the parsed, native-typed value of the property
+// - strValue : a string value that represents the property value in valid css
+// - bypass : true iff the property is a bypass property
+        var parseImpl = function( name, value, propIsBypass, propIsFlat ){
+            var self = this;
+
+            name = util.camel2dash( name ); // make sure the property name is in dash form (e.g. 'property-name' not 'propertyName')
+
+            var property = self.properties[ name ];
+            var passedValue = value;
+            var types = self.types;
+
+            if( !property ){ return null; } // return null on property of unknown name
+            if( value === undefined || value === null ){ return null; } // can't assign null
+
+            // the property may be an alias
+            if( property.alias ){
+                property = property.pointsTo;
+                name = property.name;
+            }
+
+            var valueIsString = is.string( value );
+            if( valueIsString ){ // trim the value to make parsing easier
+                value = value.trim();
+            }
+
+            var type = property.type;
+            if( !type ){ return null; } // no type, no luck
+
+            // check if bypass is null or empty string (i.e. indication to delete bypass property)
+            if( propIsBypass && (value === '' || value === null) ){
+                return {
+                    name: name,
+                    value: value,
+                    bypass: true,
+                    deleteBypass: true
+                };
+            }
+
+            // check if value is a function used as a mapper
+            if( is.fn( value ) ){
+                return {
+                    name: name,
+                    value: value,
+                    strValue: 'fn',
+                    mapped: types.fn,
+                    bypass: propIsBypass
+                };
+            }
+
+            // check if value is mapped
+            var data, mapData, layoutData, mapLayoutData, scratch, mapScratch;
+            if( !valueIsString || propIsFlat ){
+                // then don't bother to do the expensive regex checks
+
+            } else if(
+                ( data = new RegExp( types.data.regex ).exec( value ) ) ||
+                ( layoutData = new RegExp( types.layoutData.regex ).exec( value ) ) ||
+                ( scratch = new RegExp( types.scratch.regex ).exec( value ) )
+            ){
+                if( propIsBypass ){ return false; } // mappers not allowed in bypass
+
+                var mapped;
+                if( data ){
+                    mapped = types.data;
+                } else if( layoutData ){
+                    mapped = types.layoutData;
+                } else {
+                    mapped = types.scratch;
+                }
+
+                data = data || layoutData || scratch;
+
+                return {
+                    name: name,
+                    value: data,
+                    strValue: '' + value,
+                    mapped: mapped,
+                    field: data[1],
+                    bypass: propIsBypass
+                };
+
+            } else if(
+                ( mapData = new RegExp( types.mapData.regex ).exec( value ) ) ||
+                ( mapLayoutData = new RegExp( types.mapLayoutData.regex ).exec( value ) ) ||
+                ( mapScratch = new RegExp( types.mapScratch.regex ).exec( value ) )
+            ){
+                if( propIsBypass ){ return false; } // mappers not allowed in bypass
+                if( type.multiple ){ return false; } // impossible to map to num
+
+                var mapped;
+                if( mapData ){
+                    mapped = types.mapData;
+                } else if( mapLayoutData ){
+                    mapped = types.mapLayoutData;
+                } else {
+                    mapped = types.mapScratch;
+                }
+
+                mapData = mapData || mapLayoutData || mapScratch;
+
+                // we can map only if the type is a colour or a number
+                if( !(type.color || type.number) ){ return false; }
+
+                var valueMin = this.parse( name, mapData[4] ); // parse to validate
+                if( !valueMin || valueMin.mapped ){ return false; } // can't be invalid or mapped
+
+                var valueMax = this.parse( name, mapData[5] ); // parse to validate
+                if( !valueMax || valueMax.mapped ){ return false; } // can't be invalid or mapped
+
+                // check if valueMin and valueMax are the same
+                if( valueMin.value === valueMax.value ){
+                    return false; // can't make much of a mapper without a range
+
+                } else if( type.color ){
+                    var c1 = valueMin.value;
+                    var c2 = valueMax.value;
+
+                    var same = c1[0] === c2[0] // red
+                        && c1[1] === c2[1] // green
+                        && c1[2] === c2[2] // blue
+                        && ( // optional alpha
+                            c1[3] === c2[3] // same alpha outright
+                            || (
+                                (c1[3] == null || c1[3] === 1) // full opacity for colour 1?
+                                &&
+                                (c2[3] == null || c2[3] === 1) // full opacity for colour 2?
+                            )
+                        )
+                    ;
+
+                    if( same ){ return false; } // can't make a mapper without a range
+                }
+
+                return {
+                    name: name,
+                    value: mapData,
+                    strValue: '' + value,
+                    mapped: mapped,
+                    field: mapData[1],
+                    fieldMin: parseFloat( mapData[2] ), // min & max are numeric
+                    fieldMax: parseFloat( mapData[3] ),
+                    valueMin: valueMin.value,
+                    valueMax: valueMax.value,
+                    bypass: propIsBypass
+                };
+            }
+
+            if( type.multiple && propIsFlat !== 'multiple' ){
+                var vals;
+
+                if( valueIsString ){
+                    vals = value.split( /\s+/ );
+                } else if( is.array( value ) ){
+                    vals = value;
+                } else {
+                    vals = [ value ];
+                }
+
+                if( type.evenMultiple && vals.length % 2 !== 0 ){ return null; }
+
+                var valArr = vals.map( function( v ){
+                    var p = self.parse( name, v, propIsBypass, 'multiple' );
+
+                    if( p.pfValue != null ){
+                        return p.pfValue;
+                    } else {
+                        return p.value;
+                    }
+                } );
+
+                return {
+                    name: name,
+                    value: valArr,
+                    pfValue: valArr,
+                    strValue: valArr.join( ' ' ),
+                    bypass: propIsBypass,
+                    units: type.number && !type.unitless ? type.implicitUnits || 'px' : undefined
+                };
+            }
+
+            // several types also allow enums
+            var checkEnums = function(){
+                for( var i = 0; i < type.enums.length; i++ ){
+                    var en = type.enums[ i ];
+
+                    if( en === value ){
+                        return {
+                            name: name,
+                            value: value,
+                            strValue: '' + value,
+                            bypass: propIsBypass
+                        };
+                    }
+                }
+
+                return null;
+            };
+
+            // check the type and return the appropriate object
+            if( type.number ){
+                var units;
+                var implicitUnits = 'px'; // not set => px
+
+                if( type.units ){ // use specified units if set
+                    units = type.units;
+                }
+
+                if( type.implicitUnits ){
+                    implicitUnits = type.implicitUnits;
+                }
+
+                if( !type.unitless ){
+                    if( valueIsString ){
+                        var unitsRegex = 'px|em' + (type.allowPercent ? '|\\%' : '');
+                        if( units ){ unitsRegex = units; } // only allow explicit units if so set
+                        var match = value.match( '^(' + util.regex.number + ')(' + unitsRegex + ')?' + '$' );
+
+                        if( match ){
+                            value = match[1];
+                            units = match[2] || implicitUnits;
+                        }
+
+                    } else if( !units || type.implicitUnits ){
+                        units = implicitUnits; // implicitly px if unspecified
+                    }
+                }
+
+                value = parseFloat( value );
+
+                // if not a number and enums not allowed, then the value is invalid
+                if( isNaN( value ) && type.enums === undefined ){
+                    return null;
+                }
+
+                // check if this number type also accepts special keywords in place of numbers
+                // (i.e. `left`, `auto`, etc)
+                if( isNaN( value ) && type.enums !== undefined ){
+                    value = passedValue;
+
+                    return checkEnums();
+                }
+
+                // check if value must be an integer
+                if( type.integer && !is.integer( value ) ){
+                    return null;
+                }
+
+                // check value is within range
+                if( (type.min !== undefined && value < type.min)
+                    || (type.max !== undefined && value > type.max)
+                ){
+                    return null;
+                }
+
+                var ret = {
+                    name: name,
+                    value: value,
+                    strValue: '' + value + (units ? units : ''),
+                    units: units,
+                    bypass: propIsBypass
+                };
+
+                // normalise value in pixels
+                if( type.unitless || (units !== 'px' && units !== 'em') ){
+                    ret.pfValue = value;
+                } else {
+                    ret.pfValue = ( units === 'px' || !units ? (value) : (this.getEmSizeInPixels() * value) );
+                }
+
+                // normalise value in ms
+                if( units === 'ms' || units === 's' ){
+                    ret.pfValue = units === 'ms' ? value : 1000 * value;
+                }
+
+                // normalise value in rad
+                if( units === 'deg' || units === 'rad' ){
+                    ret.pfValue = units === 'rad' ? value : math.deg2rad( value );
+                }
+
+                return ret;
+
+            } else if( type.propList ){
+
+                var props = [];
+                var propsStr = '' + value;
+
+                if( propsStr === 'none' ){
+                    // leave empty
+
+                } else { // go over each prop
+
+                    var propsSplit = propsStr.split( ',' );
+                    for( var i = 0; i < propsSplit.length; i++ ){
+                        var propName = propsSplit[ i ].trim();
+
+                        if( self.properties[ propName ] ){
+                            props.push( propName );
+                        }
+                    }
+
+                    if( props.length === 0 ){ return null; }
+                }
+
+                return {
+                    name: name,
+                    value: props,
+                    strValue: props.length === 0 ? 'none' : props.join( ', ' ),
+                    bypass: propIsBypass
+                };
+
+            } else if( type.color ){
+                var tuple = util.color2tuple( value );
+
+                if( !tuple ){ return null; }
+
+                return {
+                    name: name,
+                    value: tuple,
+                    strValue: '' + value,
+                    bypass: propIsBypass,
+                    roundValue: true
+                };
+
+            } else if( type.regex || type.regexes ){
+
+                // first check enums
+                if( type.enums ){
+                    var enumProp = checkEnums();
+
+                    if( enumProp ){ return enumProp; }
+                }
+
+                var regexes = type.regexes ? type.regexes : [ type.regex ];
+
+                for( var i = 0; i < regexes.length; i++ ){
+                    var regex = new RegExp( regexes[ i ] ); // make a regex from the type string
+                    var m = regex.exec( value );
+
+                    if( m ){ // regex matches
+                        return {
+                            name: name,
+                            value: m,
+                            strValue: '' + value,
+                            bypass: propIsBypass
+                        };
+
+                    }
+                }
+
+                return null; // didn't match any
+
+            } else if( type.string ){
+                // just return
+                return {
+                    name: name,
+                    value: value,
+                    strValue: '' + value,
+                    bypass: propIsBypass
+                };
+
+            } else if( type.enums ){ // check enums last because it's a combo type in others
+                return checkEnums();
+
+            } else {
+                return null; // not a type we can handle
+            }
+
+        };
+        styfn.parseImpl = parseImpl;
+
+        module.exports = styfn;
+
+    },{"../is":83,"../math":85,"../util":100}],95:[function(_dereq_,module,exports){
+        'use strict';
+
+        var util = _dereq_( '../util' );
+
+        var styfn = {};
+
+        (function(){
+            var number = util.regex.number;
+            var rgba = util.regex.rgbaNoBackRefs;
+            var hsla = util.regex.hslaNoBackRefs;
+            var hex3 = util.regex.hex3;
+            var hex6 = util.regex.hex6;
+            var data = function( prefix ){ return '^' + prefix + '\\s*\\(\\s*([\\w\\.]+)\\s*\\)$'; };
+            var mapData = function( prefix ){
+                var mapArg = number + '|\\w+|' + rgba + '|' + hsla + '|' + hex3 + '|' + hex6;
+                return '^' + prefix + '\\s*\\(([\\w\\.]+)\\s*\\,\\s*(' + number + ')\\s*\\,\\s*(' + number + ')\\s*,\\s*(' + mapArg + ')\\s*\\,\\s*(' + mapArg + ')\\)$';
+            };
+
+            // each visual style property has a type and needs to be validated according to it
+            styfn.types = {
+                time: { number: true, min: 0, units: 's|ms', implicitUnits: 'ms' },
+                percent: { number: true, min: 0, max: 100, units: '%', implicitUnits: '%' },
+                zeroOneNumber: { number: true, min: 0, max: 1, unitless: true },
+                nOneOneNumber: { number: true, min: -1, max: 1, unitless: true },
+                nonNegativeInt: { number: true, min: 0, integer: true, unitless: true },
+                position: { enums: [ 'parent', 'origin' ] },
+                nodeSize: { number: true, min: 0, enums: [ 'auto', 'label' ] },
+                number: { number: true, unitless: true },
+                numbers: { number: true, unitless: true, multiple: true },
+                size: { number: true, min: 0 },
+                bidirectionalSize: { number: true }, // allows negative
+                bidirectionalSizes: { number: true, multiple: true }, // allows negative
+                bgSize: { number: true, min: 0, allowPercent: true },
+                bgWH: { number: true, min: 0, allowPercent: true, enums: [ 'auto' ] },
+                bgPos: { number: true, allowPercent: true },
+                bgRepeat: { enums: [ 'repeat', 'repeat-x', 'repeat-y', 'no-repeat' ] },
+                bgFit: { enums: [ 'none', 'contain', 'cover' ] },
+                bgClip: { enums: [ 'none', 'node' ] },
+                color: { color: true },
+                bool: { enums: [ 'yes', 'no' ] },
+                lineStyle: { enums: [ 'solid', 'dotted', 'dashed' ] },
+                borderStyle: { enums: [ 'solid', 'dotted', 'dashed', 'double' ] },
+                curveStyle: { enums: [ 'bezier', 'unbundled-bezier', 'haystack', 'segments' ] },
+                fontFamily: { regex: '^([\\w- \\"]+(?:\\s*,\\s*[\\w- \\"]+)*)$' },
+                fontVariant: { enums: [ 'small-caps', 'normal' ] },
+                fontStyle: { enums: [ 'italic', 'normal', 'oblique' ] },
+                fontWeight: { enums: [ 'normal', 'bold', 'bolder', 'lighter', '100', '200', '300', '400', '500', '600', '800', '900', 100, 200, 300, 400, 500, 600, 700, 800, 900 ] },
+                textDecoration: { enums: [ 'none', 'underline', 'overline', 'line-through' ] },
+                textTransform: { enums: [ 'none', 'uppercase', 'lowercase' ] },
+                textWrap: { enums: [ 'none', 'wrap' ] },
+                textBackgroundShape: { enums: [ 'rectangle', 'roundrectangle' ]},
+                nodeShape: { enums: [ 'rectangle', 'roundrectangle', 'ellipse', 'triangle', 'square', 'pentagon', 'hexagon', 'heptagon', 'octagon', 'star', 'diamond', 'vee', 'rhomboid', 'polygon' ] },
+                compoundIncludeLabels: { enums: [ 'include', 'exclude' ] },
+                arrowShape: { enums: [ 'tee', 'triangle', 'triangle-tee', 'triangle-backcurve', 'half-triangle-overshot', 'vee', 'square', 'circle', 'diamond', 'none' ] },
+                arrowFill: { enums: [ 'filled', 'hollow' ] },
+                display: { enums: [ 'element', 'none' ] },
+                visibility: { enums: [ 'hidden', 'visible' ] },
+                zCompoundDepth: { enums: [ 'bottom', 'orphan', 'auto', 'top' ] },
+                zIndexCompare: { enums: [ 'auto', 'manual' ] },
+                valign: { enums: [ 'top', 'center', 'bottom' ] },
+                halign: { enums: [ 'left', 'center', 'right' ] },
+                text: { string: true },
+                data: { mapping: true, regex: data( 'data' ) },
+                layoutData: { mapping: true, regex: data( 'layoutData' ) },
+                scratch: { mapping: true, regex: data( 'scratch' ) },
+                mapData: { mapping: true, regex: mapData( 'mapData' ) },
+                mapLayoutData: { mapping: true, regex: mapData( 'mapLayoutData' ) },
+                mapScratch: { mapping: true, regex: mapData( 'mapScratch' ) },
+                fn: { mapping: true, fn: true },
+                url: { regex: '^url\\s*\\(\\s*([^\\s]+)\\s*\\s*\\)|none|(.+)$' },
+                propList: { propList: true },
+                angle: { number: true, units: 'deg|rad', implicitUnits: 'rad' },
+                textRotation: { number: true, units: 'deg|rad', implicitUnits: 'rad', enums: [ 'none', 'autorotate' ] },
+                polygonPointList: { number: true, multiple: true, evenMultiple: true, min: -1, max: 1, unitless: true },
+                edgeDistances: { enums: ['intersection', 'node-position'] },
+                easing: {
+                    regexes: [
+                        '^(spring)\\s*\\(\\s*(' + number + ')\\s*,\\s*(' + number + ')\\s*\\)$',
+                        '^(cubic-bezier)\\s*\\(\\s*(' + number + ')\\s*,\\s*(' + number + ')\\s*,\\s*(' + number + ')\\s*,\\s*(' + number + ')\\s*\\)$'
+                    ],
+                    enums: [
+                        'linear',
+                        'ease', 'ease-in', 'ease-out', 'ease-in-out',
+                        'ease-in-sine', 'ease-out-sine', 'ease-in-out-sine',
+                        'ease-in-quad', 'ease-out-quad', 'ease-in-out-quad',
+                        'ease-in-cubic', 'ease-out-cubic', 'ease-in-out-cubic',
+                        'ease-in-quart', 'ease-out-quart', 'ease-in-out-quart',
+                        'ease-in-quint', 'ease-out-quint', 'ease-in-out-quint',
+                        'ease-in-expo', 'ease-out-expo', 'ease-in-out-expo',
+                        'ease-in-circ', 'ease-out-circ', 'ease-in-out-circ'
+                    ]
+                }
+            };
+
+            // define visual style properties
+            var t = styfn.types;
+            var props = styfn.properties = [
+                // main label
+                { name: 'label', type: t.text },
+                { name: 'text-rotation', type: t.textRotation },
+                { name: 'text-margin-x', type: t.bidirectionalSize },
+                { name: 'text-margin-y', type: t.bidirectionalSize },
+
+                // source label
+                { name: 'source-label', type: t.text },
+                { name: 'source-text-rotation', type: t.textRotation },
+                { name: 'source-text-margin-x', type: t.bidirectionalSize },
+                { name: 'source-text-margin-y', type: t.bidirectionalSize },
+                { name: 'source-text-offset', type: t.size },
+
+                // target label
+                { name: 'target-label', type: t.text },
+                { name: 'target-text-rotation', type: t.textRotation },
+                { name: 'target-text-margin-x', type: t.bidirectionalSize },
+                { name: 'target-text-margin-y', type: t.bidirectionalSize },
+                { name: 'target-text-offset', type: t.size },
+
+                // common label style
+                { name: 'text-valign', type: t.valign },
+                { name: 'text-halign', type: t.halign },
+                { name: 'color', type: t.color },
+                { name: 'text-outline-color', type: t.color },
+                { name: 'text-outline-width', type: t.size },
+                { name: 'text-outline-opacity', type: t.zeroOneNumber },
+                { name: 'text-opacity', type: t.zeroOneNumber },
+                { name: 'text-background-color', type: t.color },
+                { name: 'text-background-margin', type: t.size },
+                { name: 'text-background-opacity', type: t.zeroOneNumber },
+                { name: 'text-border-opacity', type: t.zeroOneNumber },
+                { name: 'text-border-color', type: t.color },
+                { name: 'text-border-width', type: t.size },
+                { name: 'text-border-style', type: t.borderStyle },
+                { name: 'text-background-shape', type: t.textBackgroundShape},
+                // { name: 'text-decoration', type: t.textDecoration }, // not supported in canvas
+                { name: 'text-transform', type: t.textTransform },
+                { name: 'text-wrap', type: t.textWrap },
+                { name: 'text-max-width', type: t.size },
+                { name: 'text-events', type: t.bool },
+                { name: 'font-family', type: t.fontFamily },
+                { name: 'font-style', type: t.fontStyle },
+                // { name: 'font-variant', type: t.fontVariant }, // not useful
+                { name: 'font-weight', type: t.fontWeight },
+                { name: 'font-size', type: t.size },
+                { name: 'min-zoomed-font-size', type: t.size },
+
+                // behaviour
+                { name: 'events', type: t.bool },
+
+                // visibility
+                { name: 'display', type: t.display },
+                { name: 'visibility', type: t.visibility },
+                { name: 'opacity', type: t.zeroOneNumber },
+                { name: 'z-compound-depth', type: t.zCompoundDepth },
+                { name: 'z-index-compare', type: t.zIndexCompare },
+                { name: 'z-index', type: t.nonNegativeInt },
+
+                // overlays
+                { name: 'overlay-padding', type: t.size },
+                { name: 'overlay-color', type: t.color },
+                { name: 'overlay-opacity', type: t.zeroOneNumber },
+
+                // shadows
+                { name: 'shadow-blur', type: t.size },
+                { name: 'shadow-color', type: t.color },
+                { name: 'shadow-opacity', type: t.zeroOneNumber },
+                { name: 'shadow-offset-x', type: t.bidirectionalSize },
+                { name: 'shadow-offset-y', type: t.bidirectionalSize },
+
+                // label shadows
+                { name: 'text-shadow-blur', type: t.size },
+                { name: 'text-shadow-color', type: t.color },
+                { name: 'text-shadow-opacity', type: t.zeroOneNumber },
+                { name: 'text-shadow-offset-x', type: t.bidirectionalSize },
+                { name: 'text-shadow-offset-y', type: t.bidirectionalSize },
+
+                // transition anis
+                { name: 'transition-property', type: t.propList },
+                { name: 'transition-duration', type: t.time },
+                { name: 'transition-delay', type: t.time },
+                { name: 'transition-timing-function', type: t.easing },
+
+                // node body
+                { name: 'height', type: t.nodeSize },
+                { name: 'width', type: t.nodeSize },
+                { name: 'shape', type: t.nodeShape },
+                { name: 'shape-polygon-points', type: t.polygonPointList },
+                { name: 'background-color', type: t.color },
+                { name: 'background-opacity', type: t.zeroOneNumber },
+                { name: 'background-blacken', type: t.nOneOneNumber },
+                { name: 'padding-left', type: t.size },
+                { name: 'padding-right', type: t.size },
+                { name: 'padding-top', type: t.size },
+                { name: 'padding-bottom', type: t.size },
+
+                // node border
+                { name: 'border-color', type: t.color },
+                { name: 'border-opacity', type: t.zeroOneNumber },
+                { name: 'border-width', type: t.size },
+                { name: 'border-style', type: t.borderStyle },
+
+                // node background images
+                { name: 'background-image', type: t.url },
+                { name: 'background-image-opacity', type: t.zeroOneNumber },
+                { name: 'background-position-x', type: t.bgPos },
+                { name: 'background-position-y', type: t.bgPos },
+                { name: 'background-repeat', type: t.bgRepeat },
+                { name: 'background-fit', type: t.bgFit },
+                { name: 'background-clip', type: t.bgClip },
+                { name: 'background-width', type: t.bgWH },
+                { name: 'background-height', type: t.bgWH },
+
+                // compound props
+                { name: 'position', type: t.position },
+                { name: 'compound-sizing-wrt-labels', type: t.compoundIncludeLabels },
+
+                // edge line
+                { name: 'line-style', type: t.lineStyle },
+                { name: 'line-color', type: t.color },
+                { name: 'curve-style', type: t.curveStyle },
+                { name: 'haystack-radius', type: t.zeroOneNumber },
+                { name: 'control-point-step-size', type: t.size },
+                { name: 'control-point-distances', type: t.bidirectionalSizes },
+                { name: 'control-point-weights', type: t.numbers },
+                { name: 'segment-distances', type: t.bidirectionalSizes },
+                { name: 'segment-weights', type: t.numbers },
+                { name: 'edge-distances', type: t.edgeDistances },
+                { name: 'loop-direction', type: t.angle },
+                { name: 'loop-sweep', type: t.angle },
+
+                // these are just for the core
+                { name: 'selection-box-color', type: t.color },
+                { name: 'selection-box-opacity', type: t.zeroOneNumber },
+                { name: 'selection-box-border-color', type: t.color },
+                { name: 'selection-box-border-width', type: t.size },
+                { name: 'active-bg-color', type: t.color },
+                { name: 'active-bg-opacity', type: t.zeroOneNumber },
+                { name: 'active-bg-size', type: t.size },
+                { name: 'outside-texture-bg-color', type: t.color },
+                { name: 'outside-texture-bg-opacity', type: t.zeroOneNumber }
+            ];
+
+            // define aliases
+            var aliases = styfn.aliases = [
+                { name: 'content', pointsTo: 'label' },
+                { name: 'control-point-distance', pointsTo: 'control-point-distances' },
+                { name: 'control-point-weight', pointsTo: 'control-point-weights' },
+                { name: 'edge-text-rotation', pointsTo: 'text-rotation' }
+            ];
+
+            // pie backgrounds for nodes
+            styfn.pieBackgroundN = 16; // because the pie properties are numbered, give access to a constant N (for renderer use)
+            props.push( { name: 'pie-size', type: t.bgSize } );
+            for( var i = 1; i <= styfn.pieBackgroundN; i++ ){
+                props.push( { name: 'pie-' + i + '-background-color', type: t.color } );
+                props.push( { name: 'pie-' + i + '-background-size', type: t.percent } );
+                props.push( { name: 'pie-' + i + '-background-opacity', type: t.zeroOneNumber } );
+            }
+
+            // edge arrows
+            var arrowPrefixes = styfn.arrowPrefixes = [ 'source', 'mid-source', 'target', 'mid-target' ];
+            [
+                { name: 'arrow-shape', type: t.arrowShape },
+                { name: 'arrow-color', type: t.color },
+                { name: 'arrow-fill', type: t.arrowFill }
+            ].forEach( function( prop ){
+                arrowPrefixes.forEach( function( prefix ){
+                    var name = prefix + '-' + prop.name;
+                    var type = prop.type;
+
+                    props.push( { name: name, type: type } );
+                } );
+            }, {} );
+
+            // list of property names
+            styfn.propertyNames = props.map( function( p ){ return p.name; } );
+
+            // allow access of properties by name ( e.g. style.properties.height )
+            for( var i = 0; i < props.length; i++ ){
+                var prop = props[ i ];
+
+                props[ prop.name ] = prop; // allow lookup by name
+            }
+
+            // map aliases
+            for( var i = 0; i < aliases.length; i++ ){
+                var alias = aliases[ i ];
+                var pointsToProp = props[ alias.pointsTo ];
+                var aliasProp = {
+                    name: alias.name,
+                    alias: true,
+                    pointsTo: pointsToProp
+                };
+
+                // add alias prop for parsing
+                props.push( aliasProp );
+
+                props[ alias.name ] = aliasProp; // allow lookup by name
+            }
+        })();
+
+        styfn.getDefaultProperty = function( name ){
+            return this.getDefaultProperties()[ name ];
+        };
+
+        styfn.getDefaultProperties = util.memoize( function(){
+            var rawProps = util.extend( {
+                'events': 'yes',
+                'text-events': 'no',
+                'text-valign': 'top',
+                'text-halign': 'center',
+                'color': '#000',
+                'text-outline-color': '#000',
+                'text-outline-width': 0,
+                'text-outline-opacity': 1,
+                'text-opacity': 1,
+                'text-decoration': 'none',
+                'text-transform': 'none',
+                'text-wrap': 'none',
+                'text-max-width': 9999,
+                'text-background-color': '#000',
+                'text-background-opacity': 0,
+                'text-background-margin': 0,
+                'text-border-opacity': 0,
+                'text-border-width': 0,
+                'text-border-style': 'solid',
+                'text-border-color': '#000',
+                'text-background-shape': 'rectangle',
+                'font-family': 'Helvetica Neue, Helvetica, sans-serif',
+                'font-style': 'normal',
+                // 'font-variant': fontVariant,
+                'font-weight': 'normal',
+                'font-size': 16,
+                'min-zoomed-font-size': 0,
+                'text-rotation': 'none',
+                'source-text-rotation': 'none',
+                'target-text-rotation': 'none',
+                'visibility': 'visible',
+                'display': 'element',
+                'opacity': 1,
+                'z-compound-depth': 'auto',
+                'z-index-compare': 'auto',
+                'z-index': 0,
+                'label': '',
+                'text-margin-x': 0,
+                'text-margin-y': 0,
+                'source-label': '',
+                'source-text-offset': 0,
+                'source-text-margin-x': 0,
+                'source-text-margin-y': 0,
+                'target-label': '',
+                'target-text-offset': 0,
+                'target-text-margin-x': 0,
+                'target-text-margin-y': 0,
+                'overlay-opacity': 0,
+                'overlay-color': '#000',
+                'overlay-padding': 10,
+                'shadow-opacity': 0,
+                'shadow-color': '#000',
+                'shadow-blur': 10,
+                'shadow-offset-x': 0,
+                'shadow-offset-y': 0,
+                'text-shadow-opacity': 0,
+                'text-shadow-color': '#000',
+                'text-shadow-blur': 5,
+                'text-shadow-offset-x': 0,
+                'text-shadow-offset-y': 0,
+                'transition-property': 'none',
+                'transition-duration': 0,
+                'transition-delay': 0,
+                'transition-timing-function': 'linear',
+                'loop-direction': '-135deg',
+                'loop-sweep': '-90deg',
+
+                // node props
+                'background-blacken': 0,
+                'background-color': '#999',
+                'background-opacity': 1,
+                'background-image': 'none',
+                'background-image-opacity': 1,
+                'background-position-x': '50%',
+                'background-position-y': '50%',
+                'background-repeat': 'no-repeat',
+                'background-fit': 'none',
+                'background-clip': 'node',
+                'background-width': 'auto',
+                'background-height': 'auto',
+                'border-color': '#000',
+                'border-opacity': 1,
+                'border-width': 0,
+                'border-style': 'solid',
+                'height': 30,
+                'width': 30,
+                'shape': 'ellipse',
+                'shape-polygon-points': '-1, -1,   1, -1,   1, 1,   -1, 1',
+
+                // compound props
+                'padding-top': 0,
+                'padding-bottom': 0,
+                'padding-left': 0,
+                'padding-right': 0,
+                'position': 'origin',
+                'compound-sizing-wrt-labels': 'include'
+            }, {
+                // node pie bg
+                'pie-size': '100%'
+            }, [
+                { name: 'pie-{{i}}-background-color', value: 'black' },
+                { name: 'pie-{{i}}-background-size', value: '0%' },
+                { name: 'pie-{{i}}-background-opacity', value: 1 }
+            ].reduce( function( css, prop ){
+                for( var i = 1; i <= styfn.pieBackgroundN; i++ ){
+                    var name = prop.name.replace( '{{i}}', i );
+                    var val = prop.value;
+
+                    css[ name ] = val;
+                }
+
+                return css;
+            }, {} ), {
+                // edge props
+                'line-style': 'solid',
+                'line-color': '#999',
+                'control-point-step-size': 40,
+                'control-point-weights': 0.5,
+                'segment-weights': 0.5,
+                'segment-distances': 20,
+                'edge-distances': 'intersection',
+                'curve-style': 'bezier',
+                'haystack-radius': 0
+            }, [
+                { name: 'arrow-shape', value: 'none' },
+                { name: 'arrow-color', value: '#999' },
+                { name: 'arrow-fill', value: 'filled' }
+            ].reduce( function( css, prop ){
+                styfn.arrowPrefixes.forEach( function( prefix ){
+                    var name = prefix + '-' + prop.name;
+                    var val = prop.value;
+
+                    css[ name ] = val;
+                } );
+
+                return css;
+            }, {} ) );
+
+            var parsedProps = {};
+
+            for( var i = 0; i < this.properties.length; i++ ){
+                var prop = this.properties[i];
+
+                if( prop.pointsTo ){ continue; }
+
+                var name = prop.name;
+                var val = rawProps[ name ];
+                var parsedProp = this.parse( name, val );
+
+                parsedProps[ name ] = parsedProp;
+            }
+
+            return parsedProps;
+        } );
+
+        styfn.addDefaultStylesheet = function(){
+            this
+                .selector( '$node > node' ) // compound (parent) node properties
+                .css( {
+                    'width': 'auto',
+                    'height': 'auto',
+                    'shape': 'rectangle',
+                    'padding-top': 10,
+                    'padding-right': 10,
+                    'padding-left': 10,
+                    'padding-bottom': 10,
+                    'background-color': '#eee',
+                    'border-color': '#ccc',
+                    'border-width': 1
+                } )
+                .selector( 'edge' ) // just edge properties
+                .css( {
+                    'width': 3,
+                    'curve-style': 'haystack'
+                } )
+                .selector( ':selected' )
+                .css( {
+                    'background-color': '#0169D9',
+                    'line-color': '#0169D9',
+                    'source-arrow-color': '#0169D9',
+                    'target-arrow-color': '#0169D9',
+                    'mid-source-arrow-color': '#0169D9',
+                    'mid-target-arrow-color': '#0169D9'
+                } )
+                .selector( 'node:parent:selected' )
+                .css( {
+                    'background-color': '#CCE1F9',
+                    'border-color': '#aec8e5'
+                } )
+                .selector( ':active' )
+                .css( {
+                    'overlay-color': 'black',
+                    'overlay-padding': 10,
+                    'overlay-opacity': 0.25
+                } )
+                .selector( 'core' ) // just core properties
+                .css( {
+                    'selection-box-color': '#ddd',
+                    'selection-box-opacity': 0.65,
+                    'selection-box-border-color': '#aaa',
+                    'selection-box-border-width': 1,
+                    'active-bg-color': 'black',
+                    'active-bg-opacity': 0.15,
+                    'active-bg-size': 30,
+                    'outside-texture-bg-color': '#000',
+                    'outside-texture-bg-opacity': 0.125
+                } )
+            ;
+
+            this.defaultLength = this.length;
+        };
+
+        module.exports = styfn;
+
+    },{"../util":100}],96:[function(_dereq_,module,exports){
+        'use strict';
+
+        var util = _dereq_( '../util' );
+        var Selector = _dereq_( '../selector' );
+
+        var styfn = {};
+
+        styfn.applyFromString = function( string ){
+            var self = this;
+            var style = this;
+            var remaining = '' + string;
+            var selAndBlockStr;
+            var blockRem;
+            var propAndValStr;
+
+            // remove comments from the style string
+            remaining = remaining.replace( /[/][*](\s|.)+?[*][/]/g, '' );
+
+            function removeSelAndBlockFromRemaining(){
+                // remove the parsed selector and block from the remaining text to parse
+                if( remaining.length > selAndBlockStr.length ){
+                    remaining = remaining.substr( selAndBlockStr.length );
+                } else {
+                    remaining = '';
+                }
+            }
+
+            function removePropAndValFromRem(){
+                // remove the parsed property and value from the remaining block text to parse
+                if( blockRem.length > propAndValStr.length ){
+                    blockRem = blockRem.substr( propAndValStr.length );
+                } else {
+                    blockRem = '';
+                }
+            }
+
+            while( true ){
+                var nothingLeftToParse = remaining.match( /^\s*$/ );
+                if( nothingLeftToParse ){ break; }
+
+                var selAndBlock = remaining.match( /^\s*((?:.|\s)+?)\s*\{((?:.|\s)+?)\}/ );
+
+                if( !selAndBlock ){
+                    util.error( 'Halting stylesheet parsing: String stylesheet contains more to parse but no selector and block found in: ' + remaining );
+                    break;
+                }
+
+                selAndBlockStr = selAndBlock[0];
+
+                // parse the selector
+                var selectorStr = selAndBlock[1];
+                if( selectorStr !== 'core' ){
+                    var selector = new Selector( selectorStr );
+                    if( selector._private.invalid ){
+                        util.error( 'Skipping parsing of block: Invalid selector found in string stylesheet: ' + selectorStr );
+
+                        // skip this selector and block
+                        removeSelAndBlockFromRemaining();
+                        continue;
+                    }
+                }
+
+                // parse the block of properties and values
+                var blockStr = selAndBlock[2];
+                var invalidBlock = false;
+                blockRem = blockStr;
+                var props = [];
+
+                while( true ){
+                    var nothingLeftToParse = blockRem.match( /^\s*$/ );
+                    if( nothingLeftToParse ){ break; }
+
+                    var propAndVal = blockRem.match( /^\s*(.+?)\s*:\s*(.+?)\s*;/ );
+
+                    if( !propAndVal ){
+                        util.error( 'Skipping parsing of block: Invalid formatting of style property and value definitions found in:' + blockStr );
+                        invalidBlock = true;
+                        break;
+                    }
+
+                    propAndValStr = propAndVal[0];
+                    var propStr = propAndVal[1];
+                    var valStr = propAndVal[2];
+
+                    var prop = self.properties[ propStr ];
+                    if( !prop ){
+                        util.error( 'Skipping property: Invalid property name in: ' + propAndValStr );
+
+                        // skip this property in the block
+                        removePropAndValFromRem();
+                        continue;
+                    }
+
+                    var parsedProp = style.parse( propStr, valStr );
+
+                    if( !parsedProp ){
+                        util.error( 'Skipping property: Invalid property definition in: ' + propAndValStr );
+
+                        // skip this property in the block
+                        removePropAndValFromRem();
+                        continue;
+                    }
+
+                    props.push( {
+                        name: propStr,
+                        val: valStr
+                    } );
+                    removePropAndValFromRem();
+                }
+
+                if( invalidBlock ){
+                    removeSelAndBlockFromRemaining();
+                    break;
+                }
+
+                // put the parsed block in the style
+                style.selector( selectorStr );
+                for( var i = 0; i < props.length; i++ ){
+                    var prop = props[ i ];
+                    style.css( prop.name, prop.val );
+                }
+
+                removeSelAndBlockFromRemaining();
+            }
+
+            return style;
+        };
+
+        styfn.fromString = function( string ){
+            var style = this;
+
+            style.resetToDefault();
+            style.applyFromString( string );
+
+            return style;
+        };
+
+        module.exports = styfn;
+
+    },{"../selector":87,"../util":100}],97:[function(_dereq_,module,exports){
+        'use strict';
+
+        var is = _dereq_( './is' );
+        var util = _dereq_( './util' );
+        var Style = _dereq_( './style' );
+
+// a dummy stylesheet object that doesn't need a reference to the core
+// (useful for init)
+        var Stylesheet = function(){
+            if( !(this instanceof Stylesheet) ){
+                return new Stylesheet();
+            }
+
+            this.length = 0;
+        };
+
+        var sheetfn = Stylesheet.prototype;
+
+        sheetfn.instanceString = function(){
+            return 'stylesheet';
+        };
+
+// just store the selector to be parsed later
+        sheetfn.selector = function( selector ){
+            var i = this.length++;
+
+            this[ i ] = {
+                selector: selector,
+                properties: []
+            };
+
+            return this; // chaining
+        };
+
+// just store the property to be parsed later
+        sheetfn.css = function( name, value ){
+            var i = this.length - 1;
+
+            if( is.string( name ) ){
+                this[ i ].properties.push( {
+                    name: name,
+                    value: value
+                } );
+            } else if( is.plainObject( name ) ){
+                var map = name;
+
+                for( var j = 0; j < Style.properties.length; j++ ){
+                    var prop = Style.properties[ j ];
+                    var mapVal = map[ prop.name ];
+
+                    if( mapVal === undefined ){ // also try camel case name
+                        mapVal = map[ util.dash2camel( prop.name ) ];
+                    }
+
+                    if( mapVal !== undefined ){
+                        var name = prop.name;
+                        var value = mapVal;
+
+                        this[ i ].properties.push( {
+                            name: name,
+                            value: value
+                        } );
+                    }
+                }
+            }
+
+            return this; // chaining
+        };
+
+        sheetfn.style = sheetfn.css;
+
+// generate a real style object from the dummy stylesheet
+        sheetfn.generateStyle = function( cy ){
+            var style = new Style( cy );
+
+            for( var i = 0; i < this.length; i++ ){
+                var context = this[ i ];
+                var selector = context.selector;
+                var props = context.properties;
+
+                style.selector( selector ); // apply selector
+
+                for( var j = 0; j < props.length; j++ ){
+                    var prop = props[ j ];
+
+                    style.css( prop.name, prop.value ); // apply property
+                }
+            }
+
+            return style;
+        };
+
+        module.exports = Stylesheet;
+
+    },{"./is":83,"./style":92,"./util":100}],98:[function(_dereq_,module,exports){
+        /*! Weaver licensed under MIT (https://tldrlegal.com/license/mit-license), copyright Max Franz */
+
+// cross-env thread/worker
+// NB : uses (heavyweight) processes on nodejs so best not to create too many threads
+
+        'use strict';
+
+        var window = _dereq_('./window');
+        var util = _dereq_('./util');
+        var Promise = _dereq_('./promise');
+        var Event = _dereq_('./event');
+        var define = _dereq_('./define');
+        var is = _dereq_('./is');
+
+        var Thread = function( opts ){
+            if( !(this instanceof Thread) ){
+                return new Thread( opts );
+            }
+
+            var _p = this._private = {
+                requires: [],
+                files: [],
+                queue: null,
+                pass: [],
+                disabled: false
+            };
+
+            if( is.plainObject(opts) ){
+                if( opts.disabled != null ){
+                    _p.disabled = !!opts.disabled;
+                }
+            }
+
+        };
+
+        var thdfn = Thread.prototype; // short alias
+
+        var stringifyFieldVal = function( val ){
+            var valStr = is.fn( val ) ? val.toString() : "JSON.parse('" + JSON.stringify(val) + "')";
+
+            return valStr;
+        };
+
+// allows for requires with prototypes and subobjs etc
+        var fnAsRequire = function( fn ){
+            var req;
+            var fnName;
+
+            if( is.object(fn) && fn.fn ){ // manual fn
+                req = fnAs( fn.fn, fn.name );
+                fnName = fn.name;
+                fn = fn.fn;
+            } else if( is.fn(fn) ){ // auto fn
+                req = fn.toString();
+                fnName = fn.name;
+            } else if( is.string(fn) ){ // stringified fn
+                req = fn;
+            } else if( is.object(fn) ){ // plain object
+                if( fn.proto ){
+                    req = '';
+                } else {
+                    req = fn.name + ' = {};';
+                }
+
+                fnName = fn.name;
+                fn = fn.obj;
+            }
+
+            req += '\n';
+
+            var protoreq = function( val, subname ){
+                if( val.prototype ){
+                    var protoNonempty = false;
+                    for( var prop in val.prototype ){ protoNonempty = true; break; } // jshint ignore:line
+
+                    if( protoNonempty ){
+                        req += fnAsRequire( {
+                            name: subname,
+                            obj: val,
+                            proto: true
+                        }, val );
+                    }
+                }
+            };
+
+            // pull in prototype
+            if( fn.prototype && fnName != null ){
+
+                for( var name in fn.prototype ){
+                    var protoStr = '';
+
+                    var val = fn.prototype[ name ];
+                    var valStr = stringifyFieldVal( val );
+                    var subname = fnName + '.prototype.' + name;
+
+                    protoStr += subname + ' = ' + valStr + ';\n';
+
+                    if( protoStr ){
+                        req += protoStr;
+                    }
+
+                    protoreq( val, subname ); // subobject with prototype
+                }
+
+            }
+
+            // pull in properties for obj/fns
+            if( !is.string(fn) ){ for( var name in fn ){
+                var propsStr = '';
+
+                if( fn.hasOwnProperty(name) ){
+                    var val = fn[ name ];
+                    var valStr = stringifyFieldVal( val );
+                    var subname = fnName + '["' + name + '"]';
+
+                    propsStr += subname + ' = ' + valStr + ';\n';
+                }
+
+                if( propsStr ){
+                    req += propsStr;
+                }
+
+                protoreq( val, subname ); // subobject with prototype
+            } }
+
+            return req;
+        };
+
+        var isPathStr = function( str ){
+            return is.string(str) && str.match(/\.js$/);
+        };
+
+        util.extend(thdfn, {
+
+            instanceString: function(){ return 'thread'; },
+
+            require: function( fn, as ){
+                var requires = this._private.requires;
+
+                if( isPathStr(fn) ){
+                    this._private.files.push( fn );
+
+                    return this;
+                }
+
+                if( as ){
+                    if( is.fn(fn) ){
+                        fn = { name: as, fn: fn };
+                    } else {
+                        fn = { name: as, obj: fn };
+                    }
+                } else {
+                    if( is.fn(fn) ){
+                        if( !fn.name ){
+                            throw 'The function name could not be automatically determined.  Use thread.require( someFunction, "someFunction" )';
+                        }
+
+                        fn = { name: fn.name, fn: fn };
+                    }
+                }
+
+                requires.push( fn );
+
+                return this; // chaining
+            },
+
+            pass: function( data ){
+                this._private.pass.push( data );
+
+                return this; // chaining
+            },
+
+            run: function( fn, pass ){ // fn used like main()
+                var self = this;
+                var _p = this._private;
+                pass = pass || _p.pass.shift();
+
+                if( _p.stopped ){
+                    throw 'Attempted to run a stopped thread!  Start a new thread or do not stop the existing thread and reuse it.';
+                }
+
+                if( _p.running ){
+                    return ( _p.queue = _p.queue.then(function(){ // inductive step
+                        return self.run( fn, pass );
+                    }) );
+                }
+
+                var useWW = window != null && !_p.disabled;
+                var useNode = !window && typeof module !== 'undefined' && !_p.disabled;
+
+                self.trigger('run');
+
+                var runP = new Promise(function( resolve, reject ){
+
+                    _p.running = true;
+
+                    var threadTechAlreadyExists = _p.ran;
+
+                    var fnImplStr = is.string( fn ) ? fn : fn.toString();
+
+                    // worker code to exec
+                    var fnStr = '\n' + ( _p.requires.map(function( r ){
+                        return fnAsRequire( r );
+                    }) ).concat( _p.files.map(function( f ){
+                        if( useWW ){
+                            var wwifyFile = function( file ){
+                                if( file.match(/^\.\//) || file.match(/^\.\./) ){
+                                    return window.location.origin + window.location.pathname + file;
+                                } else if( file.match(/^\//) ){
+                                    return window.location.origin + '/' + file;
+                                }
+                                return file;
+                            };
+
+                            return 'importScripts("' + wwifyFile(f) + '");';
+                        } else if( useNode ) {
+                            return 'eval( require("fs").readFileSync("' + f + '", { encoding: "utf8" }) );';
+                        } else {
+                            throw 'External file `' + f + '` can not be required without any threading technology.';
+                        }
+                    }) ).concat([
+                        '( function(){',
+                        'var ret = (' + fnImplStr + ')(' + JSON.stringify(pass) + ');',
+                        'if( ret !== undefined ){ resolve(ret); }', // assume if ran fn returns defined value (incl. null), that we want to resolve to it
+                        '} )()\n'
+                    ]).join('\n');
+
+                    // because we've now consumed the requires, empty the list so we don't dupe on next run()
+                    _p.requires = [];
+                    _p.files = [];
+
+                    if( useWW ){
+                        var fnBlob, fnUrl;
+
+                        // add normalised thread api functions
+                        if( !threadTechAlreadyExists ){
+                            var fnPre = fnStr + '';
+
+                            fnStr = [
+                                'function _ref_(o){ return eval(o); };',
+                                'function broadcast(m){ return message(m); };', // alias
+                                'function message(m){ postMessage(m); };',
+                                'function listen(fn){',
+                                '  self.addEventListener("message", function(m){ ',
+                                '    if( typeof m === "object" && (m.data.$$eval || m.data === "$$start") ){',
+                                '    } else { ',
+                                '      fn( m.data );',
+                                '    }',
+                                '  });',
+                                '};',
+                                'self.addEventListener("message", function(m){  if( m.data.$$eval ){ eval( m.data.$$eval ); }  });',
+                                'function resolve(v){ postMessage({ $$resolve: v }); };',
+                                'function reject(v){ postMessage({ $$reject: v }); };'
+                            ].join('\n');
+
+                            fnStr += fnPre;
+
+                            fnBlob = new Blob([ fnStr ], {
+                                type: 'application/javascript'
+                            });
+                            fnUrl = window.URL.createObjectURL( fnBlob );
+                        }
+                        // create webworker and let it exec the serialised code
+                        var ww = _p.webworker = _p.webworker || new Worker( fnUrl );
+
+                        if( threadTechAlreadyExists ){ // then just exec new run() code
+                            ww.postMessage({
+                                $$eval: fnStr
+                            });
+                        }
+
+                        // worker messages => events
+                        var cb;
+                        ww.addEventListener('message', cb = function( m ){
+                            var isObject = is.object(m) && is.object( m.data );
+
+                            if( isObject && ('$$resolve' in m.data) ){
+                                ww.removeEventListener('message', cb); // done listening b/c resolve()
+
+                                resolve( m.data.$$resolve );
+                            } else if( isObject && ('$$reject' in m.data) ){
+                                ww.removeEventListener('message', cb); // done listening b/c reject()
+
+                                reject( m.data.$$reject );
+                            } else {
+                                self.trigger( new Event(m, { type: 'message', message: m.data }) );
+                            }
+                        }, false);
+
+                        if( !threadTechAlreadyExists ){
+                            ww.postMessage('$$start'); // start up the worker
+                        }
+
+                    } else if( useNode ){
+                        // create a new process
+
+                        if( !_p.child ){
+                            _p.child = ( _dereq_('child_process').fork( _dereq_('path').join(__dirname, 'thread-node-fork') ) );
+                        }
+
+                        var child = _p.child;
+
+                        // child process messages => events
+                        var cb;
+                        child.on('message', cb = function( m ){
+                            if( is.object(m) && ('$$resolve' in m) ){
+                                child.removeListener('message', cb); // done listening b/c resolve()
+
+                                resolve( m.$$resolve );
+                            } else if( is.object(m) && ('$$reject' in m) ){
+                                child.removeListener('message', cb); // done listening b/c reject()
+
+                                reject( m.$$reject );
+                            } else {
+                                self.trigger( new Event({}, { type: 'message', message: m }) );
+                            }
+                        });
+
+                        // ask the child process to eval the worker code
+                        child.send({
+                            $$eval: fnStr
+                        });
+
+                    } else { // use a fallback mechanism using a timeout
+
+                        var promiseResolve = resolve;
+                        var promiseReject = reject;
+
+                        var timer = _p.timer = _p.timer || {
+
+                            listeners: [],
+
+                            exec: function(){
+                                // as a string so it can't be mangled by minifiers and processors
+                                fnStr = [
+                                    'function _ref_(o){ return eval(o); };',
+                                    'function broadcast(m){ return message(m); };',
+                                    'function message(m){ self.trigger( new Event({}, { type: "message", message: m }) ); };',
+                                    'function listen(fn){ timer.listeners.push( fn ); };',
+                                    'function resolve(v){ promiseResolve(v); };',
+                                    'function reject(v){ promiseReject(v); };'
+                                ].join('\n') + fnStr;
+
+                                // the .run() code
+                                eval( fnStr ); // jshint ignore:line
+                            },
+
+                            message: function( m ){
+                                var ls = timer.listeners;
+
+                                for( var i = 0; i < ls.length; i++ ){
+                                    var fn = ls[i];
+
+                                    fn( m );
+                                }
+                            }
+
+                        };
+
+                        timer.exec();
+                    }
+
+                }).then(function( v ){
+                    _p.running = false;
+                    _p.ran = true;
+
+                    self.trigger('ran');
+
+                    return v;
+                });
+
+                if( _p.queue == null ){
+                    _p.queue = runP; // i.e. first step of inductive promise chain (for queue)
+                }
+
+                return runP;
+            },
+
+            // send the thread a message
+            message: function( m ){
+                var _p = this._private;
+
+                if( _p.webworker ){
+                    _p.webworker.postMessage( m );
+                }
+
+                if( _p.child ){
+                    _p.child.send( m );
+                }
+
+                if( _p.timer ){
+                    _p.timer.message( m );
+                }
+
+                return this; // chaining
+            },
+
+            stop: function(){
+                var _p = this._private;
+
+                if( _p.webworker ){
+                    _p.webworker.terminate();
+                }
+
+                if( _p.child ){
+                    _p.child.kill();
+                }
+
+                if( _p.timer ){
+                    // nothing we can do if we've run a timeout
+                }
+
+                _p.stopped = true;
+
+                return this.trigger('stop'); // chaining
+            },
+
+            stopped: function(){
+                return this._private.stopped;
+            }
+
+        });
+
+// turns a stringified function into a (re)named function
+        var fnAs = function( fn, name ){
+            var fnStr = fn.toString();
+            fnStr = fnStr.replace(/function\s*?\S*?\s*?\(/, 'function ' + name + '(');
+
+            return fnStr;
+        };
+
+        var defineFnal = function( opts ){
+            opts = opts || {};
+
+            return function fnalImpl( fn, arg1 ){
+                var fnStr = fnAs( fn, '_$_$_' + opts.name );
+
+                this.require( fnStr );
+
+                return this.run( [
+                    'function( data ){',
+                    '  var origResolve = resolve;',
+                    '  var res = [];',
+                    '  ',
+                    '  resolve = function( val ){',
+                    '    res.push( val );',
+                    '  };',
+                    '  ',
+                    '  var ret = data.' + opts.name + '( _$_$_' + opts.name + ( arguments.length > 1 ? ', ' + JSON.stringify(arg1) : '' ) + ' );',
+                    '  ',
+                    '  resolve = origResolve;',
+                    '  resolve( res.length > 0 ? res : ret );',
+                    '}'
+                ].join('\n') );
+            };
+        };
+
+        util.extend(thdfn, {
+            reduce: defineFnal({ name: 'reduce' }),
+
+            reduceRight: defineFnal({ name: 'reduceRight' }),
+
+            map: defineFnal({ name: 'map' })
+        });
+
+// aliases
+        var fn = thdfn;
+        fn.promise = fn.run;
+        fn.terminate = fn.halt = fn.stop;
+        fn.include = fn.require;
+
+// pull in event apis
+        util.extend(thdfn, {
+            on: define.on(),
+            one: define.on({ unbindSelfOnTrigger: true }),
+            off: define.off(),
+            trigger: define.trigger()
+        });
+
+        define.eventAliasesOn( thdfn );
+
+        module.exports = Thread;
+
+    },{"./define":44,"./event":45,"./is":83,"./promise":86,"./util":100,"./window":107,"child_process":undefined,"path":undefined}],99:[function(_dereq_,module,exports){
+        'use strict';
+
+        var is = _dereq_( '../is' );
+
+        module.exports = {
+            // get [r, g, b] from #abc or #aabbcc
+            hex2tuple: function( hex ){
+                if( !(hex.length === 4 || hex.length === 7) || hex[0] !== '#' ){ return; }
+
+                var shortHex = hex.length === 4;
+                var r, g, b;
+                var base = 16;
+
+                if( shortHex ){
+                    r = parseInt( hex[1] + hex[1], base );
+                    g = parseInt( hex[2] + hex[2], base );
+                    b = parseInt( hex[3] + hex[3], base );
+                } else {
+                    r = parseInt( hex[1] + hex[2], base );
+                    g = parseInt( hex[3] + hex[4], base );
+                    b = parseInt( hex[5] + hex[6], base );
+                }
+
+                return [ r, g, b ];
+            },
+
+            // get [r, g, b, a] from hsl(0, 0, 0) or hsla(0, 0, 0, 0)
+            hsl2tuple: function( hsl ){
+                var ret;
+                var h, s, l, a, r, g, b;
+                function hue2rgb( p, q, t ){
+                    if( t < 0 ) t += 1;
+                    if( t > 1 ) t -= 1;
+                    if( t < 1 / 6 ) return p + (q - p) * 6 * t;
+                    if( t < 1 / 2 ) return q;
+                    if( t < 2 / 3 ) return p + (q - p) * (2 / 3 - t) * 6;
+                    return p;
+                }
+
+                var m = new RegExp( '^' + this.regex.hsla + '$' ).exec( hsl );
+                if( m ){
+
+                    // get hue
+                    h = parseInt( m[1] );
+                    if( h < 0 ){
+                        h = ( 360 - (-1 * h % 360) ) % 360;
+                    } else if( h > 360 ){
+                        h = h % 360;
+                    }
+                    h /= 360; // normalise on [0, 1]
+
+                    s = parseFloat( m[2] );
+                    if( s < 0 || s > 100 ){ return; } // saturation is [0, 100]
+                    s = s / 100; // normalise on [0, 1]
+
+                    l = parseFloat( m[3] );
+                    if( l < 0 || l > 100 ){ return; } // lightness is [0, 100]
+                    l = l / 100; // normalise on [0, 1]
+
+                    a = m[4];
+                    if( a !== undefined ){
+                        a = parseFloat( a );
+
+                        if( a < 0 || a > 1 ){ return; } // alpha is [0, 1]
+                    }
+
+                    // now, convert to rgb
+                    // code from http://mjijackson.com/2008/02/rgb-to-hsl-and-rgb-to-hsv-color-model-conversion-algorithms-in-javascript
+                    if( s === 0 ){
+                        r = g = b = Math.round( l * 255 ); // achromatic
+                    } else {
+                        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                        var p = 2 * l - q;
+                        r = Math.round( 255 * hue2rgb( p, q, h + 1 / 3 ) );
+                        g = Math.round( 255 * hue2rgb( p, q, h ) );
+                        b = Math.round( 255 * hue2rgb( p, q, h - 1 / 3 ) );
+                    }
+
+                    ret = [ r, g, b, a ];
+                }
+
+                return ret;
+            },
+
+            // get [r, g, b, a] from rgb(0, 0, 0) or rgba(0, 0, 0, 0)
+            rgb2tuple: function( rgb ){
+                var ret;
+
+                var m = new RegExp( '^' + this.regex.rgba + '$' ).exec( rgb );
+                if( m ){
+                    ret = [];
+
+                    var isPct = [];
+                    for( var i = 1; i <= 3; i++ ){
+                        var channel = m[ i ];
+
+                        if( channel[ channel.length - 1 ] === '%' ){
+                            isPct[ i ] = true;
+                        }
+                        channel = parseFloat( channel );
+
+                        if( isPct[ i ] ){
+                            channel = channel / 100 * 255; // normalise to [0, 255]
+                        }
+
+                        if( channel < 0 || channel > 255 ){ return; } // invalid channel value
+
+                        ret.push( Math.floor( channel ) );
+                    }
+
+                    var atLeastOneIsPct = isPct[1] || isPct[2] || isPct[3];
+                    var allArePct = isPct[1] && isPct[2] && isPct[3];
+                    if( atLeastOneIsPct && !allArePct ){ return; } // must all be percent values if one is
+
+                    var alpha = m[4];
+                    if( alpha !== undefined ){
+                        alpha = parseFloat( alpha );
+
+                        if( alpha < 0 || alpha > 1 ){ return; } // invalid alpha value
+
+                        ret.push( alpha );
+                    }
+                }
+
+                return ret;
+            },
+
+            colorname2tuple: function( color ){
+                return this.colors[ color.toLowerCase() ];
+            },
+
+            color2tuple: function( color ){
+                return ( is.array( color ) ? color : null )
+                    || this.colorname2tuple( color )
+                    || this.hex2tuple( color )
+                    || this.rgb2tuple( color )
+                    || this.hsl2tuple( color );
+            },
+
+            colors: {
+                // special colour names
+                transparent: [0, 0, 0, 0], // NB alpha === 0
+
+                // regular colours
+                aliceblue: [ 240, 248, 255 ],
+                antiquewhite: [ 250, 235, 215 ],
+                aqua: [0, 255, 255 ],
+                aquamarine: [ 127, 255, 212 ],
+                azure: [ 240, 255, 255 ],
+                beige: [ 245, 245, 220 ],
+                bisque: [ 255, 228, 196 ],
+                black: [0, 0, 0],
+                blanchedalmond: [ 255, 235, 205 ],
+                blue: [0, 0, 255 ],
+                blueviolet: [ 138, 43, 226 ],
+                brown: [ 165, 42, 42 ],
+                burlywood: [ 222, 184, 135 ],
+                cadetblue: [ 95, 158, 160 ],
+                chartreuse: [ 127, 255, 0],
+                chocolate: [ 210, 105, 30 ],
+                coral: [ 255, 127, 80 ],
+                cornflowerblue: [ 100, 149, 237 ],
+                cornsilk: [ 255, 248, 220 ],
+                crimson: [ 220, 20, 60 ],
+                cyan: [0, 255, 255 ],
+                darkblue: [0, 0, 139 ],
+                darkcyan: [0, 139, 139 ],
+                darkgoldenrod: [ 184, 134, 11 ],
+                darkgray: [ 169, 169, 169 ],
+                darkgreen: [0, 100, 0],
+                darkgrey: [ 169, 169, 169 ],
+                darkkhaki: [ 189, 183, 107 ],
+                darkmagenta: [ 139, 0, 139 ],
+                darkolivegreen: [ 85, 107, 47 ],
+                darkorange: [ 255, 140, 0],
+                darkorchid: [ 153, 50, 204 ],
+                darkred: [ 139, 0, 0],
+                darksalmon: [ 233, 150, 122 ],
+                darkseagreen: [ 143, 188, 143 ],
+                darkslateblue: [ 72, 61, 139 ],
+                darkslategray: [ 47, 79, 79 ],
+                darkslategrey: [ 47, 79, 79 ],
+                darkturquoise: [0, 206, 209 ],
+                darkviolet: [ 148, 0, 211 ],
+                deeppink: [ 255, 20, 147 ],
+                deepskyblue: [0, 191, 255 ],
+                dimgray: [ 105, 105, 105 ],
+                dimgrey: [ 105, 105, 105 ],
+                dodgerblue: [ 30, 144, 255 ],
+                firebrick: [ 178, 34, 34 ],
+                floralwhite: [ 255, 250, 240 ],
+                forestgreen: [ 34, 139, 34 ],
+                fuchsia: [ 255, 0, 255 ],
+                gainsboro: [ 220, 220, 220 ],
+                ghostwhite: [ 248, 248, 255 ],
+                gold: [ 255, 215, 0],
+                goldenrod: [ 218, 165, 32 ],
+                gray: [ 128, 128, 128 ],
+                grey: [ 128, 128, 128 ],
+                green: [0, 128, 0],
+                greenyellow: [ 173, 255, 47 ],
+                honeydew: [ 240, 255, 240 ],
+                hotpink: [ 255, 105, 180 ],
+                indianred: [ 205, 92, 92 ],
+                indigo: [ 75, 0, 130 ],
+                ivory: [ 255, 255, 240 ],
+                khaki: [ 240, 230, 140 ],
+                lavender: [ 230, 230, 250 ],
+                lavenderblush: [ 255, 240, 245 ],
+                lawngreen: [ 124, 252, 0],
+                lemonchiffon: [ 255, 250, 205 ],
+                lightblue: [ 173, 216, 230 ],
+                lightcoral: [ 240, 128, 128 ],
+                lightcyan: [ 224, 255, 255 ],
+                lightgoldenrodyellow: [ 250, 250, 210 ],
+                lightgray: [ 211, 211, 211 ],
+                lightgreen: [ 144, 238, 144 ],
+                lightgrey: [ 211, 211, 211 ],
+                lightpink: [ 255, 182, 193 ],
+                lightsalmon: [ 255, 160, 122 ],
+                lightseagreen: [ 32, 178, 170 ],
+                lightskyblue: [ 135, 206, 250 ],
+                lightslategray: [ 119, 136, 153 ],
+                lightslategrey: [ 119, 136, 153 ],
+                lightsteelblue: [ 176, 196, 222 ],
+                lightyellow: [ 255, 255, 224 ],
+                lime: [0, 255, 0],
+                limegreen: [ 50, 205, 50 ],
+                linen: [ 250, 240, 230 ],
+                magenta: [ 255, 0, 255 ],
+                maroon: [ 128, 0, 0],
+                mediumaquamarine: [ 102, 205, 170 ],
+                mediumblue: [0, 0, 205 ],
+                mediumorchid: [ 186, 85, 211 ],
+                mediumpurple: [ 147, 112, 219 ],
+                mediumseagreen: [ 60, 179, 113 ],
+                mediumslateblue: [ 123, 104, 238 ],
+                mediumspringgreen: [0, 250, 154 ],
+                mediumturquoise: [ 72, 209, 204 ],
+                mediumvioletred: [ 199, 21, 133 ],
+                midnightblue: [ 25, 25, 112 ],
+                mintcream: [ 245, 255, 250 ],
+                mistyrose: [ 255, 228, 225 ],
+                moccasin: [ 255, 228, 181 ],
+                navajowhite: [ 255, 222, 173 ],
+                navy: [0, 0, 128 ],
+                oldlace: [ 253, 245, 230 ],
+                olive: [ 128, 128, 0],
+                olivedrab: [ 107, 142, 35 ],
+                orange: [ 255, 165, 0],
+                orangered: [ 255, 69, 0],
+                orchid: [ 218, 112, 214 ],
+                palegoldenrod: [ 238, 232, 170 ],
+                palegreen: [ 152, 251, 152 ],
+                paleturquoise: [ 175, 238, 238 ],
+                palevioletred: [ 219, 112, 147 ],
+                papayawhip: [ 255, 239, 213 ],
+                peachpuff: [ 255, 218, 185 ],
+                peru: [ 205, 133, 63 ],
+                pink: [ 255, 192, 203 ],
+                plum: [ 221, 160, 221 ],
+                powderblue: [ 176, 224, 230 ],
+                purple: [ 128, 0, 128 ],
+                red: [ 255, 0, 0],
+                rosybrown: [ 188, 143, 143 ],
+                royalblue: [ 65, 105, 225 ],
+                saddlebrown: [ 139, 69, 19 ],
+                salmon: [ 250, 128, 114 ],
+                sandybrown: [ 244, 164, 96 ],
+                seagreen: [ 46, 139, 87 ],
+                seashell: [ 255, 245, 238 ],
+                sienna: [ 160, 82, 45 ],
+                silver: [ 192, 192, 192 ],
+                skyblue: [ 135, 206, 235 ],
+                slateblue: [ 106, 90, 205 ],
+                slategray: [ 112, 128, 144 ],
+                slategrey: [ 112, 128, 144 ],
+                snow: [ 255, 250, 250 ],
+                springgreen: [0, 255, 127 ],
+                steelblue: [ 70, 130, 180 ],
+                tan: [ 210, 180, 140 ],
+                teal: [0, 128, 128 ],
+                thistle: [ 216, 191, 216 ],
+                tomato: [ 255, 99, 71 ],
+                turquoise: [ 64, 224, 208 ],
+                violet: [ 238, 130, 238 ],
+                wheat: [ 245, 222, 179 ],
+                white: [ 255, 255, 255 ],
+                whitesmoke: [ 245, 245, 245 ],
+                yellow: [ 255, 255, 0],
+                yellowgreen: [ 154, 205, 50 ]
+            }
+        };
+
+    },{"../is":83}],100:[function(_dereq_,module,exports){
+        'use strict';
+
+        var is = _dereq_( '../is' );
+        var math = _dereq_( '../math' );
+
+        var util = {
+
+            trueify: function(){ return true; },
+
+            falsify: function(){ return false; },
+
+            zeroify: function(){ return 0; },
+
+            noop: function(){},
+
+            /* jshint ignore:start */
+            error: function( msg ){
+                if( console.error ){
+                    console.error.apply( console, arguments );
+
+                    if( console.trace ){ console.trace(); }
+                } else {
+                    console.log.apply( console, arguments );
+
+                    if( console.trace ){ console.trace(); }
+                }
+            },
+            /* jshint ignore:end */
+
+            clone: function( obj ){
+                return this.extend( {}, obj );
+            },
+
+            // gets a shallow copy of the argument
+            copy: function( obj ){
+                if( obj == null ){
+                    return obj;
+                } if( is.array( obj ) ){
+                    return obj.slice();
+                } else if( is.plainObject( obj ) ){
+                    return this.clone( obj );
+                } else {
+                    return obj;
+                }
+            },
+
+            uuid: function(
+                a,b                // placeholders
+            ){
+                for(               // loop :)
+                    b=a='';        // b - result , a - numeric variable
+                    a++<36;        //
+                    b+=a*51&52  // if "a" is not 9 or 14 or 19 or 24
+                        ?  //  return a random number or 4
+                        (
+                            a^15      // if "a" is not 15
+                                ?      // genetate a random number from 0 to 15
+                                8^Math.random()*
+                                (a^20?16:4)  // unless "a" is 20, in which case a random number from 8 to 11
+                                :
+                                4            //  otherwise 4
+                        ).toString(16)
+                        :
+                        '-'            //  in other cases (if "a" is 9,14,19,24) insert "-"
+                );
+                return b;
+            }
+
+        };
+
+        util.makeBoundingBox = math.makeBoundingBox.bind( math );
+
+        util._staticEmptyObject = {};
+
+        util.staticEmptyObject = function(){
+            return util._staticEmptyObject;
+        };
+
+        util.extend = Object.assign != null ? Object.assign : function( tgt ){
+            var args = arguments;
+
+            for( var i = 1; i < args.length; i++ ){
+                var obj = args[ i ];
+
+                for( var k in obj ){
+                    tgt[ k ] = obj[ k ];
+                }
+            }
+
+            return tgt;
+        };
+
+        util.default = function( val, def ){
+            if( val === undefined ){
+                return def;
+            } else {
+                return val;
+            }
+        };
+
+        util.removeFromArray = function( arr, ele, manyCopies ){
+            for( var i = arr.length; i >= 0; i-- ){
+                if( arr[i] === ele ){
+                    arr.splice( i, 1 );
+
+                    if( !manyCopies ){ break; }
+                }
+            }
+        };
+
+        util.clearArray = function( arr ){
+            arr.splice( 0, arr.length );
+        };
+
+        util.getPrefixedProperty = function( obj, propName, prefix ){
+            if( prefix ){
+                propName = this.prependCamel( prefix, propName ); // e.g. (labelWidth, source) => sourceLabelWidth
+            }
+
+            return obj[ propName ];
+        };
+
+        util.setPrefixedProperty = function( obj, propName, prefix, value ){
+            if( prefix ){
+                propName = this.prependCamel( prefix, propName ); // e.g. (labelWidth, source) => sourceLabelWidth
+            }
+
+            obj[ propName ] = value;
+        };
+
+        [
+            _dereq_( './colors' ),
+            _dereq_( './maps' ),
+            { memoize: _dereq_( './memoize' ) },
+            _dereq_( './regex' ),
+            _dereq_( './strings' ),
+            _dereq_( './timing' )
+        ].forEach( function( req ){
+            util.extend( util, req );
+        } );
+
+        module.exports = util;
+
+    },{"../is":83,"../math":85,"./colors":99,"./maps":101,"./memoize":102,"./regex":103,"./strings":104,"./timing":105}],101:[function(_dereq_,module,exports){
+        'use strict';
+
+        var is = _dereq_( '../is' );
+
+        module.exports = {
+            // has anything been set in the map
+            mapEmpty: function( map ){
+                var empty = true;
+
+                if( map != null ){
+                    for( var i in map ){ // jshint ignore:line
+                        empty = false;
+                        break;
+                    }
+                }
+
+                return empty;
+            },
+
+            // pushes to the array at the end of a map (map may not be built)
+            pushMap: function( options ){
+                var array = this.getMap( options );
+
+                if( array == null ){ // if empty, put initial array
+                    this.setMap( this.extend( {}, options, {
+                        value: [ options.value ]
+                    } ) );
+                } else {
+                    array.push( options.value );
+                }
+            },
+
+            // sets the value in a map (map may not be built)
+            setMap: function( options ){
+                var obj = options.map;
+                var key;
+                var keys = options.keys;
+                var l = keys.length;
+
+                for( var i = 0; i < l; i++ ){
+                    var key = keys[ i ];
+
+                    if( is.plainObject( key ) ){
+                        this.error( 'Tried to set map with object key' );
+                    }
+
+                    if( i < keys.length - 1 ){
+
+                        // extend the map if necessary
+                        if( obj[ key ] == null ){
+                            obj[ key ] = {};
+                        }
+
+                        obj = obj[ key ];
+                    } else {
+                        // set the value
+                        obj[ key ] = options.value;
+                    }
+                }
+            },
+
+            // gets the value in a map even if it's not built in places
+            getMap: function( options ){
+                var obj = options.map;
+                var keys = options.keys;
+                var l = keys.length;
+
+                for( var i = 0; i < l; i++ ){
+                    var key = keys[ i ];
+
+                    if( is.plainObject( key ) ){
+                        this.error( 'Tried to get map with object key' );
+                    }
+
+                    obj = obj[ key ];
+
+                    if( obj == null ){
+                        return obj;
+                    }
+                }
+
+                return obj;
+            },
+
+            // deletes the entry in the map
+            deleteMap: function( options ){
+                var obj = options.map;
+                var keys = options.keys;
+                var l = keys.length;
+                var keepChildren = options.keepChildren;
+
+                for( var i = 0; i < l; i++ ){
+                    var key = keys[ i ];
+
+                    if( is.plainObject( key ) ){
+                        this.error( 'Tried to delete map with object key' );
+                    }
+
+                    var lastKey = i === options.keys.length - 1;
+                    if( lastKey ){
+
+                        if( keepChildren ){ // then only delete child fields not in keepChildren
+                            for( var child in obj ){
+                                if( !keepChildren[ child ] ){
+                                    obj[ child ] = undefined;
+                                }
+                            }
+                        } else {
+                            obj[ key ] = undefined;
+                        }
+
+                    } else {
+                        obj = obj[ key ];
+                    }
+                }
+            }
+        };
+
+    },{"../is":83}],102:[function(_dereq_,module,exports){
+        'use strict';
+
+        module.exports = function memoize( fn, keyFn ){
+            var cache = {};
+
+            if( !keyFn ){
+                keyFn = function(){
+                    if( arguments.length === 1 ){
+                        return arguments[0];
+                    } else if( arguments.length === 0 ){
+                        return 'undefined';
+                    }
+
+                    var args = [];
+
+                    for( var i = 0; i < arguments.length; i++ ){
+                        args.push( arguments[ i ] );
+                    }
+
+                    return args.join( '$' );
+                };
+            }
+
+            return function memoizedFn(){
+                var self = this;
+                var args = arguments;
+                var ret;
+                var k = keyFn.apply( self, args );
+
+                if( !(ret = cache[ k ]) ){
+                    ret = cache[ k ] = fn.apply( self, args );
+                }
+
+                return ret;
+            };
+        };
+
+    },{}],103:[function(_dereq_,module,exports){
+        'use strict';
+
+        var number = '(?:[-+]?(?:(?:\\d+|\\d*\\.\\d+)(?:[Ee][+-]?\\d+)?))';
+
+        var rgba = 'rgb[a]?\\((' + number + '[%]?)\\s*,\\s*(' + number + '[%]?)\\s*,\\s*(' + number + '[%]?)(?:\\s*,\\s*(' + number + '))?\\)';
+        var rgbaNoBackRefs = 'rgb[a]?\\((?:' + number + '[%]?)\\s*,\\s*(?:' + number + '[%]?)\\s*,\\s*(?:' + number + '[%]?)(?:\\s*,\\s*(?:' + number + '))?\\)';
+
+        var hsla = 'hsl[a]?\\((' + number + ')\\s*,\\s*(' + number + '[%])\\s*,\\s*(' + number + '[%])(?:\\s*,\\s*(' + number + '))?\\)';
+        var hslaNoBackRefs = 'hsl[a]?\\((?:' + number + ')\\s*,\\s*(?:' + number + '[%])\\s*,\\s*(?:' + number + '[%])(?:\\s*,\\s*(?:' + number + '))?\\)';
+
+        var hex3 = '\\#[0-9a-fA-F]{3}';
+        var hex6 = '\\#[0-9a-fA-F]{6}';
+
+        module.exports = {
+            regex: {
+                number: number,
+                rgba: rgba,
+                rgbaNoBackRefs: rgbaNoBackRefs,
+                hsla: hsla,
+                hslaNoBackRefs: hslaNoBackRefs,
+                hex3: hex3,
+                hex6: hex6
+            }
+        };
+
+    },{}],104:[function(_dereq_,module,exports){
+        'use strict';
+
+        var memoize = _dereq_( './memoize' );
+        var is = _dereq_( '../is' );
+
+        module.exports = {
+
+            camel2dash: memoize( function( str ){
+                return str.replace( /([A-Z])/g, function( v ){
+                    return '-' + v.toLowerCase();
+                } );
+            } ),
+
+            dash2camel: memoize( function( str ){
+                return str.replace( /(-\w)/g, function( v ){
+                    return v[1].toUpperCase();
+                } );
+            } ),
+
+            prependCamel: memoize( function( prefix, str ){
+                return prefix + str[0].toUpperCase() + str.substring(1);
+            }, function( prefix, str ){
+                return prefix + '$' + str;
+            } ),
+
+            capitalize: function( str ){
+                if( is.emptyString( str ) ){
+                    return str;
+                }
+
+                return str.charAt( 0 ).toUpperCase() + str.substring( 1 );
+            }
+
+        };
+
+    },{"../is":83,"./memoize":102}],105:[function(_dereq_,module,exports){
+        'use strict';
+
+        var window = _dereq_( '../window' );
+        var is = _dereq_( '../is' );
+        var performance = window ? window.performance : null;
+
+        var util = {};
+
+        var raf = !window ? null : ( window.requestAnimationFrame || window.mozRequestAnimationFrame ||
+            window.webkitRequestAnimationFrame || window.msRequestAnimationFrame );
+
+        raf = raf || function( fn ){
+            if( fn ){
+                setTimeout( function(){
+                    fn( pnow() );
+                }, 1000 / 60 );
+            }
+        };
+
+        util.requestAnimationFrame = function( fn ){
+            raf( fn );
+        };
+
+        var pnow = performance && performance.now ? function(){ return performance.now(); } : function(){ return Date.now(); };
+
+        util.performanceNow = pnow;
+
+// ported lodash throttle function
+        util.throttle = function( func, wait, options ){
+            var leading = true,
+                trailing = true;
+
+            if( options === false ){
+                leading = false;
+            } else if( is.plainObject( options ) ){
+                leading = 'leading' in options ? options.leading : leading;
+                trailing = 'trailing' in options ? options.trailing : trailing;
+            }
+            options = options || {};
+            options.leading = leading;
+            options.maxWait = wait;
+            options.trailing = trailing;
+
+            return util.debounce( func, wait, options );
+        };
+
+        util.now = function(){
+            return Date.now();
+        };
+
+        util.debounce = function( func, wait, options ){ // ported lodash debounce function
+            var util = this;
+            var args,
+                maxTimeoutId,
+                result,
+                stamp,
+                thisArg,
+                timeoutId,
+                trailingCall,
+                lastCalled = 0,
+                maxWait = false,
+                trailing = true;
+
+            if( !is.fn( func ) ){
+                return;
+            }
+            wait = Math.max( 0, wait ) || 0;
+            if( options === true ){
+                var leading = true;
+                trailing = false;
+            } else if( is.plainObject( options ) ){
+                leading = options.leading;
+                maxWait = 'maxWait' in options && (Math.max( wait, options.maxWait ) || 0);
+                trailing = 'trailing' in options ? options.trailing : trailing;
+            }
+            var delayed = function(){
+                var remaining = wait - (util.now() - stamp);
+                if( remaining <= 0 ){
+                    if( maxTimeoutId ){
+                        clearTimeout( maxTimeoutId );
+                    }
+                    var isCalled = trailingCall;
+                    maxTimeoutId = timeoutId = trailingCall = undefined;
+                    if( isCalled ){
+                        lastCalled = util.now();
+                        result = func.apply( thisArg, args );
+                        if( !timeoutId && !maxTimeoutId ){
+                            args = thisArg = null;
+                        }
+                    }
+                } else {
+                    timeoutId = setTimeout( delayed, remaining );
+                }
+            };
+
+            var maxDelayed = function(){
+                if( timeoutId ){
+                    clearTimeout( timeoutId );
+                }
+                maxTimeoutId = timeoutId = trailingCall = undefined;
+                if( trailing || (maxWait !== wait) ){
+                    lastCalled = util.now();
+                    result = func.apply( thisArg, args );
+                    if( !timeoutId && !maxTimeoutId ){
+                        args = thisArg = null;
+                    }
+                }
+            };
+
+            return function(){
+                args = arguments;
+                stamp = util.now();
+                thisArg = this;
+                trailingCall = trailing && (timeoutId || !leading);
+
+                if( maxWait === false ){
+                    var leadingCall = leading && !timeoutId;
+                } else {
+                    if( !maxTimeoutId && !leading ){
+                        lastCalled = stamp;
+                    }
+                    var remaining = maxWait - (stamp - lastCalled),
+                        isCalled = remaining <= 0;
+
+                    if( isCalled ){
+                        if( maxTimeoutId ){
+                            maxTimeoutId = clearTimeout( maxTimeoutId );
+                        }
+                        lastCalled = stamp;
+                        result = func.apply( thisArg, args );
+                    }
+                    else if( !maxTimeoutId ){
+                        maxTimeoutId = setTimeout( maxDelayed, remaining );
+                    }
+                }
+                if( isCalled && timeoutId ){
+                    timeoutId = clearTimeout( timeoutId );
+                }
+                else if( !timeoutId && wait !== maxWait ){
+                    timeoutId = setTimeout( delayed, wait );
+                }
+                if( leadingCall ){
+                    isCalled = true;
+                    result = func.apply( thisArg, args );
+                }
+                if( isCalled && !timeoutId && !maxTimeoutId ){
+                    args = thisArg = null;
+                }
+                return result;
+            };
+        };
+
+        module.exports = util;
+
+    },{"../is":83,"../window":107}],106:[function(_dereq_,module,exports){
+        module.exports="snapshot-564e9ad5ee-1466537151217"
+    },{}],107:[function(_dereq_,module,exports){
+        module.exports = ( typeof window === 'undefined' ? null : window );
+
+    },{}]},{},[82])(82)
+});
+

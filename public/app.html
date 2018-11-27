@@ -75,6 +75,23 @@
 <!-----------------------------------------Main Js----------------------------------------->
 <script type="text/javascript" src="javascripts/main/app.js"></script>
 <script>
+    $(document).ready(function () {
+        $('#render').click( function() {
+            newGraphics();
+        });
+        $('#dragSwitch').on('change', function () {
+            if (this.checked) {
+                state.isDragSelected = true;
+            } else {
+                state.isDragSelected = false;
+            }
+        });
+    });
+
+    var metro = new Metro(d3.select("#myCanvas"));
+    console.log(metro.graphics);
+
+
     var CanvasToBMP = {
         /**
          * Convert a canvas element to ArrayBuffer containing a BMP file
@@ -173,22 +190,13 @@
     };
 
     let oCanvas = document.getElementById('myCanvas');
-    // var context = oCanvas.getContext('2d');
-    // context.beginPath();
-    // context.rect(150, 200, 100, 50);
-    // context.fillStyle = 'yellow';
-    // context.fill();
-    // context.lineWidth = 7;
-    // context.strokeStyle = 'black';
-    // context.stroke();
-
     // var strDataURI = oCanvas.toDataURL('image/bmp');
     var strDataURI = CanvasToBMP.toDataURL(oCanvas);
     var canvas = document.getElementById('newCanvas');
     var context = canvas.getContext('2d');
 
     function onDownload() {
-        console.log(strDataURI);
+        // console.log(strDataURI);
         alert('ready to print');
         oCanvas.toBlob(function(blob) {
             var imageObj = new Image(),
@@ -200,6 +208,7 @@
                 URL.revokeObjectURL(url);
             };
             imageObj.src = url;
+            console.log(url);
             $('#img').append(`<img src="${url}"/>`);
         });
         // Canvas2Image.saveAsPNG(oCanvas, true);

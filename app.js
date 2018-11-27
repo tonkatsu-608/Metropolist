@@ -42,7 +42,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
     secret: 'metro',
     saveUninitialized: false,
-    resave: false,
+    resave: false
 }));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(passport.initialize());
@@ -50,7 +50,7 @@ app.use(passport.session());
 app.use(cors(corsOptions));
 
 app.use('/', indexRouter);
-app.use('/auth', auth);
+app.use('/metro/auth', auth);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

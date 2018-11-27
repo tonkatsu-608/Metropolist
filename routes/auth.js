@@ -11,7 +11,7 @@ module.exports = function (passport) {
             password = body.password;
         User.findByEmail(email, function (err, doc) {
             if (err) {
-                res.status(500).send({msg: 'error occur in update'});
+                res.status(500).send({msg: 'error occur in finding user'});
             } else {
                 if (doc) {
                     res.status(500).send('Email already exists');
@@ -35,8 +35,8 @@ module.exports = function (passport) {
         });
     });
 
-    router.post('/login', passport.authenticate('local', { failureRedirect: '/failure', session: false }), function (req, res) {
-        res.status(200).json({msg: 'log in successfully', user: req.user});
+    router.post('/login', passport.authenticate('local', { failureRedirect: '/failure' }), function (req, res) {
+        res.status(200).json({msg: 'log in successfully', user: req.session.passport.user});
     });
 
     return router;

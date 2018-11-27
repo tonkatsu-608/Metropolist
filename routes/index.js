@@ -1,10 +1,15 @@
 const express = require('express');
 const router = express.Router();
+const Map = require('../db/Map');
 const User = require('../db/User');
 
 let loggedIn = function (req, res, next) {
     if(req.isAuthenticated()) {
         next();
+    } else {
+        return res.status(401).json({
+            error: 'User not authenticated'
+        })
     }
 }
 
@@ -17,7 +22,23 @@ router.get('/failure', function(req, res, next) {
     res.status(500).json({ msg : 'Invalid email or password' });
 });
 
-router.put('/metro/api/v1/update', function (req, res) {
+router.post('/metro/api/v1/logout', function (req, res) {
+    req.logout();
+});
+
+router.get('/metro/api/v1/users', function(req, res, next) {
+    User.findAll( function(error, users) {
+        if( error ) {
+            res.status(500).json( error);
+        } else {
+            res.json( users.map(function (user) {
+                return new User().transformUser(user);
+            }));
+        }
+    });
+});
+
+router.put('/metro/api/v1/user/update', function (req, res) {
     let user = req.body;
     User.update(user, function (err, doc) {
         if (err) {
@@ -30,6 +51,24 @@ router.put('/metro/api/v1/update', function (req, res) {
     });
 });
 
+router.post('/metro/api/v1/map/create', function (req, res, next) {
+    let map = req.body;
+    console.log(map);
+    console.log(req.user);
+    let tempMap = new Map();
+    tempMap.uid = map.uid;
+    tempMap.name = map.name;
+    tempMap.img = map.img;
+    tempMap.data = map.data;
+    tempMap.save(function (err, map) {
+        if(err) {
+            res.status(500).send({ error : 'db error' });
+        }else{
+            res.status(200).json({ msg : 'create map successfully' });
+        }
+    });
+});
+
 router.get('/app', function(req, res, next) {
     res.sendFile('app.html', {root: __dirname + "/../public"});
 });
@@ -37,26 +76,5 @@ router.get('/app', function(req, res, next) {
 router.get('/todolist', function(req, res, next) {
     res.sendFile('todolist.html', {root: __dirname + "/../public"});
 });
-
-router.get('/api/users', function(req, res, next) {
-    User.findAll( function(error, users) {
-        if( error ) {
-            res.status(500).json( error);
-        } else {
-            res.json( users.map(function (user) {
-                return new User().transformUser(user);
-            }));
-        }
-    });
-});
-
-router.get('/api/maps', function (req, res, next) {
-    // let uid = req.params.uid;
-});
-
-// router.get('/logout', function (req, res) {
-//     req.logout();
-//     res.redirect('/login');
-// });
 
 module.exports = router;
