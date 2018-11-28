@@ -1,6 +1,5 @@
 var mongoose = require('mongoose');
 var schema = mongoose.Schema;
-var bcrypt = require('bcrypt-nodejs');
 
 var mapSchema = new schema({
     uid: {
@@ -15,9 +14,21 @@ var mapSchema = new schema({
         type: String,
         required: true
     },
-    data: {
-        type: Object,
+    sites: {
+        type: Array,
         required: true
+    },
+    clusters: {
+        type: Array,
+        required: true
+    },
+    createDate: {
+        type: String,
+        required: true
+    },
+    editDate: {
+        type: String,
+        required: false
     }
 });
 
@@ -27,7 +38,11 @@ mapSchema.methods.transformMap = function ( map ) {
         uid: map.uid,
         name: map.name,
         img: map.img,
-        data: map.data
+        sites: map.sites,
+        clusters: map.clusters,
+        createDate: map.createDate,
+        editDate: map.editDate
+
     };
 }
 
@@ -43,13 +58,22 @@ mapSchema.statics.findAll = function (cb) {
     return this.find(cb);
 }
 
+mapSchema.statics.findAllByUid = function (cb) {
+    return this.findOne( { uid: uid }, cb );
+
+    return this.find(cb);
+}
+
 mapSchema.statics.update = function (map, cb) {
     return this.findByUidAndUpdate(map.id,
         { $set: {
                 uid: map.uid,
                 name: map.name,
                 img: map.img,
-                data: map.data
+                sites: map.sites,
+                clusters: map.clusters,
+                createDate: map.createDate,
+                editDate: map.editDate
         }}, { new: true }, cb);
 }
 

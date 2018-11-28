@@ -23,10 +23,10 @@ module.exports = function (passport) {
                     tempUser.password = tempUser.hashPassword(password);
                     tempUser.role = "user";
                     tempUser.enabled = true;
-                    tempUser.save(function (err, user) {
+                    tempUser.save(function (err) {
                         if(err) {
                             res.status(500).send('db error');
-                        }else{
+                        } else {
                             res.status(200).json({ msg : 'sign up successfully' });
                         }
                     });

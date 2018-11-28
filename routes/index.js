@@ -53,18 +53,42 @@ router.put('/metro/api/v1/user/update', function (req, res) {
 
 router.post('/metro/api/v1/map/create', function (req, res, next) {
     let map = req.body;
-    console.log(map);
-    console.log(req.user);
-    let tempMap = new Map();
-    tempMap.uid = map.uid;
-    tempMap.name = map.name;
-    tempMap.img = map.img;
-    tempMap.data = map.data;
-    tempMap.save(function (err, map) {
-        if(err) {
-            res.status(500).send({ error : 'db error' });
-        }else{
-            res.status(200).json({ msg : 'create map successfully' });
+    Map.findByName(map.name, function (err, doc) {
+        if (err) {
+            res.status(500).send({msg: 'error occur in finding user'});
+        } else {
+            if (doc) {
+                res.status(500).send({ error: map.name + ' already exists' });
+            }else{
+                let tempMap = new Map();
+                tempMap.uid = map.uid;
+                tempMap.img = map.img;
+                tempMap.name = map.name;
+                tempMap.sites = map.sites;
+                tempMap.clusters = map.clusters;
+                tempMap.createDate = map.createDate;
+                tempMap.editDate = map.editDate;
+                tempMap.save(function (err, map) {
+                    if(err) {
+                        res.status(500).send({ error : 'db error' });
+                    }else{
+                        res.status(200).send({ msg : 'create map successfully' });
+                    }
+                });
+            }
+        }
+    });
+});
+
+router.get('/metro/api/v1/maps', function(req, res, next) {
+    console.log("maps");
+    Map.findAll( function(error, users) {
+        if( error ) {
+            res.status(500).json( error);
+        } else {
+            res.json( users.map(function (map) {
+                return new Map().transformMap(map);
+            }));
         }
     });
 });
