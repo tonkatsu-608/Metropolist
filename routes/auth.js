@@ -36,7 +36,7 @@ module.exports = function (passport) {
     });
 
     router.post('/login', passport.authenticate('local', { failureRedirect: '/failure' }), function (req, res) {
-        res.status(200).json({msg: 'log in successfully', user: req.session.passport.user});
+        res.status(200).json({msg: 'log in successfully', user: new User().transformUser(req.session.passport.user)});
     });
 
     return router;

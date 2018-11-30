@@ -58,23 +58,23 @@ mapSchema.statics.findAll = function (cb) {
     return this.find(cb);
 }
 
-mapSchema.statics.findAllByUid = function (cb) {
-    return this.findOne( { uid: uid }, cb );
-
-    return this.find(cb);
+mapSchema.statics.findAllByUid = function (uid, cb) {
+    return this.find( { uid: uid }, cb );
 }
 
 mapSchema.statics.update = function (map, cb) {
-    return this.findByUidAndUpdate(map.id,
+    return this.findOneAndUpdate(map.id,
         { $set: {
-                uid: map.uid,
                 name: map.name,
                 img: map.img,
                 sites: map.sites,
                 clusters: map.clusters,
-                createDate: map.createDate,
                 editDate: map.editDate
         }}, { new: true }, cb);
+}
+
+mapSchema.statics.delete = function (id, cb) {
+    return this.findByIdAndRemove( id, cb );
 }
 
 module.exports = mongoose.model('maps', mapSchema, 'maps');
