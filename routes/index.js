@@ -19,7 +19,7 @@ router.get('/', function(req, res, next) {
 });
 
 /*=====================================================================================================
-                                            User Api
+                                            User API
 ======================================================================================================*/
 router.get('/failure', function(req, res, next) {
     res.status(500).json({ msg : 'Invalid email or password' });
@@ -55,7 +55,7 @@ router.put('/metro/api/v1/user/update', function (req, res) {
 });
 
 /*=====================================================================================================
-                                            Map Api
+                                            Map API
 ======================================================================================================*/
 router.get('/metro/api/v1/maps/:uid', function(req, res, next) {
     let uid = req.params.uid;
@@ -66,38 +66,37 @@ router.get('/metro/api/v1/maps/:uid', function(req, res, next) {
             if( err ) {
                 res.status(500).send({ msg: 'error occur in finding maps for specific user'});
             } else {
-                res.json( users.map(function (map) {
+                res.status(200).json( users.map(function (map) {
                     return new Map().transformMap(map);
                 }));
             }
         });
 });
 
-router.post('/metro/api/v1/map/save', function (req, res, next) {
-    let map = req.body;
-    Map.findByName(map.name, function (err, doc) {
+router.get('/metro/api/v1/map/:id', function(req, res, next) {
+    let id = req.params.id;
+    Map.findOne({_id: id}, function (err, map) {
         if( err ) {
-            res.status(500).send({msg: 'error occur in finding map'});
+            res.status(404).send({ error: 'no such map' });
         } else {
-            if( doc ) {
-                res.status(500).send({ error: map.name + ' already exists' });
-            }else{
-                let tempMap = new Map();
-                tempMap.uid = map.uid;
-                tempMap.img = map.img;
-                tempMap.name = map.name;
-                tempMap.sites = map.sites;
-                tempMap.clusters = map.clusters;
-                tempMap.createDate = map.createDate;
-                tempMap.editDate = map.editDate;
-                tempMap.save(function (err) {
-                    if( err ) {
-                        res.status(500).send({ error : 'error: no map name' });
-                    }else{
-                        res.status(200).send({ msg : 'create map successfully' });
-                    }
-                });
-            }
+            res.status(200).send(new Map().transformMap(map));
+        }
+    });
+});
+
+router.post('/metro/api/v1/map/create', function (req, res, next) {
+    let map = req.body;
+    let tempMap = new Map();
+    tempMap.uid = map.uid;
+    tempMap.img = map.img;
+    tempMap.name = map.name;
+    tempMap.createDate = map.createDate;
+    tempMap.editDate = map.editDate;
+    tempMap.save(function (err, doc) {
+        if( err ) {
+            res.status(500).send({ error : 'error occur in creating map' });
+        } else {
+            res.status(200).send(doc._id);
         }
     });
 });
@@ -106,7 +105,7 @@ router.put('/metro/api/v1/map/update', function (req, res, next) {
     let map = req.body;
     Map.update(map, function (err, doc) {
         if(err) {
-            res.status(500).send({msg: 'error occur in update map'});
+            res.status(404).send({msg: 'error: map did not find'});
         } else {
             if(doc) {
                 res.status(200).send({msg: 'update map successfully'});
@@ -119,10 +118,10 @@ router.delete('/metro/api/v1/map/delete/:id', function (req, res, next) {
     let id = req.params.id;
     Map.delete(id, function (err, doc) {
         if(err) {
-            res.status(500).send({msg: 'error occur in delete map'});
+            res.status(404).send({msg: 'map did not find'});
         } else {
             if(doc) {
-                res.status(200).send({msg: 'delete map successfully'});
+                res.status(204).send({msg: 'delete map successfully'});
             }
         }
     })

@@ -46,24 +46,12 @@ mapSchema.methods.transformMap = function ( map ) {
     };
 }
 
-mapSchema.statics.findByName = function( name, cb ) {
-    return this.findOne( { name: name }, cb );
-};
-
-mapSchema.statics.findByUid = function( uid, cb ) {
-    return this.findOne( { uid: uid }, cb );
-};
-
 mapSchema.statics.findAll = function (cb) {
     return this.find(cb);
 }
 
-mapSchema.statics.findAllByUid = function (uid, cb) {
-    return this.find( { uid: uid }, cb );
-}
-
 mapSchema.statics.update = function (map, cb) {
-    return this.findOneAndUpdate(map.id,
+    return this.findOneAndUpdate({ _id: map.id },
         { $set: {
                 name: map.name,
                 img: map.img,
