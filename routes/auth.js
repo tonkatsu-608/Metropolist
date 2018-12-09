@@ -14,7 +14,7 @@ module.exports = function (passport) {
                 res.status(500).send({msg: 'error occur in finding user'});
             } else {
                 if (doc) {
-                    res.status(500).send('Email already exists');
+                    res.status(409).send('Email already exists');
                 }else{
                     let tempUser = new User();
                     tempUser.email = email;

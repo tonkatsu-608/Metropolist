@@ -86,4 +86,11 @@ userSchema.statics.updateName = function (user, cb) {
             }}, { new: true }, cb);
 }
 
+userSchema.statics.updatePassword = function (user, cb) {
+    return this.findByIdAndUpdate(user.id,
+        { $set: {
+                password: user.password
+            }}, { new: true }, cb);
+}
+
 module.exports = mongoose.model('users', userSchema, 'users');
