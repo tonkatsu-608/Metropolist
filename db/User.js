@@ -7,6 +7,10 @@ var userSchema = new schema({
         type: String,
         required: true
     },
+    avatar: {
+        type: String,
+        required: false
+    },
     firstname: {
         type: String,
         required: true
@@ -64,7 +68,22 @@ userSchema.statics.update = function (user, cb) {
                 lastname: user.lastname,
                 role: user.role,
                 enabled: user.enabled
-        }}, { new: true }, cb);
+            }}, { new: true }, cb);
+}
+
+userSchema.statics.updateEmail = function (user, cb) {
+    return this.findByIdAndUpdate(user.id,
+        { $set: {
+                email: user.email
+            }}, { new: true }, cb);
+}
+
+userSchema.statics.updateName = function (user, cb) {
+    return this.findByIdAndUpdate(user.id,
+        { $set: {
+                firstname: user.firstname,
+                lastname: user.lastname,
+            }}, { new: true }, cb);
 }
 
 module.exports = mongoose.model('users', userSchema, 'users');

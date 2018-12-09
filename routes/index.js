@@ -41,7 +41,7 @@ router.get('/metro/api/v1/users', function(req, res, next) {
     });
 });
 
-router.put('/metro/api/v1/user/update', function (req, res) {
+router.put('/metro/api/v1/u/update', function (req, res) {
     let user = req.body;
     User.update(user, function (err, doc) {
         if( err ) {
@@ -73,7 +73,7 @@ router.get('/metro/api/v1/maps/:uid', function(req, res, next) {
         });
 });
 
-router.get('/metro/api/v1/map/:id', function(req, res, next) {
+router.get('/metro/api/v1/m/:id', function(req, res, next) {
     let id = req.params.id;
     Map.findOne({_id: id}, function (err, map) {
         if( err ) {
@@ -84,7 +84,7 @@ router.get('/metro/api/v1/map/:id', function(req, res, next) {
     });
 });
 
-router.post('/metro/api/v1/map/create', function (req, res, next) {
+router.post('/metro/api/v1/m/create', function (req, res, next) {
     let map = req.body;
     let tempMap = new Map();
     tempMap.uid = map.uid;
@@ -101,7 +101,7 @@ router.post('/metro/api/v1/map/create', function (req, res, next) {
     });
 });
 
-router.put('/metro/api/v1/map/update', function (req, res, next) {
+router.put('/metro/api/v1/m/update', function (req, res, next) {
     let map = req.body;
     Map.update(map, function (err, doc) {
         if(err) {
@@ -114,7 +114,7 @@ router.put('/metro/api/v1/map/update', function (req, res, next) {
     });
 });
 
-router.delete('/metro/api/v1/map/delete/:id', function (req, res, next) {
+router.delete('/metro/api/v1/m/delete/:id', function (req, res, next) {
     let id = req.params.id;
     Map.delete(id, function (err, doc) {
         if(err) {
@@ -125,6 +125,42 @@ router.delete('/metro/api/v1/map/delete/:id', function (req, res, next) {
             }
         }
     })
+});
+
+router.put('/metro/api/v1/u/update/email', function (req, res, next) {
+    let user = req.body;
+    User.findByEmail(user.email, function (err, doc) {
+        if (err) {
+            res.status(404).send({msg: 'error occur in finding user'});
+        } else {
+            if (doc) {
+                res.status(500).send({msg: 'Email already exists'});
+            }else{
+                User.updateEmail(user, function (err, user) {
+                    if(err) {
+                        res.status(404).send({msg: 'error: user did not find'});
+                    } else {
+                        if(user) {
+                            res.status(200).json(new User().transformUser(user));
+                        }
+                    }
+                });
+            }
+        }
+    });
+});
+
+router.put('/metro/api/v1/u/update/name', function (req, res, next) {
+    let user = req.body;
+    User.updateName(user, function (err, user) {
+        if(err) {
+            res.status(404).send({msg: 'error: user did not find'});
+        } else {
+            if(user) {
+                res.status(200).json(new User().transformUser(user));
+            }
+        }
+    });
 });
 
 router.get('/app', function(req, res, next) {
