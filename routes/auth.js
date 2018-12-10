@@ -14,7 +14,7 @@ module.exports = function (passport) {
                 res.status(500).send({msg: 'error occur in finding user'});
             } else {
                 if (doc) {
-                    res.status(409).send('Email already exists');
+                    res.status(409).send({msg: 'sorry, email already exists'});
                 }else{
                     let tempUser = new User();
                     tempUser.email = email;
@@ -36,7 +36,11 @@ module.exports = function (passport) {
     });
 
     router.post('/login', passport.authenticate('local', { failureRedirect: '/failure' }), function (req, res) {
-        res.status(200).json({msg: 'log in successfully', user: new User().transformUser(req.session.passport.user)});
+        if(req.session.passport.user.enabled === false) {
+            res.status(500).json({msg: 'your account was blocked, please email administrator to unlock: admin@admin'})
+        } else {
+            res.status(200).json({msg: 'log in successfully', user: new User().transformUser(req.session.passport.user)});
+        }
     });
 
     return router;

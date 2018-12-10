@@ -93,4 +93,11 @@ userSchema.statics.updatePassword = function (user, cb) {
             }}, { new: true }, cb);
 }
 
+userSchema.statics.updateEnabled = function (user, cb) {
+    return this.findByIdAndUpdate(user.id,
+        { $set: {
+                enabled: false
+            }}, { new: true }, cb);
+}
+
 module.exports = mongoose.model('users', userSchema, 'users');

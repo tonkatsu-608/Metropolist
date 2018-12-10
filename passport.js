@@ -16,7 +16,6 @@ module.exports = function (passport) {
                 if (err) { return done(err); }
                 if (!user) { return done(null, false); }
                 if (!user.verifyPassword(password, user.password)) { return done(null, false); }
-
                 return done(null, user);
             });
         }));

@@ -102,6 +102,20 @@ router.put('/metro/api/v1/u/update/password', function (req, res, next) {
         }
     });
 });
+
+router.put('/metro/api/v1/u/update/enabled', function (req, res, next) {
+    let user = req.body;
+    console.log(user);
+    User.updateEnabled(user, function (err, doc) {
+        if(err) {
+            res.status(404).send({msg: 'error: user did not find'});
+        } else {
+            if(doc) {
+                res.status(200).json(new User().transformUser(doc));
+            }
+        }
+    });
+});
 /*=====================================================================================================
                                             Map API
 ======================================================================================================*/
