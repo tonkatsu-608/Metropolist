@@ -1,19 +1,14 @@
 /*
-    polygons = [Polygon, Polygon, Polygon, ..., Polygon]
-    Polygon {
-        index: Int,
-        area: Float,
-        site: [x, y],
-        buildings: Int,
-        center: [x, y],
-        path: SVG path,
-        simulation: Object,
-        bounds: [width, height],
-        children: [Item, Item, Item, ..., Item],
-        vertices : [[x1, y1], [x2, y2], ..., [xn, yn]],
-        type : one of ['rich', 'medium', 'poor', 'plaza'],
-    }
     clusters = [Item, Item, Item, ..., Item]
+    polygons = [Polygon, Polygon, Polygon, ..., Polygon]
+========================================
+    Edge {
+        endpoint1: {x, y},
+        endpoint2: {x, y},
+        left: {x, y, index},
+        right[optional]: {x, y, index}
+    }
+========================================
     Item {
         width: Int,
         height: Int,
@@ -29,6 +24,21 @@
         orientation: Float,
         symbol: one of ['symbolCircle', 'symbolCross', 'symbolDiamond', 'symbolSquare', 'symbolStar', 'symbolTriangle', 'symbolWye']
     }
+========================================
+    Polygon {
+        index: Int,
+        area: Float,
+        site: [x, y],
+        buildings: Int,
+        center: [x, y],
+        path: SVG path,
+        simulation: Object,
+        bounds: [width, height],
+        children: [Item, Item, Item, ..., Item],
+        halfedges: [Edge, Edge, Edge, ..., Edge],
+        vertices : [[x1, y1], [x2, y2], ..., [xn, yn]],
+        type : one of ['rich', 'medium', 'poor', 'plaza'],
+    }
  */
 
 /* Data need to be loaded :
@@ -37,6 +47,18 @@
 *
 * */
 function Metro(canvas, data ) {
+    $(document).ready(function () {
+        $('#render').click( function() {
+            newGraphics();
+        });
+        $('#dragSwitch').on('change', function () {
+            if (this.checked) {
+                state.isDragSelected = true;
+            } else {
+                state.isDragSelected = false;
+            }
+        });
+    });
     /*
         canvas: HTMLElement;
         data: {
@@ -44,11 +66,11 @@ function Metro(canvas, data ) {
             clusters: Object,
         }
     */
-
     var state = {
-        N: data ? data.sites.length : 30, // quantity of polygons
+        N: data ? data.sites.length : 2, // quantity of polygons
         SIGN: Math.random() < 0.5 ? -1 : 1, // make positive or negative 1
         simulations: [],
+        verticesSimulations: [],
         isDragSelected: false,
         DRAGGED_SUBJECT: null,
         canvas: canvas.node() || d3.select("canvas").node(),
@@ -56,10 +78,10 @@ function Metro(canvas, data ) {
         height () { return this.canvas.height; },
         context () { return this.canvas.getContext("2d"); },
         COLOR: d3.scaleOrdinal().range(d3.schemeCategory20), // random color
-        DISTRICT_TYPES: ['rich', 'medium','poor','plaza', 'empty'], // four types of districts
-        SYMBOL_TYPES: ['symbolCircle', 'symbolCross', 'symbolDiamond', 'symbolSquare', 'symbolTriangle', 'symbolWye']
+        DISTRICT_TYPES: ['rich', 'medium','poor','plaza', 'empty'] // four types of districts
     };
     state.graphics = new Graphics();
+    console.log(state.graphics.polygons);
     /*=====================================================================================================
                                          Constructor Functions
     ======================================================================================================*/
@@ -68,18 +90,42 @@ function Metro(canvas, data ) {
         this.voronoi = d3.voronoi().extent([[20, 20], [state.width() - 20, state.height() - 20]]);
         this.diagram = this.voronoi( this.sites );
         this.links = this.diagram.links();
-        this.polygons = makePolygons(this.diagram);
+        this.edges = this.diagram.edges;
+        this.polygons = makePolygons(this.diagram, this.edges);
         this.clusters = data ? data.clusters : this.polygons.map( makeCluster );
     }
 
 // make polygons(districts)
-    function makePolygons(diagram) {
-        let edges = diagram.edges;
+    function makePolygons(diagram, edges) {
         return diagram.cells.map(function(cell, index) {
             let polygon = {};
             let vertices = cell.halfedges.map(function(i) {
                 let vertex = cellHalfedgeStart(cell, edges[i]);
-                polygon.site = {x: cell.site.data[0], y: cell.site.data[1]};
+                polygon.halfedges = cell.halfedges.map(e => {
+                    let edge = {};
+                    edge.endpoint1 = {x: edges[e][0][0], y: edges[e][0][1], vx: 0, vy: 0 };
+                    edge.endpoint2 = {x: edges[e][1][0], y: edges[e][1][1], vx: 0, vy: 0 };
+
+                    if(edges[e].left) {
+                        edge.left = {};
+                        edge.left.x = edges[e].left[0];
+                        edge.left.y = edges[e].left[1];
+                        edge.left.index = edges[e].left.index;
+                    }
+                    if(edges[e].right) {
+                        edge.right = {};
+                        edge.right.x = edges[e].right[0];
+                        edge.right.y = edges[e].right[1];
+                        edge.right.index = edges[e].right.index;
+                    }
+                    edges[e].endpoint1 = {x: edges[e][0][0], y: edges[e][0][1], vx: 0, vy: 0 };
+                    edges[e].endpoint2 = {x: edges[e][1][0], y: edges[e][1][1], vx: 0, vy: 0 };
+                    delete edges[e].left.data;
+                    if(edges[e].right) delete edges[e].right.data;
+
+                    return edge;
+                });
+                polygon.site = { x: cell.site[0], y: cell.site[1] };
                 return vertex;
             });
             polygon.index = index;
@@ -87,7 +133,7 @@ function Metro(canvas, data ) {
             polygon.vertices = vertices;
             polygon.bounds = bounds(vertices);
             polygon.area = d3.polygonArea(vertices);
-            polygon.center = {x: d3.polygonCentroid(vertices)[0], y: d3.polygonCentroid(vertices)[1]};
+            polygon.center = { x: d3.polygonCentroid(vertices)[0], y: d3.polygonCentroid(vertices)[1] };
             polygon.type = getType(polygon);
             return polygon;
         });
@@ -166,7 +212,7 @@ function Metro(canvas, data ) {
     ======================================================================================================*/
     startSimulations();
 
-// initialize drag event
+    // initialize drag event
     d3.select(state.canvas)
         .call(d3.drag()
             .container(state.canvas)
@@ -179,7 +225,7 @@ function Metro(canvas, data ) {
     d3.select("body")
         .on("keydown", onKeyDown);
 
-// redraw graphic
+    // redraw graphic
     function tick() {
         state.context().clearRect(0, 0, state.width(), state.height());
         // drawLink();
@@ -226,8 +272,8 @@ function Metro(canvas, data ) {
             state.context().rotate(d.orientation);
             state.context().translate( -(d.x), -(d.y));
             state.context().beginPath();
-            state.context().moveTo(d.x + d.radius, d.y);
-            state.context().arc(d.x, d.y, d.radius, 0, 2 * Math.PI);
+            state.context().moveTo(d.x + d.radius / 2, d.y);
+            state.context().arc(d.x, d.y, d.radius / 2, 0, 2 * Math.PI);
             state.context().fillStyle = "#CBC5B9";
             state.context().fill();
             state.context().strokeStyle = "#000";
@@ -241,14 +287,26 @@ function Metro(canvas, data ) {
     /*=====================================================================================================
                                          Additional Functions
     ======================================================================================================*/
-// start simulations
+    // start simulations
     function startSimulations() {
-        for(let i = 0; i < state.graphics.polygons.length; i ++){
+        // forces among vertices
+        for(let j = 0; j < state.graphics.edges.length; j ++) {
+            if(state.graphics.edges[j]) {
+                delete state.graphics.edges[j][0];
+                delete state.graphics.edges[j][1];
+            }
+        }
+
+        // forces among buildings
+        for(let i = 0; i < state.graphics.polygons.length; i ++) {
             makeSimulations(state.graphics.polygons[i], state.graphics.polygons[i].children);
+
+            // state.verticesSimulations[state.graphics.polygons[i].index] = d3.forceSimulation(state.graphics.edges)
+            //     .force("curvedEdgeForce", curvedEdgeForce(state.graphics.polygons[i]))
         }
     }
 
-// render every n ticks;
+    // render every n ticks;
     function onTick(n) {
         let tickCount = 0;
 
@@ -259,7 +317,6 @@ function Metro(canvas, data ) {
                 render();
                 tickCount = 0;
             }else{
-                console.log("tick");
                 tickCount = 0;
             }
         }
@@ -269,16 +326,18 @@ function Metro(canvas, data ) {
         state.N = $('#sites').val();
         state.simulations.forEach(s => s.stop());
         state.graphics = new Graphics();
+
         startSimulations();
     }
 
-// make simulations in using d3.forceSimulation
+    // make simulations in using d3.forceSimulation
     function makeSimulations(polygon, cluster) {
         let collision = Math.sqrt(polygon.area / polygon.children.length) / Math.sqrt(2) / 2;
         let distance = Math.max(polygon.bounds.width, polygon.bounds.height) / 2;
         state.simulations[polygon.index] = d3.forceSimulation(cluster)
             .force("center", d3.forceCenter(polygon.center.x, polygon.center.y))
             .force("collide", d3.forceCollide(d => d.radius + 0.5).iterations(2))
+            .force("curvedEdgeForce", curvedEdgeForce(polygon))
             .force("myForce", myForce().distanceMin(collision).distanceMax(distance).iterations(4))
             .force("polygonCollide", forceCollidePolygon(polygon))
             // .on("tick", () => Math.random() < .1 ? render() : 'render' );
@@ -287,7 +346,7 @@ function Metro(canvas, data ) {
         polygon.simulation = state.simulations[polygon.index];
     }
 
-// set context menu
+    // set context menu
     function menu(d) {
         let point = [d3.event.layerX, d3.event.layerY];
         let polygon = state.graphics.polygons.filter(poly => d3.polygonContains(poly.vertices, point))[0];
@@ -335,7 +394,7 @@ function Metro(canvas, data ) {
         return content;
     };
 
-// remake cluster after change its parent's type
+    // remake cluster after change its parent's type
     function remakeCluster(polygon) {
         let item = makeCluster(polygon);
         state.graphics.clusters.splice(polygon.index, 1, item);
@@ -355,7 +414,7 @@ function Metro(canvas, data ) {
         }
     }
 
-// custom force
+    // custom force
     function myForce() {
         var nodes,
             node,
@@ -465,15 +524,15 @@ function Metro(canvas, data ) {
         return force;
     }
 
-// custom force of polygon collision
-// inspired from http://bl.ocks.org/larsenmtl/39a028da44db9e8daf14578cb354b5cb
-    function forceCollidePolygon(polygon, radius){
+    // custom force of polygon collision
+    // inspired from http://bl.ocks.org/larsenmtl/39a028da44db9e8daf14578cb354b5cb
+    function forceCollidePolygon(polygon, radius) {
         var nodes, n, iterations = 1;
 
         // took from d3-force/src/collide.js
         if (typeof radius !== "function") radius = constant(radius == null ? 1 : +radius);
 
-        function force(){
+        function force() {
             for(let l = 0; l < iterations; l++) {
                 for(let k = 0; k < nodes.length; k++) {
                     let node = nodes[k],
@@ -495,9 +554,9 @@ function Metro(canvas, data ) {
                         let vector = point2Segment(point, segment1, segment2);
                         let d = dist2Segment(point, vector);
 
-                        vectors.push(vector)
+                        vectors.push(vector);
                         distances.push(d);
-                        minDistance = Math.min(...distances)
+                        minDistance = Math.min(...distances);
                         indexOfNearestSegment = distances.indexOf(minDistance);
 
                         // set min distance between the point and its nearest polygon segment
@@ -551,10 +610,114 @@ function Metro(canvas, data ) {
         force.radius = function(_) {
             return arguments.length ? (radius = typeof _ === "function" ? _ : constant(+_), force) : radius;
         };
+
         return force;
     }
 
-// source: http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
+    // make curved edge
+    function curvedEdgeForce(polygon) {
+        var nodes, n, iterations = 1;
+
+        let polyPoints = polygon.vertices,
+            point = {},
+            endpoint1 = {},
+            endpoint2 = {},
+            vector = 0,
+            d = 0,
+            leftVectors = [],
+            rightVectors = [],
+            leftDistances = [],
+            rightDistances = [];
+
+        for(let l = 0; l < iterations; l++) {
+            //  for each edge E in the "road map"
+            for(edge of polygon.halfedges) {
+                if(edge.left && edge.right) {
+                    // for each polygons P that is adjacent to E
+                    for(let l = 0, leftPoly = state.graphics.polygons[edge.left.index]; l < leftPoly.children.length; l++) {
+                        if(leftPoly.children[l].x !== undefined && leftPoly.children[l].y !== undefined) {
+                            point = {x: leftPoly.children[l].x, y: leftPoly.children[l].y}; // for each building B that is in P
+                            endpoint1 = { x: edge.endpoint1.x, y: edge.endpoint1.y };
+                            endpoint2 = { x: edge.endpoint2.x, y: edge.endpoint2.y };
+                            vector = point2Segment(point, endpoint1, endpoint2); // vector V from P to Q where P is the center of B and Q is the closest point on E to P
+                            d = dist2Segment(point, vector); // the magnitude (length) of V
+                            leftVectors.push(vector);
+                            leftDistances.push(d);
+
+                            let dvx = (point.x - vector.x);
+                            let dvy = (point.y - vector.y);
+                            // console.log(dvx + '|' + dvy);
+                            edge.endpoint1.x += dvx;
+                            edge.endpoint1.y += dvy;
+                            edge.endpoint2.x += dvx;
+                            edge.endpoint2.y += dvy;
+                        }
+                    }
+
+                    for(let r = 0, rightPoly = state.graphics.polygons[edge.right.index]; r < rightPoly.children.length; r++) {
+                        if(rightPoly.children[r].x !== undefined && rightPoly.children[r].y !== undefined) {
+                            point = {x: rightPoly.children[r].x, y: rightPoly.children[r].y}; // for each building B that is in P
+                            endpoint1 = { x: edge.endpoint1.x, y: edge.endpoint1.y };
+                            endpoint2 = { x: edge.endpoint2.x, y: edge.endpoint2.y };
+                            vector = point2Segment(point, endpoint1, endpoint2); // vector V from P to Q where P is the center of B and Q is the closest point on E to P
+                            d = 1 / dist2Segment(point, vector); // the magnitude (length) of V
+                            rightVectors.push(vector);
+                            rightDistances.push(d);
+
+                            let dvx = (point.x - vector.x);
+                            let dvy = (point.y - vector.y);
+                            edge.endpoint1.x += dvx;
+                            edge.endpoint1.y += dvy;
+                            edge.endpoint2.x += dvx;
+                            edge.endpoint2.y += dvy;
+                            // let dvx = Math.abs(point.x - vector.x) / (d);
+                            // let dvy = Math.abs(point.y - vector.y) / (d);
+                            // edge.endpoint1.vx += Math.sign(point.x - vector.x) * dvx;
+                            // edge.endpoint1.vy += Math.sign(point.x - vector.x) * dvy;
+                            // edge.endpoint2.vx += Math.sign(point.x - vector.x) * dvx;
+                            // edge.endpoint2.vy += Math.sign(point.x - vector.x) * dvy;
+                        }
+                    }
+                }
+            }
+        }
+        // return force;
+
+        console.log("leftVectors:", Vsum(leftVectors));
+        console.log("rightVectors:", Vsum(rightVectors));
+        /*
+         For each polygon:
+            For each segment(edge) E in polygon P
+                For each building B in polygon
+                    ☑️️1. Calculate vector V between building center and segment (return to E)
+                    ☑️️2. Cal the corresponding force F of V
+                    ☑️️3. Apply F on every E in P
+
+         ☑️️1.️️ for each edge E in the "road map"
+         ☑️️2. let VECTORS(E) = a list of vectors related to E
+         ☑️️2. for each polygons P that is adjacent to E
+         ☑️️4.️ for each building B that is in P
+         ☑️️5. compute the vector V from P to Q where P is the center of B and Q is the closest point on E to P
+         ☑️️6. let L be the magnitude (length) of V
+         ☑️️7. change the length of V to be 1/L
+         ☑️️8. add V to VECTORS(E)
+
+         9. for each vertex V in the "road map" let Vforce = a Vector with angle = 0 and magnitude = 0
+
+         10. for each edge E in the "road map"
+         11. let Vsum = the vector sum of VECTORS(E)
+         12. let P1 be one end of E
+         13. let P2 be the other end of E
+
+         14. let P1force = P1force + Vsum/2
+         15. let P2force = P2force + Vsum/2
+
+         16. for each vertex V in the "road map"
+         17. move V by an amount normalized(Vforce)
+        */
+    }
+
+    // source: http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
     function getLineIntersection(p0_x, p0_y, p1_x, p1_y, p2_x, p2_y, p3_x, p3_y) {
         var s1_x, s1_y, s2_x, s2_y;
         s1_x = p1_x - p0_x;
@@ -575,12 +738,12 @@ function Metro(canvas, data ) {
         return false;
     }
 
-// took from d3-force/src/jiggle.js
+    // took from d3-force/src/jiggle.js
     function jiggle() {
         // return (Math.random() - 0.5) * 1e-6;
         return 0;
     }
-// took from d3-force/src/constant.js
+    // took from d3-force/src/constant.js
     function constant(x){
         return function() {
             return x;
@@ -616,7 +779,7 @@ function Metro(canvas, data ) {
         return edge[+(edge.left !== cell.site)];
     }
 
-// get bounds of a specific polygon
+    // get bounds of a specific polygon
     function bounds( polygon ) {
         let xs = polygon.map( p => p[0] ),
             ys = polygon.map( p => p[1] ),
@@ -626,6 +789,17 @@ function Metro(canvas, data ) {
             maxY = Math.max.apply( null, ys );
 
         return { width : maxX - minX, height : maxY - minY };
+    }
+
+    // get sum of vectors
+    function Vsum(vectors) {
+        let Vx = 0;
+        let Vy = 0;
+        for(v of vectors) {
+            Vx += v.x;
+            Vy += v.y;
+        }
+        return {x: Vx, y: Vy};
     }
     /*=====================================================================================================
                                              Drag Functions
@@ -697,7 +871,7 @@ function Metro(canvas, data ) {
     /*=====================================================================================================
                                              Draw Functions
     ======================================================================================================*/
-// draw centers/sites
+    // draw centers/sites
     function drawSites(color) {
         state.context().save();
         state.context().beginPath();
@@ -714,7 +888,7 @@ function Metro(canvas, data ) {
         state.context().restore();
     }
 
-// draw links among sites
+    // draw links among sites
     function drawLink() {
         state.context().beginPath();
         for (let i = 0, n = state.graphics.links.length; i < n; ++i) {
@@ -726,7 +900,7 @@ function Metro(canvas, data ) {
         state.context().stroke();
     }
 
-// draw circle paths
+    // draw circle paths
     function drawCirclePaths(width, color) {
         let path = null;
 
@@ -742,7 +916,7 @@ function Metro(canvas, data ) {
         }
     }
 
-// draw paths
+    // draw paths
     function drawPaths(width, color) {
         state.context().save();
         state.context().beginPath();

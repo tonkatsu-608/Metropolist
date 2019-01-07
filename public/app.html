@@ -46,17 +46,17 @@
 <div class="row" style="background-color: #CBC5B9">
     <div class="col s12">
         <div class="row">
-            <div class="col s4">
-                <canvas width="450" height="300" id="myCanvas">
+            <div class="col s12">
+                <canvas width="1420" height="920" id="myCanvas">
                     Your browser does not support canvas
                 </canvas>
                 <!--<canvas id="oldCanvas" width="710" height="460"></canvas>-->
             </div>
-            <div class="col s4">
+            <div class="col s4" hidden>
                 <!--<canvas id="oldCanvas" width="710" height="460"></canvas>-->
                 <canvas width="450" height="300" id="newCanvas"></canvas>
             </div>
-            <div class="col s4">
+            <div class="col s4" hidden>
                 <div style="width: 450px; height:300px;" id="img"></div>
             </div>
         </div>
@@ -75,19 +75,6 @@
 <!-----------------------------------------Main Js----------------------------------------->
 <script type="text/javascript" src="javascripts/main/app.js"></script>
 <script>
-    $(document).ready(function () {
-        $('#render').click( function() {
-            newGraphics();
-        });
-        $('#dragSwitch').on('change', function () {
-            if (this.checked) {
-                state.isDragSelected = true;
-            } else {
-                state.isDragSelected = false;
-            }
-        });
-    });
-
     var metro = new Metro(d3.select("#myCanvas"));
 
     var CanvasToBMP = {
