@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="165d839a-52e7-4e96-a2de-bc583fff601e" name="Default" comment="">
+      <change beforePath="" afterPath="$PROJECT_DIR$/public/javascripts/main/app-6.js" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change beforePath="$PROJECT_DIR$/public/app.html" afterPath="$PROJECT_DIR$/public/app.html" />
       <change beforePath="$PROJECT_DIR$/public/javascripts/main/app.js" afterPath="$PROJECT_DIR$/public/javascripts/main/app.js" />
@@ -21,8 +22,8 @@
       <file leaf-file-name="app.html" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/public/app.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="255">
-              <caret line="23" column="65" lean-forward="false" selection-start-line="23" selection-start-column="51" selection-end-line="23" selection-end-column="65" />
+            <state relative-caret-position="375">
+              <caret line="25" column="34" lean-forward="false" selection-start-line="25" selection-start-column="34" selection-end-line="25" selection-end-column="34" />
               <folding>
                 <element signature="e#1259#1265#0" expanded="true" />
                 <element signature="e#1265#1271#0" expanded="true" />
@@ -37,11 +38,11 @@
       <file leaf-file-name="app.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/public/javascripts/main/app.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="437">
-              <caret line="972" column="38" lean-forward="true" selection-start-line="972" selection-start-column="38" selection-end-line="972" selection-end-column="38" />
+            <state relative-caret-position="284">
+              <caret line="62" column="57" lean-forward="true" selection-start-line="62" selection-start-column="57" selection-end-line="62" selection-end-column="57" />
               <folding>
                 <element signature="n#!!doc" expanded="true" />
-                <element signature="n#!!block;n#menu#0;n#!!block;n#Metro#0" expanded="false" />
+                <element signature="n#!!block;n#myForce#0;n#!!block;n#Metro#0" expanded="false" />
                 <element signature="n#!!block;n#forceCollidePolygon#0;n#!!block;n#Metro#0" expanded="false" />
                 <element signature="n#!!block;n#getLineIntersection#0;n#!!block;n#Metro#0" expanded="false" />
               </folding>
@@ -83,6 +84,9 @@
       <find>of</find>
       <find>Xoffset</find>
       <find>vertices</find>
+      <find>parent.index</find>
+      <find>endpoint1</find>
+      <find>graphic</find>
     </findStrings>
     <replaceStrings>
       <replace>this.state.</replace>
@@ -197,14 +201,14 @@
               <item name="Metropolist" type="462c0819:PsiDirectoryNode" />
               <item name="public" type="462c0819:PsiDirectoryNode" />
               <item name="javascripts" type="462c0819:PsiDirectoryNode" />
-              <item name="libraries" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="Metropolist" type="b2602c69:ProjectViewProjectNode" />
               <item name="Metropolist" type="462c0819:PsiDirectoryNode" />
               <item name="public" type="462c0819:PsiDirectoryNode" />
               <item name="javascripts" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
+              <item name="metro_demo" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="Metropolist" type="b2602c69:ProjectViewProjectNode" />
@@ -229,8 +233,8 @@
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/db" />
       <recent name="$PROJECT_DIR$/public/javascripts/main" />
+      <recent name="$PROJECT_DIR$/db" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -271,12 +275,12 @@
       <workItem from="1543802523123" duration="162000" />
       <workItem from="1544149239902" duration="11069000" />
       <workItem from="1545152573560" duration="1487000" />
-      <workItem from="1546028352063" duration="82392000" />
+      <workItem from="1546028352063" duration="88604000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="144186000" />
+    <option name="totallyTimeSpent" value="150398000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1440" height="900" extended-state="0" />
@@ -403,13 +407,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="75">
           <caret line="5" column="165160" lean-forward="false" selection-start-line="5" selection-start-column="165160" selection-end-line="5" selection-end-column="165160" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$APPLICATION_HOME_DIR$/plugins/JavaScriptLanguage/jsLanguageServicesImpl/external/lib.dom.d.ts">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="188">
-          <caret line="4665" column="4" lean-forward="false" selection-start-line="4665" selection-start-column="4" selection-end-line="4665" selection-end-column="4" />
         </state>
       </provider>
     </entry>
@@ -584,9 +581,29 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/public/javascripts/metro_demo/index.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-14223">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <element signature="n#!!doc" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/public/javascripts/main/app-6.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="269">
+          <caret line="656" column="41" lean-forward="true" selection-start-line="656" selection-start-column="19" selection-end-line="656" selection-end-column="41" />
+          <folding>
+            <element signature="n#!!doc" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/public/javascripts/libraries/d3.v4.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4961">
+        <state relative-caret-position="20">
           <caret line="6067" column="13" lean-forward="false" selection-start-line="6067" selection-start-column="13" selection-end-line="6067" selection-end-column="13" />
           <folding />
         </state>
@@ -594,8 +611,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/public/app.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="23" column="65" lean-forward="false" selection-start-line="23" selection-start-column="51" selection-end-line="23" selection-end-column="65" />
+        <state relative-caret-position="375">
+          <caret line="25" column="34" lean-forward="false" selection-start-line="25" selection-start-column="34" selection-end-line="25" selection-end-column="34" />
           <folding>
             <element signature="e#1259#1265#0" expanded="true" />
             <element signature="e#1265#1271#0" expanded="true" />
@@ -606,13 +623,21 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$APPLICATION_HOME_DIR$/plugins/JavaScriptLanguage/jsLanguageServicesImpl/external/lib.dom.d.ts">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="266">
+          <caret line="15090" column="17" lean-forward="false" selection-start-line="15090" selection-start-column="17" selection-end-line="15090" selection-end-column="17" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/public/javascripts/main/app.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="437">
-          <caret line="972" column="38" lean-forward="true" selection-start-line="972" selection-start-column="38" selection-end-line="972" selection-end-column="38" />
+        <state relative-caret-position="284">
+          <caret line="62" column="57" lean-forward="true" selection-start-line="62" selection-start-column="57" selection-end-line="62" selection-end-column="57" />
           <folding>
             <element signature="n#!!doc" expanded="true" />
-            <element signature="n#!!block;n#menu#0;n#!!block;n#Metro#0" expanded="false" />
+            <element signature="n#!!block;n#myForce#0;n#!!block;n#Metro#0" expanded="false" />
             <element signature="n#!!block;n#forceCollidePolygon#0;n#!!block;n#Metro#0" expanded="false" />
             <element signature="n#!!block;n#getLineIntersection#0;n#!!block;n#Metro#0" expanded="false" />
           </folding>
