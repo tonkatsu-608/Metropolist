@@ -300,10 +300,14 @@ function Metro(canvas, data ) {
         // make simulations among buildings
         state.graphics.polygons.forEach(p => makeSimulations(p, p.children));
 
+        if (state.isSimulatingSelected) {
+            state.simulations.forEach(s => s.restart());
+        }
+
         setTimeout(() => {
-            if (!state.isDragSelected) {
+            if (!state.isSimulatingSelected) {
                 state.simulations.forEach(s => s.stop());
-            }}, 500);
+            }}, 1);
     }
 
     function newGraphics() {
