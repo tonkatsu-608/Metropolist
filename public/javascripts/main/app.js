@@ -58,6 +58,13 @@ function Metro(canvas, data ) {
                 state.isDragSelected = false;
             }
         });
+        $('#simulateSwitch').on('change', function () {
+            if (this.checked) {
+                state.isSimulatingSelected = true;
+            } else {
+                state.isSimulatingSelected = false;
+            }
+        });
     });
     /*
         canvas: HTMLElement;
@@ -67,11 +74,12 @@ function Metro(canvas, data ) {
         }
     */
     var state = {
-        N: data ? data.sites.length : 2, // quantity of polygons
+        N: data ? data.sites.length : 30, // quantity of polygons
         SIGN: Math.random() < 0.5 ? -1 : 1, // make positive or negative 1
         simulations: [],
         verticesSimulations: [],
         isDragSelected: false,
+        isSimulatingSelected: false,
         DRAGGED_SUBJECT: null,
         canvas: canvas.node() || d3.select("canvas").node(),
         width () { return this.canvas.width; },
@@ -81,7 +89,6 @@ function Metro(canvas, data ) {
         DISTRICT_TYPES: ['rich', 'medium','poor','plaza', 'empty'] // four types of districts
     };
     state.graphics = new Graphics();
-    console.log(state.graphics.polygons);
     /*=====================================================================================================
                                          Constructor Functions
     ======================================================================================================*/
@@ -91,41 +98,45 @@ function Metro(canvas, data ) {
         this.diagram = this.voronoi( this.sites );
         this.links = this.diagram.links();
         this.edges = this.diagram.edges;
-        this.polygons = makePolygons(this.diagram, this.edges);
+        this.polygons = makePolygons(this.diagram);
         this.clusters = data ? data.clusters : this.polygons.map( makeCluster );
+        this.buildings = getBuildings(this.clusters);
     }
 
-// make polygons(districts)
-    function makePolygons(diagram, edges) {
+    // make polygons(districts)
+    function makePolygons(diagram) {
         return diagram.cells.map(function(cell, index) {
             let polygon = {};
+
             let vertices = cell.halfedges.map(function(i) {
-                let vertex = cellHalfedgeStart(cell, edges[i]);
+                let vertex = cellHalfedgeStart(cell, diagram.edges[i]);
                 polygon.halfedges = cell.halfedges.map(e => {
-                    let edge = {};
-                    edge.endpoint1 = {x: edges[e][0][0], y: edges[e][0][1], vx: 0, vy: 0 };
-                    edge.endpoint2 = {x: edges[e][1][0], y: edges[e][1][1], vx: 0, vy: 0 };
+                    // let edge = {};
+                    // edge.endpoint1 = {x: edges[e][0][0], y: edges[e][0][1], vx: 0, vy: 0 };
+                    // edge.endpoint2 = {x: edges[e][1][0], y: edges[e][1][1], vx: 0, vy: 0 };
+                    //
+                    // if(edges[e].left) {
+                    //     edge.left = {};
+                    //     edge.left.x = edges[e].left[0];
+                    //     edge.left.y = edges[e].left[1];
+                    //     edge.left.index = edges[e].left.index;
+                    // }
+                    // if(edges[e].right) {
+                    //     edge.right = {};
+                    //     edge.right.x = edges[e].right[0];
+                    //     edge.right.y = edges[e].right[1];
+                    //     edge.right.index = edges[e].right.index;
+                    // }
+                    diagram.edges[e].endpoint1 = {x: diagram.edges[e][0][0], y: diagram.edges[e][0][1], vx: 0, vy: 0 };
+                    diagram.edges[e].endpoint2 = {x: diagram.edges[e][1][0], y: diagram.edges[e][1][1], vx: 0, vy: 0 };
+                    // delete edges[e].left.data;
+                    // if(edges[e].right) delete edges[e].right.data;
 
-                    if(edges[e].left) {
-                        edge.left = {};
-                        edge.left.x = edges[e].left[0];
-                        edge.left.y = edges[e].left[1];
-                        edge.left.index = edges[e].left.index;
-                    }
-                    if(edges[e].right) {
-                        edge.right = {};
-                        edge.right.x = edges[e].right[0];
-                        edge.right.y = edges[e].right[1];
-                        edge.right.index = edges[e].right.index;
-                    }
-                    edges[e].endpoint1 = {x: edges[e][0][0], y: edges[e][0][1], vx: 0, vy: 0 };
-                    edges[e].endpoint2 = {x: edges[e][1][0], y: edges[e][1][1], vx: 0, vy: 0 };
-                    delete edges[e].left.data;
-                    if(edges[e].right) delete edges[e].right.data;
-
-                    return edge;
+                    return diagram.edges[e];
                 });
                 polygon.site = { x: cell.site[0], y: cell.site[1] };
+                vertex.x = vertex[0];
+                vertex.y = vertex[1];
                 return vertex;
             });
             polygon.index = index;
@@ -139,7 +150,7 @@ function Metro(canvas, data ) {
         });
     }
 
-// make clusters(buildings)
+    // make clusters
     function makeCluster(poly) {
         let number = 0;
         let width = poly.bounds.width;
@@ -207,6 +218,21 @@ function Metro(canvas, data ) {
             }
         }
     }
+    
+    // get buildings from clusters
+    function getBuildings(clusters) {
+        let buildings = [];
+        for(let i = 0; i < clusters.length; i ++) {
+            let cluster = clusters[i];
+            if(!cluster) return;
+            if(cluster.length !== 0) {
+                for(let building of cluster) {
+                    buildings.push(building);
+                }
+            }
+        }
+        return buildings;
+    }
     /*=====================================================================================================
                                              Main Functions
     ======================================================================================================*/
@@ -230,7 +256,8 @@ function Metro(canvas, data ) {
         state.context().clearRect(0, 0, state.width(), state.height());
         // drawLink();
         // drawSites('black');
-        drawPaths( 2, 'black');
+        // drawPaths( 2, 'black');
+        drawEdges( 2, 'black');
         // drawCirclePaths( 2, 'black');
 
         // draw clusters
@@ -285,15 +312,15 @@ function Metro(canvas, data ) {
         }
     }
     /*=====================================================================================================
-                                         Additional Functions
+                                      Additional Functions
     ======================================================================================================*/
     // start simulations
     function startSimulations() {
         // forces among vertices
         for(let j = 0; j < state.graphics.edges.length; j ++) {
             if(state.graphics.edges[j]) {
-                delete state.graphics.edges[j][0];
-                delete state.graphics.edges[j][1];
+                // delete state.graphics.edges[j][0];
+                // delete state.graphics.edges[j][1];
             }
         }
 
@@ -337,7 +364,7 @@ function Metro(canvas, data ) {
         state.simulations[polygon.index] = d3.forceSimulation(cluster)
             .force("center", d3.forceCenter(polygon.center.x, polygon.center.y))
             .force("collide", d3.forceCollide(d => d.radius + 0.5).iterations(2))
-            .force("curvedEdgeForce", curvedEdgeForce(polygon))
+            // .force("curvedEdgeForce", curvedEdgeForce(polygon))
             .force("myForce", myForce().distanceMin(collision).distanceMax(distance).iterations(4))
             .force("polygonCollide", forceCollidePolygon(polygon))
             // .on("tick", () => Math.random() < .1 ? render() : 'render' );
@@ -620,8 +647,6 @@ function Metro(canvas, data ) {
 
         let polyPoints = polygon.vertices,
             point = {},
-            endpoint1 = {},
-            endpoint2 = {},
             vector = 0,
             d = 0,
             leftVectors = [],
@@ -631,60 +656,59 @@ function Metro(canvas, data ) {
 
         for(let l = 0; l < iterations; l++) {
             //  for each edge E in the "road map"
-            for(edge of polygon.halfedges) {
+            for(let edge of polygon.halfedges) {
                 if(edge.left && edge.right) {
                     // for each polygons P that is adjacent to E
                     for(let l = 0, leftPoly = state.graphics.polygons[edge.left.index]; l < leftPoly.children.length; l++) {
                         if(leftPoly.children[l].x !== undefined && leftPoly.children[l].y !== undefined) {
                             point = {x: leftPoly.children[l].x, y: leftPoly.children[l].y}; // for each building B that is in P
-                            endpoint1 = { x: edge.endpoint1.x, y: edge.endpoint1.y };
-                            endpoint2 = { x: edge.endpoint2.x, y: edge.endpoint2.y };
-                            vector = point2Segment(point, endpoint1, endpoint2); // vector V from P to Q where P is the center of B and Q is the closest point on E to P
+                            vector = point2Segment(point, edge.endpoint1, edge.endpoint2); // vector V from P to Q where P is the center of B and Q is the closest point on E to P
                             d = dist2Segment(point, vector); // the magnitude (length) of V
                             leftVectors.push(vector);
                             leftDistances.push(d);
-
-                            let dvx = (point.x - vector.x);
-                            let dvy = (point.y - vector.y);
-                            // console.log(dvx + '|' + dvy);
-                            edge.endpoint1.x += dvx;
-                            edge.endpoint1.y += dvy;
-                            edge.endpoint2.x += dvx;
-                            edge.endpoint2.y += dvy;
+                            let dvx = (point.x - vector.x) / (getSumOfVectors(leftVectors).x / 2);
+                            let dvy = (point.y - vector.y) / (getSumOfVectors(leftVectors).y / 2);
+                            // moveVertices(edge, dvx, dvy);
                         }
                     }
 
                     for(let r = 0, rightPoly = state.graphics.polygons[edge.right.index]; r < rightPoly.children.length; r++) {
                         if(rightPoly.children[r].x !== undefined && rightPoly.children[r].y !== undefined) {
                             point = {x: rightPoly.children[r].x, y: rightPoly.children[r].y}; // for each building B that is in P
-                            endpoint1 = { x: edge.endpoint1.x, y: edge.endpoint1.y };
-                            endpoint2 = { x: edge.endpoint2.x, y: edge.endpoint2.y };
-                            vector = point2Segment(point, endpoint1, endpoint2); // vector V from P to Q where P is the center of B and Q is the closest point on E to P
+                            vector = point2Segment(point, edge.endpoint1, edge.endpoint2); // vector V from P to Q where P is the center of B and Q is the closest point on E to P
                             d = 1 / dist2Segment(point, vector); // the magnitude (length) of V
                             rightVectors.push(vector);
                             rightDistances.push(d);
-
-                            let dvx = (point.x - vector.x);
-                            let dvy = (point.y - vector.y);
-                            edge.endpoint1.x += dvx;
-                            edge.endpoint1.y += dvy;
-                            edge.endpoint2.x += dvx;
-                            edge.endpoint2.y += dvy;
-                            // let dvx = Math.abs(point.x - vector.x) / (d);
-                            // let dvy = Math.abs(point.y - vector.y) / (d);
-                            // edge.endpoint1.vx += Math.sign(point.x - vector.x) * dvx;
-                            // edge.endpoint1.vy += Math.sign(point.x - vector.x) * dvy;
-                            // edge.endpoint2.vx += Math.sign(point.x - vector.x) * dvx;
-                            // edge.endpoint2.vy += Math.sign(point.x - vector.x) * dvy;
+                            let dvx = (point.x - vector.x) / (getSumOfVectors(rightDistances).x / 2);
+                            let dvy = (point.y - vector.y) / (getSumOfVectors(rightDistances).y / 2);
+                            // moveVertices(edge, dvx, dvy);
                         }
                     }
                 }
             }
         }
+
+        function moveVertices(edge, dvx, dvy) {
+            if( isNaN(dvx) || isNaN(dvy) ) return;
+            dvx *= 10;
+            dvy *= 10;
+            edge[0][0] += dvx;
+            edge[0][1] += dvy;
+            edge[1][0] += dvx;
+            edge[1][1] += dvy;
+            // edge.endpoint1.x += dvx;
+            // edge.endpoint1.y += dvy;
+            // edge.endpoint2.x += dvx;
+            // edge.endpoint2.y += dvy;
+            // let dvx = Math.abs(point.x - vector.x) / (d);
+            // let dvy = Math.abs(point.y - vector.y) / (d);
+            // edge.endpoint1.vx += Math.sign(point.x - vector.x) * dvx;
+            // edge.endpoint1.vy += Math.sign(point.x - vector.x) * dvy;
+            // edge.endpoint2.vx += Math.sign(point.x - vector.x) * dvx;
+            // edge.endpoint2.vy += Math.sign(point.x - vector.x) * dvy;
+        }
         // return force;
 
-        console.log("leftVectors:", Vsum(leftVectors));
-        console.log("rightVectors:", Vsum(rightVectors));
         /*
          For each polygon:
             For each segment(edge) E in polygon P
@@ -750,6 +774,10 @@ function Metro(canvas, data ) {
         };
     }
 
+    function distance(v, w) {
+        return Math.sqrt(sqr(v.x - w.x) + sqr(v.y - w.y));
+    }
+
     function sqr(x) {
         return x * x;
     }
@@ -789,17 +817,6 @@ function Metro(canvas, data ) {
             maxY = Math.max.apply( null, ys );
 
         return { width : maxX - minX, height : maxY - minY };
-    }
-
-    // get sum of vectors
-    function Vsum(vectors) {
-        let Vx = 0;
-        let Vy = 0;
-        for(v of vectors) {
-            Vx += v.x;
-            Vy += v.y;
-        }
-        return {x: Vx, y: Vy};
     }
     /*=====================================================================================================
                                              Drag Functions
@@ -921,7 +938,7 @@ function Metro(canvas, data ) {
         state.context().save();
         state.context().beginPath();
         for(let i = 0; i < state.graphics.polygons.length; i ++) {
-            let length = state.graphics.polygons[i].children.length;
+            let poly = state.graphics.polygons[i];
             let lineCreator = d3.line()
                 .x(function(d) { return d[0]; })
                 .y(function(d) { return d[1]; })
@@ -929,17 +946,19 @@ function Metro(canvas, data ) {
             // .curve(d3.curveBasis);
             lineCreator.context(state.context());
 
-            let vertices = state.graphics.polygons[i].vertices;
+            let vertices = poly.vertices;
             for(let j = 0; j < vertices.length; j ++) {
                 let k = (j+1) < vertices.length ? (j+1) : 0,
-                    p1 = vertices[j],
-                    p2 = vertices[k];
-                if(length !== 0) {
-                    lineCreator([p1,  p2]);
-                    // lineCreator([p1, [(p1[0] + p2[0])/2 + 5 * state.SIGN, (p1[1] + p2[1])/2 + 5 * state.SIGN],  p2]);
+                    v1 = vertices[j],
+                    v2 = vertices[k];
+                if(poly.children.length !== 0) {
+                    drawPath(v1, v2);
+
+                    // lineCreator([v1,  v2]);
+                    //// lineCreator([v1, [(v1[0] + v2[0])/2 + 5 * state.SIGN, (v1[1] + v2[1])/2 + 5 * state.SIGN],  v2]);
                 } else {
-                    // state.context().moveTo(p1[0], p1[1]);
-                    // state.context().lineTo(p2[0], p2[1]);
+                    // state.context().moveTo(v1[0], v1[1]);
+                    // state.context().lineTo(v2[0], v2[1]);
                     // state.context().setLineDash([5,10]);
                 }
             }
@@ -950,16 +969,142 @@ function Metro(canvas, data ) {
         state.context().closePath();
         state.context().restore();
     }
+
+    function drawEdges(width, color) {
+        state.context().save();
+        state.context().beginPath();
+
+        for(let i = 0; i < state.graphics.edges.length; i ++) {
+            let edge = state.graphics.edges[i];
+
+            //if( Math.random() < .01 ) console.log( edge );
+            if(edge && edge[0] && edge[1] ) {
+                drawPath(edge[0], edge[1]);
+            }
+        }
+        state.context().lineWidth = width;
+        state.context().strokeStyle = color;
+        state.context().stroke();
+        state.context().closePath();
+        state.context().restore();
+    }
+
+    function isIn( item, center, boxDimension ) {
+        let dx = Math.abs(item.x - center.x);
+        let dy = Math.abs(item.y - center.y);
+        return dx <= boxDimension && dy <= boxDimension;
+    }
+
+    function itemsWithin( items, center, distance ) {
+        return items.filter( item => isIn( item, center, distance ) );
+    }
+
+    function normalizeVector( v ) {
+        let polar = toPolar( v );
+        return {
+            x : v.x / polar.r,
+            y : v.y / polar.r
+        };
+    }
+
+    // polar(r, theta) to Cartesian(x, y)
+    function toPolar( v ) {
+        return {
+            r : Math.sqrt( v.x * v.x  +v.y * v.y ),
+            theta : Math.atan2( v.y, v.x )
+        }
+    }
+
+    // Cartesian(x, y) to polar(r, theta)
+    function toCartesian( p ) {
+        return {
+            x : p.r * Math.cos( p.theta ),
+            y : p.r * Math.sin( p.theta )
+        }
+    }
+
+    function setLength( v, length ) {
+        let polar = toPolar( v );
+
+        polar.r = length;
+        return toCartesian( polar );
+    }
+
+    // get sum of vectors
+    function getSumOfVectors(vectors, f) {
+        let vX = 0;
+        let vY = 0;
+        for(v of vectors) {
+            let temp = toPolar( v );
+            let tempV = f( temp );
+            temp = toCartesian( tempV );
+            vX += temp.x;
+            vY += temp.y;
+        }
+        return {x: vX, y: vY};
+    }
+
+    // draw path
+    function drawPath(v1, v2) {
+        let count = 0;
+        const DISTANCE = 100;
+        const PATH_LENGTH = distance(v1,v2);
+        const SEGMENT_LENGTH = PATH_LENGTH / 20;
+
+        state.context().save();
+        state.context().beginPath();
+
+        while( distance( v1, v2 ) > SEGMENT_LENGTH * 1.2 && count++ < 20 ) {
+            let points = itemsWithin( state.graphics.buildings, v1, DISTANCE );
+            let vectors = points.map( point => {
+                let diff = { x: v1.x - point.x, y: v1.y - point.y };
+                diff = toPolar( diff );
+                diff.r = Math.max( .05, diff.r - point.radius );
+
+                return toCartesian( diff );
+            });
+
+            let f = (vPolar) => {
+               vPolar.r = DISTANCE / vPolar.r;
+               return vPolar;
+            };
+
+            // get Vsum: the sum of building vectors.  Each building pushes v1 away from itself
+            let vSum = setLength( getSumOfVectors(vectors, f), 0.5 );
+            let vPull = setLength( {x : v2.x - v1.x, y : v2.y - v1.y }, 1 );
+
+            // add a pulling vector from v1 to v2
+            vSum.x += vPull.x;
+            vSum.y += vPull.y;
+            vSum = setLength( vSum, SEGMENT_LENGTH );
+
+            let vTemp = { x : v1.x + vSum.x, y : v1.y + vSum.y };
+
+            // draw line form v1 to vTemp
+            state.context().moveTo(v1.x, v1.y);
+            state.context().lineTo(vTemp.x, vTemp.y);
+
+            v1 = vTemp;
+        }
+        // draw line form v1 to v2
+        state.context().moveTo(v1.x, v1.y);
+        state.context().lineTo(v2.x, v2.y);
+        state.context().strokeStyle = "black";
+        state.context().stroke();
+        state.context().closePath();
+        state.context().restore();
+    }
     /*=====================================================================================================
                                             Key Functions
     ======================================================================================================*/
     function onKeyDown() {
-        if(d3.event.keyCode === 13){
-            if($('#sites').val() !== ""){
+        if(d3.event.keyCode === 13) {
+            if($('#sites').val() !== "") {
                 newGraphics();
             }
         }
     }
 
+    //
     return state;
 }
