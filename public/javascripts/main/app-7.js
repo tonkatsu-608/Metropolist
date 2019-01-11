@@ -46,36 +46,11 @@
 *   clusters: JSON -> Object,
 *
 * */
-function Metro( canvas, data ) {
+function Metro(canvas, data ) {
     $(document).ready(function () {
         $('#render').click( function() {
             newGraphics();
         });
-
-        $('#startWrap').click( function() {
-            $('#startWrap').attr('hidden', true);
-            $('#stopWrap').removeAttr('hidden', true);
-            $('#dragSwitch').attr('disabled', true);
-            $('#simulateSwitch').attr('disabled', true);
-            $('#input-sites').attr('disabled', true);
-            $('#render').attr('disabled', true);
-
-            state.isWrapMode = true;
-            startWrapMode();
-        });
-
-        $('#stopWrap').click( function() {
-            $('#stopWrap').attr('hidden', true);
-            $('#startWrap').removeAttr('hidden', true);
-            $('#dragSwitch').removeAttr('disabled', true);
-            $('#simulateSwitch').removeAttr('disabled', true);
-            $('#input-sites').removeAttr('disabled', true);
-            $('#render').removeAttr('disabled', true);
-
-            state.isWrapMode = false;
-            stopWrapMode();
-        });
-
         $('#dragSwitch').on('change', function () {
             if (this.checked) {
                 state.isDragSelected = true; // single
@@ -83,17 +58,16 @@ function Metro( canvas, data ) {
                 state.isDragSelected = false; // multiple
             }
         });
-
         $('#simulateSwitch').on('change', function () {
             if (this.checked) {
                 state.isSimulatingSelected = true; //drag
                 if(state.simulations.length !== 0) {
-                    restartSimulations();
+                    state.simulations.forEach(s => s.restart());
                 }
             } else {
                 state.isSimulatingSelected = false; // simulating
                 if(state.simulations.length !== 0) {
-                    stopSimulations();
+                    state.simulations.forEach(s => s.stop());
                 }
             }
         });
@@ -108,10 +82,8 @@ function Metro( canvas, data ) {
     var state = {
         N: data ? data.sites.length : 30, // quantity of polygons
         SIGN: Math.random() < 0.5 ? -1 : 1, // make positive or negative 1
-        vertices: [],
         simulations: [],
         verticesSimulations: [],
-        isWrapMode: false,
         isDragSelected: false,
         isSimulatingSelected: false,
         DRAGGED_SUBJECT: null,
@@ -122,7 +94,6 @@ function Metro( canvas, data ) {
         COLOR: d3.scaleOrdinal().range(d3.schemeCategory20), // random color
         DISTRICT_TYPES: ['rich', 'medium','poor','plaza', 'empty'] // four types of districts
     };
-
     state.graphics = new Graphics();
     /*=====================================================================================================
                                          Constructor Functions
@@ -142,13 +113,13 @@ function Metro( canvas, data ) {
     function makePolygons(diagram) {
         return diagram.cells.map(function(cell, index) {
             let polygon = {};
+
             let vertices = cell.halfedges.map(function(i) {
                 let vertex = cellHalfedgeStart(cell, diagram.edges[i]);
                 polygon.halfedges = cell.halfedges.map(e => diagram.edges[e]);
                 polygon.site = { x: cell.site[0], y: cell.site[1] };
                 vertex.x = vertex[0];
                 vertex.y = vertex[1];
-                state.vertices.push({x: vertex[0], y: vertex[1]});
                 return vertex;
             });
             polygon.index = index;
@@ -234,12 +205,9 @@ function Metro( canvas, data ) {
     // get buildings from clusters
     function getBuildings(clusters) {
         let buildings = [];
-
         for(let i = 0; i < clusters.length; i ++) {
             let cluster = clusters[i];
-
             if(!cluster) return;
-
             if(cluster.length !== 0) {
                 for(let building of cluster) {
                     buildings.push(building);
@@ -333,12 +301,12 @@ function Metro( canvas, data ) {
         state.graphics.polygons.forEach(p => makeSimulations(p, p.children));
 
         if (state.isSimulatingSelected) {
-            restartSimulations();
+            state.simulations.forEach(s => s.restart());
         }
 
         setTimeout(() => {
             if (!state.isSimulatingSelected) {
-                stopSimulations();
+                state.simulations.forEach(s => s.stop());
             }}, 0);
     }
 
@@ -350,23 +318,6 @@ function Metro( canvas, data ) {
         startSimulations();
     }
 
-    function restartSimulations() {
-        state.simulations.forEach(s => s.restart());
-    }
-
-    function stopSimulations() {
-        state.simulations.forEach(s => s.stop());
-    }
-    
-    function startWrapMode() {
-        stopSimulations();
-        drawVertices();
-    }
-
-    function stopWrapMode() {
-        tick();
-    }
-
     // make simulations in using d3.forceSimulation
     function makeSimulations(polygon, cluster) {
         let collision = Math.sqrt(polygon.area / polygon.children.length) / Math.sqrt(2) / 2;
@@ -376,6 +327,7 @@ function Metro( canvas, data ) {
             .force("collide", d3.forceCollide(d => d.radius + 0.5).iterations(2))
             .force("myForce", myForce().distanceMin(collision).distanceMax(distance).iterations(4))
             .force("polygonCollide", forceCollidePolygon(polygon))
+            .force("moveVertices", moveVertices())
             .on("tick", tick);
 
         polygon.simulation = state.simulations[polygon.index];
@@ -730,65 +682,44 @@ function Metro( canvas, data ) {
                                              Drag Functions
     ======================================================================================================*/
     function dragsubject() {
-        let sbj, index, isInside;
+        let sbj, I, isInside;
         let point = [d3.event.x, d3.event.y];
-
-        if(!state.isWrapMode) {
-            // DRAGGED_SUBJECT = building
-            for(let i = 0; i < state.graphics.polygons.length; i ++){
-                isInside = d3.polygonContains(state.graphics.polygons[i].vertices, point);
-                if(isInside){
-                    index = i;
-                    break;
-                }
+        for(let i = 0; i < state.graphics.polygons.length; i ++){
+            isInside = d3.polygonContains(state.graphics.polygons[i].vertices, point);
+            if(isInside){
+                I = i;
+                break;
             }
-            try { sbj = state.simulations[index].find(d3.event.x, d3.event.y); } catch {}
-
-        } else {
-            // DRAGGED_SUBJECT = vertex
-            try { sbj = findVertex(d3.event.x, d3.event.y, 10); } catch {}
         }
-
-        state.DRAGGED_SUBJECT = sbj || null;
-        return state.DRAGGED_SUBJECT;
+        try { sbj = state.simulations[I].find(d3.event.x, d3.event.y); } catch {}
+        state.DRAGGED_SUBJECT = sbj;
+        return sbj;
     }
 
     function dragstarted() {
-        if(!state.isWrapMode) {
-            d3.contextMenu('close');
-            if(!state.isDragSelected) {
-                state.simulations[d3.event.subject.parent]
-                    .force("center", d3.forceCenter(d3.event.x, d3.event.y))
-                    .restart();
-            }
-            if (!d3.event.active) state.simulations[d3.event.subject.parent].alphaTarget(0.3).restart();
-            makePointInside();
-        } else {
-
+        d3.contextMenu('close');
+        if(!state.isDragSelected) {
+            state.simulations[d3.event.subject.parent]
+                .force("center", d3.forceCenter(d3.event.x, d3.event.y))
+                .restart();
         }
+        if (!d3.event.active) state.simulations[d3.event.subject.parent].alphaTarget(0.3).restart();
+        makePointInside();
     }
 
     function dragged() {
-        if(!state.isWrapMode) {
-            if(!state.isDragSelected) {
-                state.simulations[d3.event.subject.parent]
-                    .force("center", d3.forceCenter(d3.event.x, d3.event.y))
-                    .restart();
-            }
-            makePointInside();
-            tick();
-        } else {
-            d3.event.subject.x = d3.event.x;
-            d3.event.subject.y = d3.event.y;
-            tick();
-            drawVertices();
+        if(!state.isDragSelected) {
+            state.simulations[d3.event.subject.parent]
+                .force("center", d3.forceCenter(d3.event.x, d3.event.y))
+                .restart();
         }
+        makePointInside();
+        tick();
+        moveVertices();
     }
 
     function dragended() {
-        if(!state.isWrapMode) {
-            if (!d3.event.active) state.simulations[d3.event.subject.parent].alphaTarget(0);
-        }
+        if (!d3.event.active) state.simulations[d3.event.subject.parent].alphaTarget(0);
         d3.event.subject.fx = null;
         d3.event.subject.fy = null;
         state.DRAGGED_SUBJECT = null;
@@ -814,29 +745,6 @@ function Metro( canvas, data ) {
                 d3.event.subject.fy = d3.event.y;
             }
         }
-    }
-
-    function findVertex(x, y, radius) {
-        var i = 0,
-            n = state.vertices.length,
-            dx,
-            dy,
-            d2,
-            vertex,
-            closest;
-
-        if (radius == null) radius = Infinity;
-        else radius *= radius;
-
-        for (i = 0; i < n; ++i) {
-            vertex = state.vertices[i];
-            dx = x - vertex.x;
-            dy = y - vertex.y;
-            d2 = dx * dx + dy * dy;
-            if (d2 < radius) closest = vertex, radius = d2;
-        }
-
-        return closest;
     }
     /*=====================================================================================================
                                              Draw Functions
@@ -869,61 +777,6 @@ function Metro( canvas, data ) {
         state.context().strokeStyle = "rgba(0,0,0,0.2)";
         state.context().stroke();
     }
-    
-    // draw vertices
-    function drawVertices() {
-        state.context().save();
-
-        // state.vertices.forEach(d => {
-        //     state.context().beginPath();
-        //     state.context().moveTo(d.x + 8, d.y);
-        //     state.context().arc(d.x, d.y, 8, 0, 2 * Math.PI);
-        //     state.context().lineWidth = 2;
-        //     state.context().strokeStyle = 'red';
-        //     state.context().stroke();
-        //     state.context().fillStyle = '#CBC5B9';
-        //     state.context().fill();
-        //     state.context().closePath();
-        // });
-
-        state.graphics.edges.forEach(e => {
-            state.context().beginPath();
-            state.context().moveTo(e[0][0], e[0][1]);
-            state.context().lineTo(e[1][0], e[1][1]);
-            state.context().lineWidth = 1;
-            state.context().strokeStyle = 'red';
-            state.context().stroke();
-            state.context().closePath();
-
-            state.context().beginPath();
-            state.context().moveTo(e[0][0] + 8, e[0][1]);
-            state.context().arc(e[0][0], e[0][1], 8, 0, 2 * Math.PI);
-            state.context().lineWidth = 2;
-            state.context().strokeStyle = 'red';
-            state.context().stroke();
-            state.context().fillStyle = '#CBC5B9';
-            state.context().fill();
-            state.context().closePath();
-
-        });
-
-        if(state.DRAGGED_SUBJECT) {
-            let d = state.DRAGGED_SUBJECT;
-            console.log(state.DRAGGED_SUBJECT);
-
-            state.context().beginPath();
-            state.context().moveTo(d.x + 8, d.y);
-            state.context().arc(d.x, d.y, 8, 0, 2 * Math.PI);
-            state.context().lineWidth = 2;
-            state.context().strokeStyle = 'red';
-            state.context().stroke();
-            state.context().fillStyle = 'red';
-            state.context().fill();
-            state.context().closePath();
-        }
-
-        state.context().restore();
-    }
 
     // draw edges
     function drawEdges(width, color) {
@@ -937,6 +790,8 @@ function Metro( canvas, data ) {
                     drawPath(edge[0], edge[1], width, color);
                 } else if(edge.left && edge.right && state.graphics.polygons[edge.left.index].children.length !== 0 && state.graphics.polygons[edge.right.index].children.length !== 0){
                     drawPath(edge[0], edge[1], width, color);
+                } else {
+
                 }
             }
         }
@@ -956,9 +811,9 @@ function Metro( canvas, data ) {
             let points = itemsWithin( state.graphics.buildings, v1, DISTANCE );
             let vectors = points.map( point => {
                 let diff = { x: v1.x - point.x, y: v1.y - point.y };
-
                 diff = toPolar( diff );
                 diff.r = Math.max( .05, diff.r - point.radius );
+
                 return toCartesian( diff );
             });
 
@@ -992,6 +847,77 @@ function Metro( canvas, data ) {
         state.context().stroke();
         state.context().closePath();
         state.context().restore();
+    }
+
+    function addWalls(v) {
+        let dLeft = v.x;
+        let dRight = state.width() - v.x;
+        let dTop = v.y;
+        let dBottom = state.height() - v.y;
+
+        dLeft /= state.width();
+        dRight /= state.width();
+        dTop /= state.height();
+        dBottom /= state.height();
+
+        let fLeft = Math.min(.25 - dLeft, 0);
+        let fRight = Math.min(.25 - dRight, 0);
+        let fTop = Math.min( .25 - dTop, 0);
+        let fBottom = Math.min( .25 - dBottom, 0);
+
+        // console.log(fLeft, '|' , fRight, '|', fTop, '|', fBottom)
+
+        v.x += fLeft * 4;
+        v.x += fRight * 4;
+        v.y += fTop * 4;
+        v.y += fBottom * 4;
+    }
+
+    function moveVertices() {
+        let edges = state.graphics.edges;
+        const DISTANCE = 200;
+        const SEGMENT_LENGTH = .5;
+
+        edges.forEach(edge => {
+            let points = itemsWithin( state.graphics.buildings, edge[0], DISTANCE );
+            let vectors = points.map( point => {
+                let diff = { x: edge[0].x - point.x, y: edge[0].y - point.y };
+                diff = toPolar( diff );
+                diff.r = Math.max( .05, diff.r - point.radius );
+
+                return toCartesian( diff );
+            });
+
+            vectors.push( { x : Math.min( 0, edge[0].x - DISTANCE * .9 ), y : edge[0].y  });
+            vectors.push( { x : Math.max( state.width() - 1, edge[0].x + DISTANCE * .9), y: edge[0].y });
+            vectors.push( { x : edge[0].x, y : Math.min(0, edge[0].y - DISTANCE * .9 ) } );
+            vectors.push( { x : edge[0].x, y : Math.max( state.height() -1, edge[0].y + DISTANCE * .9 ) });
+
+            let f = (vPolar) => {
+                vPolar.r = DISTANCE / vPolar.r;
+                return vPolar;
+            };
+
+            // get Vsum: the sum of building vectors.  Each building pushes v1 away from itself
+            let sumOfVectors = getSumOfVectors(vectors, f);
+            let vSum = setLength( sumOfVectors ,SEGMENT_LENGTH);
+
+            edge[0][0] += vSum.x;
+            edge[0][1] += vSum.y;
+
+            edge[0].x += vSum.x;
+            edge[0].y += vSum.y;
+
+            edge[0][0] = Math.max( 1, edge[0].x );
+            edge[0][1] = Math.max( 1, edge[0].y );
+            edge[0][0] = Math.min( state.width() - 2, edge[0].x );
+            edge[0][1] = Math.min( state.height() -2, edge[0].y );
+
+            edge[0].x = Math.max( 1, edge[0].x );
+            edge[0].y = Math.max( 1, edge[0].y );
+            edge[0].x = Math.min( state.width() - 2, edge[0].x );
+            edge[0].y = Math.min( state.height() -2, edge[0].y );
+        });
     }
 
     function isIn( item, center, boxDimension ) {
