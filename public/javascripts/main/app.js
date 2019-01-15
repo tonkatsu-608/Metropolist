@@ -311,13 +311,13 @@ function Metro( canvas, data ) {
         if(state.isDragSelected && state.DRAGGED_SUBJECT){
             let d = state.DRAGGED_SUBJECT;
             state.context().save();
+            state.context().beginPath();
+            state.context().translate(state.transform.x, state.transform.y);
+            state.context().scale(state.transform.k, state.transform.k);
             state.context().clearRect(d.x - d.width / 2, d.y - d.height / 2, d.width, d.height);
             state.context().translate(d.x, d.y);
             state.context().rotate(d.orientation);
             state.context().translate( -(d.x), -(d.y));
-            state.context().beginPath();
-            state.context().translate(state.transform.x, state.transform.y);
-            state.context().scale(state.transform.k, state.transform.k);
             state.context().moveTo(d.x + d.radius / 2, d.y);
             state.context().arc(d.x, d.y, d.radius / 2, 0, 2 * Math.PI);
             state.context().fillStyle = "#CBC5B9";
@@ -940,8 +940,8 @@ function Metro( canvas, data ) {
         tick();
 
         // draw
-        state.context().save();
         state.graphics.edges.forEach(e => {
+            state.context().save();
             state.context().beginPath();
             state.context().translate(state.transform.x, state.transform.y);
             state.context().scale(state.transform.k, state.transform.k);
@@ -960,11 +960,13 @@ function Metro( canvas, data ) {
             state.context().stroke();
             state.context().fillStyle = '#CBC5B9';
             state.context().fill();
+            state.context().restore();
         });
 
         // draw DRAGGED_SUBJECT vertex
         if(state.DRAGGED_SUBJECT) {
             let d = state.DRAGGED_SUBJECT;
+            state.context().save();
             state.context().beginPath();
             state.context().translate(state.transform.x, state.transform.y);
             state.context().scale(state.transform.k, state.transform.k);
@@ -975,8 +977,8 @@ function Metro( canvas, data ) {
             state.context().stroke();
             state.context().fillStyle = 'red';
             state.context().fill();
+            state.context().restore();
         }
-        state.context().restore();
     }
 
     // draw edges
