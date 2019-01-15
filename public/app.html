@@ -14,57 +14,75 @@
 <nav class="grey lighten-3">
     <div class="nav-wrapper">
         <a href="#" class="brand-logo" style="max-height: 80px;">
-            <img id="test" src="https://fontmeme.com/permalink/180923/7d95b1af3bc6a2edd6b5c31370e73e2d.png" height="80%" width="80%" alt="pixel-fonts" border="0">
+            <img id="test" src="https://fontmeme.com/permalink/180923/7d95b1af3bc6a2edd6b5c31370e73e2d.png" height="60%" width="60%" alt="pixel-fonts" border="0">
         </a>
-        <ul class="right hide-on-med-and-down">
-            <li>
-                <div class="switch">
-                    <label>
-                        Drag
-                        <input type="checkbox" id="simulateSwitch">
-                        <span class="lever"></span>
-                        Simulating
-                    </label>
-                </div>
-            </li>
-            <li>&nbsp;&nbsp;&nbsp;&nbsp;</li>
-            <li>
-                <input placeholder="sites number" id="input-sites" type="number"/>
-            </li>
-            <li>
-                <a class="btn" id="render">render</a>
-            </li>
-            <li>
-                <div class="switch">
-                    <label>
-                        Multiple
-                        <input type="checkbox" id="dragSwitch">
-                        <span class="lever"></span>
-                        Single
-                    </label>
-                </div>
-            </li>
-            <li id="startWrap">
-                <a class="btn">wrap</a>
-            </li>
-            <li id="stopWrap" hidden>
-                <a class="btn red">stop wrap</a>
-            </li>
-
-            <!--<li>-->
-                <!--<a class="btn" href="/todolist">todoList</a>-->
-            <!--</li>-->
-            <!--<li>-->
-                <!--<a class="btn" onclick="onDownload()">download</a>-->
-            <!--</li>-->
-        </ul>
     </div>
 </nav>
-<div class="row" style="background-color: #CBC5B9">
+<div class="row">
     <div class="col s12">
         <div class="row">
-            <div class="col s12">
-                <canvas width="1420" height="920" id="myCanvas">
+            <div class="col s2">
+                <ul class="right hide-on-med-and-down">
+                    <li>
+                        <div class="switch">
+                            <label>
+                                Drag
+                                <input type="checkbox" id="simulateSwitch">
+                                <span class="lever"></span>
+                                Simulating
+                            </label>
+                        </div>
+                    </li>
+                    <hr/>
+                    <li>
+                        <div class="switch">
+                            <label>
+                                Multiple
+                                <input type="checkbox" id="dragSwitch">
+                                <span class="lever"></span>
+                                Single
+                            </label>
+                        </div>
+                    </li>
+                    <hr/>
+                    <li>
+                        <div class="input-field">
+                            <input id="input-sites" type="number" value="30"/>
+                            <label for="input-sites">sites</label>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="input-field">
+                            <input id="distance" type="number" value="100"/>
+                            <label for="distance">distance</label>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="input-field">
+                            <input id="segment" type="number" value="20"/>
+                            <label for="segment">segment</label>
+                        </div>
+                    </li>
+                    <li>
+                        <a class="btn" id="render">render</a>
+                    </li>
+                    <hr/>
+                    <li id="startWrap">
+                        <a class="btn">wrap</a>
+                    </li>
+                    <li id="stopWrap" hidden>
+                        <a class="btn red">stop wrap</a>
+                    </li>
+                    <!--<li>-->
+                    <!--<a class="btn" href="/todolist">todoList</a>-->
+                    <!--</li>-->
+                    <!--<li>-->
+                    <!--<a class="btn" onclick="onDownload()">download</a>-->
+                    <!--</li>-->
+                </ul>
+            </div>
+            <div class="col s10" style="background-color: #CBC5B9">
+                <canvas width="1190" height="920" id="myCanvas">
                     Your browser does not support canvas
                 </canvas>
                 <!--<canvas id="oldCanvas" width="710" height="460"></canvas>-->

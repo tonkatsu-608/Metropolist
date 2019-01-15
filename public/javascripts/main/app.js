@@ -115,6 +115,7 @@ function Metro( canvas, data ) {
         isDragSelected: false,
         isSimulatingSelected: false,
         DRAGGED_SUBJECT: null,
+        transform: d3.zoomIdentity,
         canvas: canvas.node() || d3.select("canvas").node(),
         width () { return this.canvas.width; },
         height () { return this.canvas.height; },
@@ -261,6 +262,7 @@ function Metro( canvas, data ) {
             .on("start", dragstarted)
             .on("drag", dragged)
             .on("end", dragended))
+        .call(d3.zoom().scaleExtent([1/2, 2]).on("zoom", zoomed))
         .on("contextmenu", d3.contextMenu(menu));
 
     d3.select("body")
@@ -269,7 +271,7 @@ function Metro( canvas, data ) {
     // render graphics
     function tick() {
         state.context().clearRect(0, 0, state.width(), state.height());
-        // drawLink();
+        drawLink();
         // drawSites('yellow');
         // drawCenters('green');
         drawEdges( 2, 'black');
@@ -279,10 +281,12 @@ function Metro( canvas, data ) {
             for (let i = 0; i < state.graphics.clusters[k].length; i ++) {
                 let d = state.graphics.clusters[k][i];
                 state.context().save();
+                state.context().beginPath();
+                state.context().translate(state.transform.x, state.transform.y);
+                state.context().scale(state.transform.k, state.transform.k);
                 state.context().translate(d.x, d.y);
                 state.context().rotate(d.orientation);
                 state.context().translate( -(d.x), -(d.y));
-                state.context().beginPath();
                 state.context().lineWidth = 3;
                 if(d.random < .79) {
                     state.context().rect(d.x - d.width / 2, d.y - d.height / 2, d.width, d.height);
@@ -300,7 +304,6 @@ function Metro( canvas, data ) {
                 state.context().fill();
                 state.context().strokeStyle = "#000";
                 state.context().stroke();
-                state.context().closePath();
                 state.context().restore();
             }
         }
@@ -313,6 +316,8 @@ function Metro( canvas, data ) {
             state.context().rotate(d.orientation);
             state.context().translate( -(d.x), -(d.y));
             state.context().beginPath();
+            state.context().translate(state.transform.x, state.transform.y);
+            state.context().scale(state.transform.k, state.transform.k);
             state.context().moveTo(d.x + d.radius / 2, d.y);
             state.context().arc(d.x, d.y, d.radius / 2, 0, 2 * Math.PI);
             state.context().fillStyle = "#CBC5B9";
@@ -320,7 +325,6 @@ function Metro( canvas, data ) {
             state.context().strokeStyle = "#000";
             state.context().lineWidth = 1.5;
             state.context().stroke();
-            state.context().closePath();
             state.context().clip();
             state.context().restore();
         }
@@ -344,7 +348,7 @@ function Metro( canvas, data ) {
     }
 
     function newGraphics() {
-        state.N = $('#sites').val();
+        state.N = $('#input-sites').val() || 30;
         state.simulations.forEach(s => s.stop());
         state.graphics = new Graphics();
 
@@ -734,12 +738,20 @@ function Metro( canvas, data ) {
     /*=====================================================================================================
                                              Drag Functions
     ======================================================================================================*/
+    function zoomed() {
+        state.transform = d3.event.transform;
+        tick();
+    }
+
     function dragsubject() {
         let sbj, index, isInside;
-        let point = [d3.event.x, d3.event.y];
 
         if(!state.isWrapMode) {
             // DRAGGED_SUBJECT = building
+            let x = state.transform.invertX(d3.event.x);
+            let y = state.transform.invertX(d3.event.y);
+            let point = [x, y];
+
             for(let i = 0; i < state.graphics.polygons.length; i ++){
                 isInside = d3.polygonContains(state.graphics.polygons[i].vertices, point);
                 if(isInside){
@@ -747,7 +759,7 @@ function Metro( canvas, data ) {
                     break;
                 }
             }
-            try { sbj = state.simulations[index].find(d3.event.x, d3.event.y); } catch {}
+            try { sbj = state.simulations[index].find(x, y); } catch {}
 
         } else {
             // DRAGGED_SUBJECT = vertex
@@ -780,7 +792,6 @@ function Metro( canvas, data ) {
         } else {
             // dragging vertex
         }
-        console.log("DRAGGED_SUBJECT: ", d3.event.subject);
     }
 
     function dragged() {
@@ -870,6 +881,8 @@ function Metro( canvas, data ) {
     function drawSites(color) {
         state.context().save();
         state.context().beginPath();
+        state.context().translate(state.transform.x, state.transform.y);
+        state.context().scale(state.transform.k, state.transform.k);
         for (let i = 0, n = state.graphics.polygons.length; i < n; ++i) {
             let site = state.graphics.polygons[i].site;
             state.context().moveTo(site.x + 2.5, site.y);
@@ -879,7 +892,6 @@ function Metro( canvas, data ) {
         state.context().fill();
         state.context().strokeStyle = "#fff";
         state.context().stroke();
-        state.context().closePath();
         state.context().restore();
     }
 
@@ -887,6 +899,8 @@ function Metro( canvas, data ) {
     function drawCenters(color) {
         state.context().save();
         state.context().beginPath();
+        state.context().translate(state.transform.x, state.transform.y);
+        state.context().scale(state.transform.k, state.transform.k);
         for (let i = 0, n = state.graphics.polygons.length; i < n; ++i) {
             let site = state.graphics.polygons[i].center;
             state.context().moveTo(site.x + 2.5, site.y);
@@ -896,13 +910,15 @@ function Metro( canvas, data ) {
         state.context().fill();
         state.context().strokeStyle = "#fff";
         state.context().stroke();
-        state.context().closePath();
         state.context().restore();
     }
 
     // draw links among sites
     function drawLink() {
+        state.context().save();
         state.context().beginPath();
+        state.context().translate(state.transform.x, state.transform.y);
+        state.context().scale(state.transform.k, state.transform.k);
         for (let i = 0, n = state.graphics.links.length; i < n; ++i) {
             let link = state.graphics.links[i];
             state.context().moveTo(link.source[0], link.source[1]);
@@ -910,27 +926,20 @@ function Metro( canvas, data ) {
         }
         state.context().strokeStyle = "rgba(0,0,0,0.2)";
         state.context().stroke();
+        state.context().restore();
     }
     
     // draw vertices
     function drawVertices() {
+        // clear rendered edges first
         tick();
+
+        // draw
         state.context().save();
-
-        // state.vertices.forEach(d => {
-        //     state.context().beginPath();
-        //     state.context().moveTo(d.x + 8, d.y);
-        //     state.context().arc(d.x, d.y, 8, 0, 2 * Math.PI);
-        //     state.context().lineWidth = 2;
-        //     state.context().strokeStyle = 'red';
-        //     state.context().stroke();
-        //     state.context().fillStyle = '#CBC5B9';
-        //     state.context().fill();
-        //     state.context().closePath();
-        // });
-
         state.graphics.edges.forEach(e => {
             state.context().beginPath();
+            state.context().translate(state.transform.x, state.transform.y);
+            state.context().scale(state.transform.k, state.transform.k);
             state.context().moveTo(e[0][0], e[0][1]);
             state.context().lineTo(e[1][0], e[1][1]);
             state.context().lineWidth = 1;
@@ -946,13 +955,14 @@ function Metro( canvas, data ) {
             state.context().stroke();
             state.context().fillStyle = '#CBC5B9';
             state.context().fill();
-            state.context().closePath();
         });
 
+        // draw DRAGGED_SUBJECT vertex
         if(state.DRAGGED_SUBJECT) {
             let d = state.DRAGGED_SUBJECT;
-
             state.context().beginPath();
+            state.context().translate(state.transform.x, state.transform.y);
+            state.context().scale(state.transform.k, state.transform.k);
             state.context().moveTo(d.x + 8, d.y);
             state.context().arc(d.x, d.y, 8, 0, 2 * Math.PI);
             state.context().lineWidth = 2;
@@ -960,7 +970,6 @@ function Metro( canvas, data ) {
             state.context().stroke();
             state.context().fillStyle = 'red';
             state.context().fill();
-            state.context().closePath();
         }
         state.context().restore();
     }
@@ -985,12 +994,15 @@ function Metro( canvas, data ) {
     // draw segment
     function drawPath(v1, v2, width, color) {
         let count = 0;
-        const DISTANCE = 100;
+        const DISTANCE = $('#distance').val() || 100;
         const PATH_LENGTH = distance(v1,v2);
-        const SEGMENT_LENGTH = PATH_LENGTH / 20;
+        const SEGMENT = $('#segment').val() || 20;
+        const SEGMENT_LENGTH = PATH_LENGTH / SEGMENT;
 
         state.context().save();
         state.context().beginPath();
+        state.context().translate(state.transform.x, state.transform.y);
+        state.context().scale(state.transform.k, state.transform.k);
 
         while( distance( v1, v2 ) > SEGMENT_LENGTH * 1.2 && count++ < 20 ) {
             let points = itemsWithin( state.graphics.buildings, v1, DISTANCE );
@@ -1030,7 +1042,6 @@ function Metro( canvas, data ) {
         state.context().lineWidth = width
         state.context().strokeStyle = color;
         state.context().stroke();
-        state.context().closePath();
         state.context().restore();
     }
 
