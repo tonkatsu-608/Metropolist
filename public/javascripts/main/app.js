@@ -262,7 +262,7 @@ function Metro( canvas, data ) {
             .on("start", dragstarted)
             .on("drag", dragged)
             .on("end", dragended))
-        .call(d3.zoom().scaleExtent([1/2, 2]).on("zoom", zoomed))
+        .call(d3.zoom().scaleExtent([1/2, 4]).on("zoom", zoomed))
         .on("contextmenu", d3.contextMenu(menu));
 
     d3.select("body")
@@ -745,14 +745,14 @@ function Metro( canvas, data ) {
 
     function dragsubject() {
         let sbj, index, isInside;
+        let x = state.transform.invertX(d3.event.x);
+        let y = state.transform.invertY(d3.event.y);
 
         if(!state.isWrapMode) {
             // DRAGGED_SUBJECT = building
-            let x = state.transform.invertX(d3.event.x);
-            let y = state.transform.invertX(d3.event.y);
-            let point = [x, y];
-
             for(let i = 0; i < state.graphics.polygons.length; i ++){
+                let point = [x, y];
+
                 isInside = d3.polygonContains(state.graphics.polygons[i].vertices, point);
                 if(isInside){
                     index = i;
@@ -764,7 +764,7 @@ function Metro( canvas, data ) {
         } else {
             // DRAGGED_SUBJECT = vertex
             try {
-                let vertex = findVertex(d3.event.x, d3.event.y, 10);
+                let vertex = findVertex(x, y, 10);
                 let edge = state.graphics.edges[vertex.index];
                 if(vertex.x == edge[0][0] && vertex.y == edge[0][1]) {
                     sbj = state.graphics.edges[vertex.index][0];
@@ -775,6 +775,7 @@ function Metro( canvas, data ) {
             } catch {}
         }
         state.DRAGGED_SUBJECT = sbj || null;
+        console.log("DRAGGED_SUBJECT: ", state.DRAGGED_SUBJECT);
         return state.DRAGGED_SUBJECT;
     }
 
@@ -795,23 +796,27 @@ function Metro( canvas, data ) {
     }
 
     function dragged() {
+        let x = d3.event.x;
+        let y = d3.event.y;
+
         if(!state.isWrapMode) {
             // dragging building
             if(!state.isDragSelected) {
                 state.simulations[d3.event.subject.parent]
-                    .force("center", d3.forceCenter(d3.event.x, d3.event.y))
+                    .force("center", d3.forceCenter(x, y))
                     .restart();
             }
             makePointInside();
             tick();
         } else {
-            if(d3.event.x > 20 && d3.event.x < state.width() - 20 && d3.event.y > 20 && d3.event.y < state.height() - 20) {
-                d3.event.subject[0] = d3.event.x;
-                d3.event.subject[1] = d3.event.y;
-                d3.event.subject.x = d3.event.x;
-                d3.event.subject.y = d3.event.y;
-                d3.event.subject.data.x = d3.event.x;
-                d3.event.subject.data.y = d3.event.y;
+
+            if(x > 20 && x < state.width() - 20 && y > 20 && y < state.height() - 20) {
+                d3.event.subject[0] = x;
+                d3.event.subject[1] = y;
+                d3.event.subject.x = x;
+                d3.event.subject.y = y;
+                d3.event.subject.data.x = x;
+                d3.event.subject.data.y = y;
                 drawVertices();
             }
         }
