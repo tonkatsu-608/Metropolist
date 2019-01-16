@@ -3,7 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="165d839a-52e7-4e96-a2de-bc583fff601e" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/public/app.html" afterPath="$PROJECT_DIR$/public/app.html" />
+      <change beforePath="$PROJECT_DIR$/public/javascripts/main/app-7.js" afterPath="$PROJECT_DIR$/public/javascripts/main/app-7.js" />
       <change beforePath="$PROJECT_DIR$/public/javascripts/main/app.js" afterPath="$PROJECT_DIR$/public/javascripts/main/app.js" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
@@ -35,12 +35,23 @@
       <file leaf-file-name="app.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/public/javascripts/main/app.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="436">
-              <caret line="798" column="26" lean-forward="false" selection-start-line="798" selection-start-column="16" selection-end-line="798" selection-end-column="26" />
+            <state relative-caret-position="305">
+              <caret line="940" column="33" lean-forward="true" selection-start-line="940" selection-start-column="33" selection-end-line="940" selection-end-column="33" />
               <folding>
                 <element signature="n#!!block;n#myForce#0;n#!!block;n#Metro#0" expanded="false" />
+                <element signature="n#!!block;n#forceCollidePolygon#0;n#!!block;n#Metro#0" expanded="false" />
                 <element signature="n#!!block;n#getLineIntersection#0;n#!!block;n#Metro#0" expanded="false" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="d3.v4.js" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/public/javascripts/libraries/d3.v4.js">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="469">
+              <caret line="11110" column="21" lean-forward="false" selection-start-line="11110" selection-start-column="15" selection-end-line="11110" selection-end-column="21" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -56,15 +67,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>offRadius</find>
-      <find>Path2D</find>
-      <find>path</find>
-      <find>stack</find>
-      <find>voronoi</find>
-      <find>optional</find>
-      <find>option</find>
-      <find>state.</find>
-      <find>findByName</find>
       <find>findAllByUid</find>
       <find>findAll</find>
       <find>update</find>
@@ -85,6 +87,16 @@
       <find>isSimulatingSelected</find>
       <find>|| null</find>
       <find>state.vertices</find>
+      <find>( function</find>
+      <find>(function</find>
+      <find>state.COLOR</find>
+      <find>.halfedges</find>
+      <find>color</find>
+      <find>menu</find>
+      <find>close</find>
+      <find>Conta</find>
+      <find>Contains</find>
+      <find>d3.polygonContains</find>
     </findStrings>
     <replaceStrings>
       <replace>this.state.</replace>
@@ -111,6 +123,7 @@
         <option value="$PROJECT_DIR$/app.js" />
         <option value="$PROJECT_DIR$/public/todolist.html" />
         <option value="$PROJECT_DIR$/public/app.html" />
+        <option value="$PROJECT_DIR$/public/javascripts/main/app-7.js" />
         <option value="$PROJECT_DIR$/public/javascripts/main/app.js" />
       </list>
     </option>
@@ -280,12 +293,12 @@
       <workItem from="1543802523123" duration="162000" />
       <workItem from="1544149239902" duration="11069000" />
       <workItem from="1545152573560" duration="1487000" />
-      <workItem from="1546028352063" duration="126029000" />
+      <workItem from="1546028352063" duration="136769000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="187823000" />
+    <option name="totallyTimeSpent" value="198563000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1440" height="900" extended-state="0" />
@@ -574,26 +587,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/public/javascripts/main/app-6.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="269">
-          <caret line="656" column="41" lean-forward="true" selection-start-line="656" selection-start-column="19" selection-end-line="656" selection-end-column="41" />
-          <folding>
-            <element signature="n#!!doc" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/public/javascripts/main/app-7.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-3770">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="n#!!doc" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/public/javascripts/others/paper-canvas.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="446">
@@ -618,14 +611,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/public/javascripts/libraries/d3-context-menu.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
-          <caret line="11" column="37" lean-forward="true" selection-start-line="11" selection-start-column="37" selection-end-line="11" selection-end-column="37" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/public/clip-voronoi.html">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -642,14 +627,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/public/javascripts/libraries/d3.v4.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="94">
-          <caret line="11085" column="36" lean-forward="false" selection-start-line="11085" selection-start-column="36" selection-end-line="11085" selection-end-column="36" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/public/app.html">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-334">
@@ -662,12 +639,53 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/public/javascripts/main/app-6.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="221">
+          <caret line="84" column="46" lean-forward="false" selection-start-line="84" selection-start-column="46" selection-end-line="84" selection-end-column="46" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/public/javascripts/libraries/d3-context-menu.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="165">
+          <caret line="11" column="8" lean-forward="false" selection-start-line="11" selection-start-column="8" selection-end-line="11" selection-end-column="8" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/public/javascripts/others/d3-svg.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="249">
+          <caret line="180" column="48" lean-forward="false" selection-start-line="180" selection-start-column="43" selection-end-line="180" selection-end-column="48" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/public/javascripts/main/app-7.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="491">
+          <caret line="111" column="0" lean-forward="true" selection-start-line="111" selection-start-column="0" selection-end-line="125" selection-end-column="5" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/public/javascripts/libraries/d3.v4.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="469">
+          <caret line="11110" column="21" lean-forward="false" selection-start-line="11110" selection-start-column="15" selection-end-line="11110" selection-end-column="21" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/public/javascripts/main/app.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="436">
-          <caret line="798" column="26" lean-forward="false" selection-start-line="798" selection-start-column="16" selection-end-line="798" selection-end-column="26" />
+        <state relative-caret-position="305">
+          <caret line="940" column="33" lean-forward="true" selection-start-line="940" selection-start-column="33" selection-end-line="940" selection-end-column="33" />
           <folding>
             <element signature="n#!!block;n#myForce#0;n#!!block;n#Metro#0" expanded="false" />
+            <element signature="n#!!block;n#forceCollidePolygon#0;n#!!block;n#Metro#0" expanded="false" />
             <element signature="n#!!block;n#getLineIntersection#0;n#!!block;n#Metro#0" expanded="false" />
           </folding>
         </state>

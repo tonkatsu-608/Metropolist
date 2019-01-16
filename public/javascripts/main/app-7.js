@@ -109,6 +109,22 @@ function Metro(canvas, data ) {
         this.buildings = getBuildings(this.clusters);
     }
 
+    // make sites
+    function makeSites() {
+        let sites = [];
+
+        if(data) {
+            sites = data.sites;
+        } else {
+            sites = data ? data.sites : d3.range(state.N).map( () => [Math.random() * state.width(), Math.random() * state.height()] );
+            // sites.forEach(s => {
+            //     s.color = state.COLOR(Math.random() * 4);
+            //     return s;
+            // });
+        }
+        return sites;
+    }
+
     // make polygons(districts)
     function makePolygons(diagram) {
         return diagram.cells.map(function(cell, index) {

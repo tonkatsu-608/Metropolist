@@ -47,12 +47,12 @@
 *
 * */
 function Metro( canvas, data ) {
-    $(document).ready(function () {
-        $('#render').click( function() {
+    $(document).ready(() => {
+        $('#render').click(() => {
             newGraphics();
         });
 
-        $('#startWrap').click( function() {
+        $('#startWrap').click(() => {
             $('#startWrap').attr('hidden', true);
             $('#stopWrap').removeAttr('hidden', true);
             $('#dragSwitch').attr('disabled', true);
@@ -64,7 +64,7 @@ function Metro( canvas, data ) {
             startWrapMode();
         });
 
-        $('#stopWrap').click( function() {
+        $('#stopWrap').click(() => {
             $('#stopWrap').attr('hidden', true);
             $('#startWrap').removeAttr('hidden', true);
             $('#dragSwitch').removeAttr('disabled', true);
@@ -115,7 +115,7 @@ function Metro( canvas, data ) {
         isDragSelected: false,
         isSimulatingSelected: false,
         DRAGGED_SUBJECT: null,
-        transform: d3.zoomIdentity,
+        transform: d3.zoomIdentity, // scale parameter of zoom
         canvas: canvas.node() || d3.select("canvas").node(),
         width () { return this.canvas.width; },
         height () { return this.canvas.height; },
@@ -129,24 +129,40 @@ function Metro( canvas, data ) {
                                          Constructor Functions
     ======================================================================================================*/
     function Graphics() {
-        this.sites = data ? data.sites : d3.range(state.N).map( s => [Math.random() * state.width(), Math.random() * state.height()] );
+        this.sites = makeSites();
         this.voronoi = d3.voronoi().extent([[20, 20], [state.width() - 20, state.height() - 20]]);
         this.diagram = this.voronoi( this.sites );
-        this.links = this.diagram.links();
-        this.edges = this.diagram.edges;
         this.polygons = makePolygons(this.diagram);
+        this.edges = this.diagram.edges;
+        this.links = this.diagram.links();
+        this.triangles = this.diagram.triangles();
         this.clusters = data ? data.clusters : this.polygons.map( makeCluster );
         this.buildings = getBuildings(this.clusters);
     }
 
+    // make sites
+    function makeSites() {
+        let sites = [];
+
+        if(data) {
+            sites = data.sites;
+        } else {
+            sites = d3.range(state.N).map( () => [Math.random() * state.width(), Math.random() * state.height()] );
+            sites.forEach(s => {
+                s.color = null;
+                return s;
+            });
+        }
+        return sites;
+    }
+
     // make polygons(districts)
     function makePolygons(diagram) {
-        return diagram.cells.map(function(cell, index) {
+        return diagram.cells.map((cell, index) => {
             let polygon = {};
             let vertices = cell.halfedges.map(i => {
                 let vertex = cellHalfedgeStart(cell, diagram.edges[i]);
-                polygon.halfedges = cell.halfedges.map(e => diagram.edges[e]);
-                polygon.site = { x: cell.site[0], y: cell.site[1] };
+                polygon.site = { x: cell.site[0], y: cell.site[1], index: i, color: null };
                 vertex.x = vertex[0];
                 vertex.y = vertex[1];
                 state.vertices.push({x: vertex[0], y: vertex[1], index: i});
@@ -159,15 +175,50 @@ function Metro( canvas, data ) {
             polygon.area = d3.polygonArea(vertices);
             polygon.center = { x: d3.polygonCentroid(vertices)[0], y: d3.polygonCentroid(vertices)[1] };
             polygon.type = getType(polygon);
+            switch (polygon.type) {
+                case 'rich':
+                    polygon.site.color = 'blue';
+                    cell.site.data.color = 'blue';
+                    break;
+                case 'medium':
+                    polygon.site.color = 'red';
+                    cell.site.data.color = 'red';
+                    break;
+                case 'poor':
+                    polygon.site.color = 'green';
+                    cell.site.data.color = 'green';
+                    break;
+                case 'plaza':
+                    polygon.site.color = 'yellow';
+                    cell.site.data.color = 'yellow';
+                    break;
+                case 'empty':
+                    polygon.site.color = 'white';
+                    cell.site.data.color = 'white';
+                    break;
+            }
             return polygon;
         });
+
+        function getType(poly) {
+            let x = Math.abs(poly.center.x - state.width() / 2);
+            let y = Math.abs(poly.center.y - state.height() / 2);
+            let distance = Math.sqrt(x * x + y * y);
+            distance = distance / Math.sqrt( (state.width() * state.width())/4 + (state.height() * state.height())/4 );
+
+            if(distance > .6) {
+                return 'empty';
+            } else {
+                return state.DISTRICT_TYPES[Math.floor(Math.random() * 4)];
+            }
+        }
     }
 
     // make clusters
     function makeCluster(poly) {
-        let number = 0;
-        let width = poly.bounds.width;
-        let height = poly.bounds.height;
+        let number = 0,
+            width = poly.bounds.width,
+            height = poly.bounds.height;
         switch (poly.type){
             case 'rich':
                 number = classifyCluster(Math.round(Math.random() * Math.round(height / 35) + 2), Math.round(Math.random() * 1) + 1);
@@ -188,12 +239,12 @@ function Metro( canvas, data ) {
                 number = Math.round(Math.random() * 10 + 5);
         }
 
-        let dots = d3.range(number).map(function () {
+        let dots = d3.range(number).map(() => {
             let d = {
                 orientation: 0.0,
                 parent: poly.index,
             };
-            switch (poly.type){
+            switch (poly.type) {
                 case 'rich':
                     d.width = Math.round(Math.random() * 10 + width / 10);
                     d.height = Math.round(Math.random() * 10 + height / 10);
@@ -271,8 +322,11 @@ function Metro( canvas, data ) {
     // render graphics
     function tick() {
         state.context().clearRect(0, 0, state.width(), state.height());
-        drawLink();
-        // drawSites('yellow');
+
+        renderBackground();
+        drawTriangles();
+        // drawLink();
+        drawSites();
         // drawCenters('green');
         drawEdges( 2, 'black');
 
@@ -386,11 +440,19 @@ function Metro( canvas, data ) {
         polygon.simulation = state.simulations[polygon.index];
     }
 
+    // set zoom arguments
+    function zoomed() {
+        state.transform = d3.event.transform;
+        tick();
+    }
+
     // set context menu
     function menu(d) {
-        let point = [d3.event.layerX, d3.event.layerY];
+        let x = state.transform.invertX(d3.event.layerX);
+        let y = state.transform.invertY(d3.event.layerY);
+        let point = [x, y];
         let polygon = state.graphics.polygons.filter(poly => d3.polygonContains(poly.vertices, point))[0];
-        let content =  [{
+        return [{
             title: 'Current Type: ' + polygon.type,
         },
             {
@@ -400,6 +462,7 @@ function Metro( canvas, data ) {
                 title: 'Change type to Rich',
                 action: function() {
                     polygon.type = 'rich';
+                    polygon.site.color = 'blue';
                     remakeCluster(polygon);
                     $('#stopWrap').click();
                 }
@@ -408,7 +471,8 @@ function Metro( canvas, data ) {
                 title: 'Change type to Medium',
                 action: function() {
                     polygon.type = 'medium';
-                    remakeCluster(polygon);
+                    polygon.site.color = 'red';
+                remakeCluster(polygon);
                     $('#stopWrap').click();
                 }
             },
@@ -416,6 +480,7 @@ function Metro( canvas, data ) {
                 title: 'Change type to Poor',
                 action: function() {
                     polygon.type = 'poor';
+                    polygon.site.color = 'green';
                     remakeCluster(polygon);
                     $('#stopWrap').click();
                 }
@@ -424,6 +489,7 @@ function Metro( canvas, data ) {
                 title: 'Change type to Plaza',
                 action: function() {
                     polygon.type = 'plaza';
+                    polygon.site.color = 'yellow';
                     remakeCluster(polygon);
                     $('#stopWrap').click();
                 }
@@ -432,11 +498,11 @@ function Metro( canvas, data ) {
                 title: 'Change type to Empty',
                 action: function() {
                     polygon.type = 'empty';
+                    polygon.site.color = 'white';
                     remakeCluster(polygon);
                     $('#stopWrap').click();
                 }
             }];
-        return content;
     };
 
     // remake cluster after change its parent's type
@@ -444,19 +510,6 @@ function Metro( canvas, data ) {
         let cluster = makeCluster(polygon);
         state.graphics.clusters.splice(polygon.index, 1, cluster);
         makeSimulations(polygon, cluster);
-    }
-
-    function getType(poly) {
-        let x = Math.abs(poly.center.x - state.width() / 2);
-        let y = Math.abs(poly.center.y - state.height() / 2);
-        let distance = Math.sqrt(x * x + y * y);
-        distance = distance / Math.sqrt( (state.width() * state.width())/4 + (state.height() * state.height())/4 );
-
-        if(distance > .6) {
-            return 'empty';
-        } else {
-            return state.DISTRICT_TYPES[Math.floor(Math.random() * 4)];
-        }
     }
 
     // custom force
@@ -735,14 +788,14 @@ function Metro( canvas, data ) {
             maxY = Math.max.apply( null, ys );
         return { width : maxX - minX, height : maxY - minY };
     }
+
+    // make barycentric color for triangles which consist of sites
+    function barycentricValue() {
+
+    }
     /*=====================================================================================================
                                              Drag Functions
     ======================================================================================================*/
-    function zoomed() {
-        state.transform = d3.event.transform;
-        tick();
-    }
-
     function dragsubject() {
         let sbj, index, isInside;
         let x = state.transform.invertX(d3.event.x);
@@ -776,6 +829,9 @@ function Metro( canvas, data ) {
         }
         state.DRAGGED_SUBJECT = sbj || null;
         console.log("DRAGGED_SUBJECT: ", state.DRAGGED_SUBJECT);
+
+        if(!state.DRAGGED_SUBJECT) d3.contextMenu('close');
+
         return state.DRAGGED_SUBJECT;
     }
 
@@ -809,7 +865,6 @@ function Metro( canvas, data ) {
             makePointInside();
             tick();
         } else {
-
             if(x > 20 && x < state.width() - 20 && y > 20 && y < state.height() - 20) {
                 d3.event.subject[0] = x;
                 d3.event.subject[1] = y;
@@ -882,39 +937,61 @@ function Metro( canvas, data ) {
     /*=====================================================================================================
                                              Draw Functions
     ======================================================================================================*/
+    // render background
+    function renderBackground() {
+        state.graphics.triangles.forEach(triangle => {
+            let min_width = Math.min(triangle[0][0], triangle[1][0], triangle[2][0]);
+            let max_width = Math.max(triangle[0][0], triangle[1][0], triangle[2][0]);
+            let min_height = Math.min(triangle[0][1], triangle[1][1], triangle[2][1]);
+            let max_height = Math.max(triangle[0][1], triangle[1][1], triangle[2][1]);
+
+            for(let x = min_width; x < max_width; x ++) {
+                for(let y = min_height; y < max_height; y ++) {
+                    let point = [x, y];
+                    if(d3.polygonContains(triangle, point)) {
+                        // renderPixel(triangle);
+
+                    }
+                }
+            }
+        });
+    }
+
     // draw sites
-    function drawSites(color) {
+    function drawSites() {
         state.context().save();
-        state.context().beginPath();
         state.context().translate(state.transform.x, state.transform.y);
         state.context().scale(state.transform.k, state.transform.k);
+
         for (let i = 0, n = state.graphics.polygons.length; i < n; ++i) {
             let site = state.graphics.polygons[i].site;
-            state.context().moveTo(site.x + 2.5, site.y);
-            state.context().arc(site.x, site.y, 2.5, 0, 2 * Math.PI, false);
+            state.context().beginPath();
+            state.context().moveTo(site.x + 8, site.y);
+            state.context().arc(site.x, site.y, 8, 0, 2 * Math.PI, false);
+            state.context().fillStyle = site.color;
+            state.context().fill();
+            state.context().strokeStyle = site.color;
+            state.context().stroke();
         }
-        state.context().fillStyle = color;
-        state.context().fill();
-        state.context().strokeStyle = "#fff";
-        state.context().stroke();
         state.context().restore();
     }
 
     // draw centers
     function drawCenters(color) {
         state.context().save();
-        state.context().beginPath();
         state.context().translate(state.transform.x, state.transform.y);
         state.context().scale(state.transform.k, state.transform.k);
+
         for (let i = 0, n = state.graphics.polygons.length; i < n; ++i) {
             let site = state.graphics.polygons[i].center;
+            state.context().beginPath();
             state.context().moveTo(site.x + 2.5, site.y);
             state.context().arc(site.x, site.y, 2.5, 0, 2 * Math.PI, false);
+            state.context().fillStyle = color;
+            state.context().fill();
+            state.context().strokeStyle = color;
+            state.context().stroke();
         }
-        state.context().fillStyle = color;
-        state.context().fill();
-        state.context().strokeStyle = "#fff";
-        state.context().stroke();
         state.context().restore();
     }
 
@@ -924,6 +1001,7 @@ function Metro( canvas, data ) {
         state.context().beginPath();
         state.context().translate(state.transform.x, state.transform.y);
         state.context().scale(state.transform.k, state.transform.k);
+
         for (let i = 0, n = state.graphics.links.length; i < n; ++i) {
             let link = state.graphics.links[i];
             state.context().moveTo(link.source[0], link.source[1]);
@@ -933,13 +1011,43 @@ function Metro( canvas, data ) {
         state.context().stroke();
         state.context().restore();
     }
+
+    // draw triangles
+    function drawTriangles() {
+        for (let i = 0, n = state.graphics.triangles.length; i < n; ++i) {
+            let triangle = state.graphics.triangles[i];
+            state.context().save();
+            state.context().beginPath();
+            state.context().translate(state.transform.x, state.transform.y);
+            state.context().scale(state.transform.k, state.transform.k);
+            state.context().moveTo(triangle[0][0] + 8, triangle[0][1]);
+            state.context().lineTo(triangle[1][0], triangle[1][1]);
+            state.context().lineTo(triangle[2][0], triangle[2][1]);
+            state.context().closePath();
+            state.context().strokeStyle = "rgba(0,0,0,0.2)";
+            state.context().stroke();
+            // state.context().beginPath();
+            // state.context().moveTo(triangle[0][0] + 8, triangle[0][1]);
+            // state.context().arc(triangle[0][0], triangle[0][1], 8, 0, 2 * Math.PI);
+            // state.context().fillStyle = triangle[0].color;
+            // state.context().fill();
+            // state.context().closePath();
+            // state.context().beginPath();
+            // state.context().moveTo(triangle[1][0] + 8, triangle[1][1]);
+            // state.context().arc(triangle[1][0], triangle[1][1], 8, 0, 2 * Math.PI);
+            // state.context().fillStyle = triangle[1].color;
+            // state.context().fill();
+            // state.context().closePath();
+            state.context().restore();
+        }
+    }
     
     // draw vertices
     function drawVertices() {
-        // clear rendered edges first
+        // clear rendered edges & vertices first
         tick();
 
-        // draw
+        // draw edges & vertices
         state.graphics.edges.forEach(e => {
             state.context().save();
             state.context().beginPath();
