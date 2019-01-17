@@ -16,6 +16,17 @@
         <a href="#" class="brand-logo" style="max-height: 80px;">
             <img id="test" src="https://fontmeme.com/permalink/180923/7d95b1af3bc6a2edd6b5c31370e73e2d.png" height="60%" width="60%" alt="pixel-fonts" border="0">
         </a>
+        <ul class="right hide-on-med-and-down">
+            <li>
+                <div class="input-field">
+                    <input id="input-sites" type="number" value="30"/>
+                    <label for="input-sites">sites</label>
+                </div>
+            </li>
+            <li>
+                <a class="btn" id="render">render</a>
+            </li>
+        </ul>
     </div>
 </nav>
 <div class="row">
@@ -46,27 +57,29 @@
                     </li>
                     <hr/>
                     <li>
-                        <div class="input-field">
-                            <input id="input-sites" type="number" value="30"/>
-                            <label for="input-sites">sites</label>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="input-field">
-                            <input id="distance" type="number" value="100"/>
+                        <p class="range-field">
                             <label for="distance">distance</label>
-                        </div>
+                            <input type="range" id="distance" value="180" min="0" max="300"/>
+                        </p>
                     </li>
                     <li>
-                        <div class="input-field">
-                            <input id="segment" type="number" value="20"/>
+                        <p class="range-field">
                             <label for="segment">segment</label>
-                        </div>
+                            <input type="range" id="segment" value="20" min="0" max="100"/>
+                        </p>
                     </li>
-                    <li>
-                        <a class="btn" id="render">render</a>
-                    </li>
-                    <hr/>
+                    <!--<li>-->
+                        <!--<div class="input-field">-->
+                            <!--<input id="distance" type="number" value="100"/>-->
+                            <!--<label for="distance">distance</label>-->
+                        <!--</div>-->
+                    <!--</li>-->
+                    <!--<li>-->
+                        <!--<div class="input-field">-->
+                            <!--<input id="segment" type="number" value="20"/>-->
+                            <!--<label for="segment">segment</label>-->
+                        <!--</div>-->
+                    <!--</li>-->
                     <li id="startWrap">
                         <a class="btn">warp</a>
                     </li>

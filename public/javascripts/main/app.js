@@ -47,12 +47,20 @@
 *
 * */
 function Metro( canvas, data ) {
-    $(document).ready(() => {
-        $('#render').click(() => {
+    $(document).ready( function() {
+        $('#render').click( function() {
             newGraphics();
         });
 
-        $('#startWrap').click(() => {
+        $('#distance').on('change', function() {
+            tick();
+        });
+
+        $('#segment').on('change', function() {
+            tick();
+        });
+
+        $('#startWrap').click( function() {
             $('#startWrap').attr('hidden', true);
             $('#stopWrap').removeAttr('hidden', true);
             $('#dragSwitch').attr('disabled', true);
@@ -64,7 +72,7 @@ function Metro( canvas, data ) {
             startWrapMode();
         });
 
-        $('#stopWrap').click(() => {
+        $('#stopWrap').click( function() {
             $('#stopWrap').attr('hidden', true);
             $('#startWrap').removeAttr('hidden', true);
             $('#dragSwitch').removeAttr('disabled', true);
@@ -76,17 +84,17 @@ function Metro( canvas, data ) {
             stopWrapMode();
         });
 
-        $('#dragSwitch').on('change', function () {
-            if (this.checked) {
+        $('#dragSwitch').on('change', function() {
+            if(this.checked) {
                 state.isDragSelected = true; // single
             } else {
                 state.isDragSelected = false; // multiple
             }
         });
 
-        $('#simulateSwitch').on('change', function () {
-            if (this.checked) {
-                state.isSimulatingSelected = true; //drag
+        $('#simulateSwitch').on('change', function() {
+            if(this.checked) {
+                state.isSimulatingSelected = true; // drag
                 if(state.simulations.length !== 0) {
                     restartSimulations();
                 }
@@ -221,16 +229,16 @@ function Metro( canvas, data ) {
             height = poly.bounds.height;
         switch (poly.type){
             case 'rich':
-                number = classifyCluster(Math.round(Math.random() * Math.round(height / 35) + 2), Math.round(Math.random() * 1) + 1);
+                number = classifyCluster(Math.round(Math.random() * Math.round(height / 35) + 3), Math.round(Math.random() * 1) + 3);
                 break;
             case 'medium':
-                number = classifyCluster(Math.round(Math.random() * Math.round(height / 25) + 2), Math.round(Math.random() * 1) + 2);
+                number = classifyCluster(Math.round(Math.random() * Math.round(height / 25) + 4), Math.round(Math.random() * 2) + 3);
                 break;
             case 'poor':
-                number = classifyCluster(Math.round(Math.random() * Math.round(height / 20) + 5), Math.round(Math.random() * 2) + 2);
+                number = classifyCluster(Math.round(Math.random() * Math.round(height / 20) + 5), Math.round(Math.random() * 3) + 3);
                 break;
             case 'plaza':
-                number = classifyCluster(Math.round(Math.random() * 1 + 2), Math.round(Math.random() * 1 + 1));
+                number = classifyCluster(3, 1);
                 break;
             case 'empty':
                 number = 0;
@@ -268,7 +276,7 @@ function Metro( canvas, data ) {
             d.random = Math.random();
             d.sign = d.random < 0.5 ? -1 : 1;
             d.offset = {x: Math.round(Math.random() * d.width / 2), y: Math.round(Math.random() * d.height / 2)};
-            d.radius = Math.sqrt(sqr(d.width) + sqr(d.height));
+            d.radius = Math.sqrt(sqr(d.width / 2) + sqr(d.height / 2));
             return d;
         });
         poly.children = dots;
@@ -323,10 +331,10 @@ function Metro( canvas, data ) {
     function tick() {
         state.context().clearRect(0, 0, state.width(), state.height());
 
-        renderBackground();
-        drawTriangles();
+        // renderBackground();
+        // drawTriangles();
         // drawLink();
-        drawSites();
+        // drawSites();
         // drawCenters('green');
         drawEdges( 2, 'black');
 
@@ -349,10 +357,10 @@ function Metro( canvas, data ) {
                 } else if(d.random > .8) {
                     state.context().rect(d.x - d.width / 2, d.y - d.height / 2, d.width, d.height);
                     state.context().globalCompositeOperation = 'destination-over';
-                    state.context().arc(d.x + d.sign * d.offset.x, d.y + d.sign * d.offset.y, d.radius / 4, 0, 2 * Math.PI);
+                    state.context().arc(d.x + d.sign * d.offset.x, d.y + d.sign * d.offset.y, d.radius / 2, 0, 2 * Math.PI);
                 } else {
                     state.context().lineWidth = 1.5;
-                    state.context().arc(d.x, d.y, d.radius / 2, 0, 2 * Math.PI);
+                    state.context().arc(d.x, d.y, d.radius, 0, 2 * Math.PI);
                 }
                 state.context().fillStyle = "#98948b";
                 state.context().fill();
@@ -372,8 +380,9 @@ function Metro( canvas, data ) {
             state.context().translate(d.x, d.y);
             state.context().rotate(d.orientation);
             state.context().translate( -(d.x), -(d.y));
-            state.context().moveTo(d.x + d.radius / 2, d.y);
-            state.context().arc(d.x, d.y, d.radius / 2, 0, 2 * Math.PI);
+            let dist = Math.max(d.offset.x, d.offset.y, Math.sqrt(sqr(d.offset.x) + sqr(d.offset.y)));
+            state.context().moveTo(d.x + d.radius, d.y);
+            state.context().arc(d.x, d.y, d.radius, 0, 2 * Math.PI);
             state.context().fillStyle = "#CBC5B9";
             state.context().fill();
             state.context().strokeStyle = "#000";
@@ -432,9 +441,10 @@ function Metro( canvas, data ) {
         let distance = Math.max(polygon.bounds.width, polygon.bounds.height) / 2;
         state.simulations[polygon.index] = d3.forceSimulation(cluster)
             .force("center", d3.forceCenter(polygon.center.x, polygon.center.y))
-            .force("collide", d3.forceCollide(d => d.radius + 0.5).iterations(2))
-            .force("myForce", myForce().distanceMin(collision).distanceMax(distance).iterations(4))
+            .force("collide", d3.forceCollide(d => d.radius + 10).iterations(2))
+            // .force("collide", d3.forceCollide(20).iterations(2))
             .force("polygonCollide", forceCollidePolygon(polygon))
+            .force("myForce", myForce().distanceMin(20).distanceMax(distance).iterations(4))
             .on("tick", tick);
 
         polygon.simulation = state.simulations[polygon.index];
@@ -658,7 +668,7 @@ function Metro( canvas, data ) {
                         indexOfNearestSegment = distances.indexOf(minDistance);
 
                         // set min distance between the point and its nearest polygon segment
-                        if( d < 30) {
+                        if( d < 20) {
                             let dvx = Math.abs(point.x - vector.x) / (d);
                             let dvy = Math.abs(point.y - vector.y) / (d);
                             node.vx += Math.sign(point.x - vector.x) * dvx;
@@ -678,8 +688,6 @@ function Metro( canvas, data ) {
                         // check whether point is intersecting with polygon bounds
                         inter = getLineIntersection(segment1.x, segment1.y, segment2.x, segment2.y, center.x, center.y, point.x, point.y);
                         if (inter) {
-                            // d.x = (d.x + inter.x) * .5;
-                            // d.y = (d.y + inter.y) * .5;
                             node.x = inter.x;
                             node.y = inter.y;
                             break;
@@ -788,11 +796,6 @@ function Metro( canvas, data ) {
             maxY = Math.max.apply( null, ys );
         return { width : maxX - minX, height : maxY - minY };
     }
-
-    // make barycentric color for triangles which consist of sites
-    function barycentricValue() {
-
-    }
     /*=====================================================================================================
                                              Drag Functions
     ======================================================================================================*/
@@ -880,15 +883,17 @@ function Metro( canvas, data ) {
     function dragended() {
         if(!state.isWrapMode) {
             // dragging building
-            if (!d3.event.active) state.simulations[d3.event.subject.parent].alphaTarget(0);
+            if (!d3.event.active) state.simulations[d3.event.subject.parent].alphaTarget(0).stop();
+            d3.event.subject.fx = null;
+            d3.event.subject.fy = null;
+            state.DRAGGED_SUBJECT = null;
+            tick();
         } else {
             // dragging vertex
             $('#stopWrap').click();
             $('#startWrap').click();
+            state.DRAGGED_SUBJECT = null;
         }
-        d3.event.subject.fx = null;
-        d3.event.subject.fy = null;
-        state.DRAGGED_SUBJECT = null;
     }
 
     function makePointInside() {
@@ -937,8 +942,19 @@ function Metro( canvas, data ) {
     /*=====================================================================================================
                                              Draw Functions
     ======================================================================================================*/
+    // https://codeplea.com/triangular-interpolation
+    //
+    function barycentricValue(triangle, point) {
+
+        return 'white';
+    }
+
     // render background
     function renderBackground() {
+        state.context().save();
+        state.context().translate(state.transform.x, state.transform.y);
+        state.context().scale(state.transform.k, state.transform.k);
+
         state.graphics.triangles.forEach(triangle => {
             let min_width = Math.min(triangle[0][0], triangle[1][0], triangle[2][0]);
             let max_width = Math.max(triangle[0][0], triangle[1][0], triangle[2][0]);
@@ -949,12 +965,16 @@ function Metro( canvas, data ) {
                 for(let y = min_height; y < max_height; y ++) {
                     let point = [x, y];
                     if(d3.polygonContains(triangle, point)) {
-                        // renderPixel(triangle);
+                        let color = barycentricValue(triangle, point);
 
+                        state.context().beginPath();
+                        state.context().fillStyle = color;
+                        state.context().fillRect(x,y,1,1);
                     }
                 }
             }
         });
+        state.context().restore();
     }
 
     // draw sites
