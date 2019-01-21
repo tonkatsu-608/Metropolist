@@ -14,20 +14,16 @@ var mapSchema = new schema({
         type: String,
         required: true
     },
-    sites: {
-        type: Array,
-        required: true
-    },
-    clusters: {
-        type: Array,
-        required: true
-    },
     createDate: {
         type: String,
         required: true
     },
     editDate: {
         type: String,
+        required: false
+    },
+    graphics: {
+        type: Object,
         required: false
     }
 });
@@ -38,8 +34,7 @@ mapSchema.methods.transformMap = function ( map ) {
         uid: map.uid,
         name: map.name,
         img: map.img,
-        sites: map.sites,
-        clusters: map.clusters,
+        graphics: map.graphics,
         createDate: map.createDate,
         editDate: map.editDate
 
@@ -55,8 +50,7 @@ mapSchema.statics.update = function (map, cb) {
         { $set: {
                 name: map.name,
                 img: map.img,
-                sites: map.sites,
-                clusters: map.clusters,
+                graphics: map.graphics,
                 editDate: map.editDate
         }}, { new: true }, cb);
 }
