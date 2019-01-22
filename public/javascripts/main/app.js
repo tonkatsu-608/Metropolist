@@ -820,7 +820,7 @@ function Metro( canvas, data ) {
         } else {
             // DRAGGED_SUBJECT = vertex
             try {
-                let vertex = findVertex(x, y, 10);
+                let vertex = findVertex(x, y, 20);
                 let edge = state.graphics.edges[vertex.index];
                 if(vertex.x == edge[0][0] && vertex.y == edge[0][1]) {
                     sbj = state.graphics.edges[vertex.index][0];
@@ -1114,7 +1114,6 @@ function Metro( canvas, data ) {
         for(let i = 0; i < state.graphics.edges.length; i ++) {
             let edge = state.graphics.edges[i];
             if(edge && edge[0] && edge[1] ) {
-
                 if(edge.left && state.graphics.polygons[edge.left.index].children.length !== 0) {
                     drawPath(edge[0], edge[1], width, color);
                 } else if(edge.right && state.graphics.polygons[edge.right.index].children.length !== 0) {
