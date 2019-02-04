@@ -22,10 +22,38 @@ var mapSchema = new schema({
         type: String,
         required: false
     },
-    graphics: {
+    data: {
         type: Object,
         required: false
-    }
+    },
+    // segment: {
+    //     type: Number,
+    //     required: false
+    // },
+    // distance: {
+    //     type: Number,
+    //     required: false
+    // },
+    // sites: {
+    //     type: Array,
+    //     required: false
+    // },
+    // edges: {
+    //     type: Array,
+    //     required: false
+    // },
+    // polygons: {
+    //     type: Array,
+    //     required: false
+    // },
+    // clusters: {
+    //     type: Array,
+    //     required: false
+    // },
+    // vertices: {
+    //     type: Array,
+    //     required: false
+    // },
 });
 
 mapSchema.methods.transformMap = function ( map ) {
@@ -34,10 +62,16 @@ mapSchema.methods.transformMap = function ( map ) {
         uid: map.uid,
         name: map.name,
         img: map.img,
-        graphics: map.graphics,
-        createDate: map.createDate,
-        editDate: map.editDate
-
+        data: map.data,
+        // createDate: map.createDate,
+        // editDate: map.editDate,
+        // segment: map.segment,
+        // distance: map.distance,
+        // sites: map.sites,
+        // edges: map.edges,
+        // polygons: map.polygons,
+        // clusters: map.clusters,
+        // vertices: map.vertices,
     };
 }
 
@@ -50,8 +84,15 @@ mapSchema.statics.update = function (map, cb) {
         { $set: {
                 name: map.name,
                 img: map.img,
-                graphics: map.graphics,
-                editDate: map.editDate
+                data: map.data,
+                // editDate: map.editDate,
+                // segment: map.segment,
+                // distance: map.distance,
+                // sites: map.sites,
+                // edges: map.edges,
+                // polygons: map.polygons,
+                // clusters: map.clusters,
+                // vertices: map.vertices,
         }}, { new: true }, cb);
 }
 

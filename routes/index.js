@@ -165,7 +165,6 @@ router.post('/metro/api/v1/map/create', function (req, res, next) {
 
 router.put('/metro/api/v1/map/update', function (req, res, next) {
     let map = req.body;
-    console.log(map.graphics.edges);
     Map.update(map, function (err, doc) {
         if(err) {
             res.status(404).send({msg: 'error: map did not find'});
@@ -196,6 +195,10 @@ router.get('/app', function(req, res, next) {
 
 router.get('/todolist', function(req, res, next) {
     res.sendFile('todolist.html', {root: __dirname + "/../public"});
+});
+
+router.get('/elevation-demo', function(req, res, next) {
+    res.sendFile('elevation-demo.html', {root: __dirname + "/../public"});
 });
 
 module.exports = router;

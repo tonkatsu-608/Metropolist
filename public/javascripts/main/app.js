@@ -60,28 +60,28 @@ function Metro( canvas, data ) {
             tick();
         });
 
-        $('#startWrap').click( function() {
-            $('#startWrap').attr('hidden', true);
-            $('#stopWrap').removeAttr('hidden', true);
+        $('#startWarp').click( function() {
+            $('#startWarp').attr('hidden', true);
+            $('#stopWarp').removeAttr('hidden', true);
             $('#dragSwitch').attr('disabled', true);
             $('#simulateSwitch').attr('disabled', true);
             $('#input-sites').attr('disabled', true);
             $('#render').attr('disabled', true);
 
-            state.isWrapMode = true;
-            startWrapMode();
+            state.isWarpMode = true;
+            startWarpMode();
         });
 
-        $('#stopWrap').click( function() {
-            $('#stopWrap').attr('hidden', true);
-            $('#startWrap').removeAttr('hidden', true);
+        $('#stopWarp').click( function() {
+            $('#stopWarp').attr('hidden', true);
+            $('#startWarp').removeAttr('hidden', true);
             $('#dragSwitch').removeAttr('disabled', true);
             $('#simulateSwitch').removeAttr('disabled', true);
             $('#input-sites').removeAttr('disabled', true);
             $('#render').removeAttr('disabled', true);
 
-            state.isWrapMode = false;
-            stopWrapMode();
+            state.isWarpMode = false;
+            stopWarpMode();
         });
 
         $('#dragSwitch').on('change', function() {
@@ -119,7 +119,7 @@ function Metro( canvas, data ) {
         vertices: [],
         simulations: [],
         verticesSimulations: [],
-        isWrapMode: false,
+        isWarpMode: false,
         isDragSelected: false,
         isSimulatingSelected: false,
         DRAGGED_SUBJECT: null,
@@ -133,6 +133,7 @@ function Metro( canvas, data ) {
     };
 
     state.graphics = new Graphics();
+    console.log(state.graphics)
     /*=====================================================================================================
                                          Constructor Functions
     ======================================================================================================*/
@@ -140,12 +141,12 @@ function Metro( canvas, data ) {
         this.sites = makeSites();
         this.voronoi = d3.voronoi().extent([[20, 20], [state.width() - 20, state.height() - 20]]);
         this.diagram = this.voronoi( this.sites );
-        this.polygons = makePolygons(this.diagram);
+        this.polygons = makePolygons( this.diagram );
         this.edges = this.diagram.edges;
         this.links = this.diagram.links();
         this.triangles = this.diagram.triangles();
         this.clusters = data ? data.clusters : this.polygons.map( makeCluster );
-        this.buildings = getBuildings(this.clusters);
+        this.buildings = getBuildings( this.clusters );
     }
 
     // make sites
@@ -170,7 +171,7 @@ function Metro( canvas, data ) {
             let polygon = {};
             let vertices = cell.halfedges.map(i => {
                 let vertex = cellHalfedgeStart(cell, diagram.edges[i]);
-                polygon.site = { x: cell.site[0], y: cell.site[1], index: i, color: null };
+                polygon.site = { x: cell.site[0], y: cell.site[1], index: cell.site.index, color: null };
                 vertex.x = vertex[0];
                 vertex.y = vertex[1];
                 state.vertices.push({x: vertex[0], y: vertex[1], index: i});
@@ -426,12 +427,12 @@ function Metro( canvas, data ) {
         state.simulations.forEach(s => s.stop());
     }
     
-    function startWrapMode() {
+    function startWarpMode() {
         stopSimulations();
         drawVertices();
     }
 
-    function stopWrapMode() {
+    function stopWarpMode() {
         tick();
     }
 
@@ -474,7 +475,7 @@ function Metro( canvas, data ) {
                     polygon.type = 'rich';
                     polygon.site.color = 'blue';
                     remakeCluster(polygon);
-                    $('#stopWrap').click();
+                    $('#stopWarp').click();
                 }
             },
             {
@@ -483,7 +484,7 @@ function Metro( canvas, data ) {
                     polygon.type = 'medium';
                     polygon.site.color = 'red';
                 remakeCluster(polygon);
-                    $('#stopWrap').click();
+                    $('#stopWarp').click();
                 }
             },
             {
@@ -492,7 +493,7 @@ function Metro( canvas, data ) {
                     polygon.type = 'poor';
                     polygon.site.color = 'green';
                     remakeCluster(polygon);
-                    $('#stopWrap').click();
+                    $('#stopWarp').click();
                 }
             },
             {
@@ -501,7 +502,7 @@ function Metro( canvas, data ) {
                     polygon.type = 'plaza';
                     polygon.site.color = 'yellow';
                     remakeCluster(polygon);
-                    $('#stopWrap').click();
+                    $('#stopWarp').click();
                 }
             },
             {
@@ -510,7 +511,7 @@ function Metro( canvas, data ) {
                     polygon.type = 'empty';
                     polygon.site.color = 'white';
                     remakeCluster(polygon);
-                    $('#stopWrap').click();
+                    $('#stopWarp').click();
                 }
             }];
     };
@@ -804,7 +805,7 @@ function Metro( canvas, data ) {
         let x = state.transform.invertX(d3.event.x);
         let y = state.transform.invertY(d3.event.y);
 
-        if(!state.isWrapMode) {
+        if(!state.isWarpMode) {
             // DRAGGED_SUBJECT = building
             for(let i = 0; i < state.graphics.polygons.length; i ++){
                 let point = [x, y];
@@ -820,15 +821,17 @@ function Metro( canvas, data ) {
         } else {
             // DRAGGED_SUBJECT = vertex
             try {
-                let vertex = findVertex(x, y, 20);
+                let vertex = findVertex(x, y);
                 let edge = state.graphics.edges[vertex.index];
-                if(vertex.x == edge[0][0] && vertex.y == edge[0][1]) {
+
+                if(vertex.x === edge[0][0] && vertex.y === edge[0][1]) {
                     sbj = state.graphics.edges[vertex.index][0];
-                } else if(vertex.x == edge[1][0] && vertex.y == edge[1][1]) {
+                } else if(vertex.x === edge[1][0] && vertex.y === edge[1][1]) {
                     sbj = state.graphics.edges[vertex.index][1];
+                } else {
+                    console.log("no sbj");
                 }
-                sbj.data = vertex;
-            } catch {}
+            } catch { }
         }
         state.DRAGGED_SUBJECT = sbj || null;
         console.log("DRAGGED_SUBJECT: ", state.DRAGGED_SUBJECT);
@@ -839,7 +842,7 @@ function Metro( canvas, data ) {
     }
 
     function dragstarted() {
-        if(!state.isWrapMode) {
+        if(!state.isWarpMode) {
             // dragging building
             d3.contextMenu('close');
             if(!state.isDragSelected) {
@@ -858,7 +861,7 @@ function Metro( canvas, data ) {
         let x = d3.event.x;
         let y = d3.event.y;
 
-        if(!state.isWrapMode) {
+        if(!state.isWarpMode) {
             // dragging building
             if(!state.isDragSelected) {
                 state.simulations[d3.event.subject.parent]
@@ -873,15 +876,13 @@ function Metro( canvas, data ) {
                 d3.event.subject[1] = y;
                 d3.event.subject.x = x;
                 d3.event.subject.y = y;
-                d3.event.subject.data.x = x;
-                d3.event.subject.data.y = y;
                 drawVertices();
             }
         }
     }
 
     function dragended() {
-        if(!state.isWrapMode) {
+        if(!state.isWarpMode) {
             // dragging building
             if (!d3.event.active) state.simulations[d3.event.subject.parent].alphaTarget(0).stop();
             d3.event.subject.fx = null;
@@ -890,8 +891,8 @@ function Metro( canvas, data ) {
             tick();
         } else {
             // dragging vertex
-            $('#stopWrap').click();
-            $('#startWrap').click();
+            $('#stopWarp').click();
+            $('#startWarp').click();
             state.DRAGGED_SUBJECT = null;
         }
     }

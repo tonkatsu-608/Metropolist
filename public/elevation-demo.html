@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Metropolist</title>
+    <link rel="shortcut icon" type="image/x-icon" href="images/metro.ico" media="screen" />
+    <link rel="Bookmark" href="images/metro.ico" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="stylesheets/materialize.min.css">
+    <link rel="stylesheet" href="stylesheets/d3-context-menu.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+</head>
+<body>
+<nav class="grey lighten-3">
+    <div class="nav-wrapper">
+        <a href="#" class="brand-logo" style="max-height: 80px;">
+            <img id="test" src="https://fontmeme.com/permalink/180923/7d95b1af3bc6a2edd6b5c31370e73e2d.png" height="60%" width="60%" alt="pixel-fonts" border="0">
+        </a>
+        <ul class="right hide-on-med-and-down">
+            <li>
+                <div class="input-field">
+                    <input id="input-sites" type="number" value="30"/>
+                    <label for="input-sites">sites</label>
+                </div>
+            </li>
+            <li>
+                <a class="btn" id="render">render</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+<div class="row">
+    <div class="col s12">
+        <div class="row">
+            <div class="col s2">
+                <ul class="right hide-on-med-and-down">
+                    <li id="startEdit">
+                        <a class="btn">edit</a>
+                    </li>
+                    <li id="stopEdit" hidden>
+                        <a class="btn red">stop edit</a>
+                    </li>
+                    <hr/>
+
+                    <li>
+                        <p>elevation setting</p>
+                        <div class="switch">
+                            <label>
+                                increase
+                                <input type="checkbox" id="elevationSwitch" disabled>
+                                <span class="lever"></span>
+                                decrease
+                            </label>
+                        </div>
+                    </li>
+                    <li>
+                        <p class="range-field">
+                            <label for="radius">radius</label>
+                            <input type="range" id="radius" value="100" min="30" max="700" disabled/>
+                        </p>
+                    </li>
+                </ul>
+            </div>
+            <div class="col s10">
+                <canvas width="1190" height="920" id="myCanvas">
+                    Your browser does not support canvas
+                </canvas>
+                <!--<canvas id="oldCanvas" width="710" height="460"></canvas>-->
+            </div>
+            <div class="col s4" hidden>
+                <!--<canvas id="oldCanvas" width="710" height="460"></canvas>-->
+                <canvas width="450" height="300" id="newCanvas"></canvas>
+            </div>
+            <div class="col s4" hidden>
+                <div style="width: 450px; height:300px;" id="img"></div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!---------------------------------------Js libraries------------------------------------->
+<script type="text/javascript" src="javascripts/libraries/jquery.js"></script>
+<script type="text/javascript" src="javascripts/libraries/materialize.min.js"></script>
+<script type="text/javascript" src="javascripts/libraries/jquery.Shortcut.js"></script>
+<script type="text/javascript" src="javascripts/libraries/d3.v4.js"></script>
+<script type="text/javascript" src="javascripts/libraries/d3-context-menu.js"></script>
+<script type="text/javascript" src="javascripts/libraries/canvas2image.js"></script>
+<script type="text/javascript" src="javascripts/libraries/html2canvas.js"></script>
+<!-----------------------------------------Main Js----------------------------------------->
+<script type="text/javascript" src="javascripts/main/elevation-demo.js"></script>
+<script>
+    var metro = new Metro(d3.select("#myCanvas"));
+</script>
+</body>
+</html>
