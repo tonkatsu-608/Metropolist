@@ -2,13 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="165d839a-52e7-4e96-a2de-bc583fff601e" name="Default" comment="">
-      <change beforePath="" afterPath="$PROJECT_DIR$/public/elevation-demo.html" />
-      <change beforePath="" afterPath="$PROJECT_DIR$/public/javascripts/main/elevation-demo.js" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/db/Map.js" afterPath="$PROJECT_DIR$/db/Map.js" />
-      <change beforePath="$PROJECT_DIR$/public/app.html" afterPath="$PROJECT_DIR$/public/app.html" />
-      <change beforePath="$PROJECT_DIR$/public/javascripts/main/app.js" afterPath="$PROJECT_DIR$/public/javascripts/main/app.js" />
-      <change beforePath="$PROJECT_DIR$/routes/index.js" afterPath="$PROJECT_DIR$/routes/index.js" />
+      <change beforePath="$PROJECT_DIR$/public/elevation-demo.html" afterPath="$PROJECT_DIR$/public/elevation-demo.html" />
+      <change beforePath="$PROJECT_DIR$/public/javascripts/main/elevation-demo.js" afterPath="$PROJECT_DIR$/public/javascripts/main/elevation-demo.js" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
     <ignored path="$PROJECT_DIR$/temp/" />
@@ -22,25 +18,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="app.html" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/public/app.html">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="305">
-              <caret line="57" column="20" lean-forward="false" selection-start-line="57" selection-start-column="20" selection-end-line="63" selection-end-column="25" />
-              <folding>
-                <element signature="n#style#0;n#a#0;n#div#0;n#nav#0;n#body#0;n#html#0;n#!!top" expanded="true" />
-                <element signature="n#style#0;n#div#1;n#div#0;n#div#0;n#div#0;n#body#0;n#html#0;n#!!top" expanded="true" />
-                <element signature="n#style#0;n#div#0;n#div#3;n#div#0;n#div#0;n#div#0;n#body#0;n#html#0;n#!!top" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="elevation-demo.html" pinned="false" current-in-tab="false">
+      <file leaf-file-name="elevation-demo.html" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/public/elevation-demo.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="533">
-              <caret line="63" column="32" lean-forward="false" selection-start-line="63" selection-start-column="32" selection-end-line="63" selection-end-column="32" />
+            <state relative-caret-position="455">
+              <caret line="55" column="19" lean-forward="true" selection-start-line="55" selection-start-column="19" selection-end-line="60" selection-end-column="29" />
               <folding>
                 <element signature="n#style#0;n#a#0;n#div#0;n#nav#0;n#body#0;n#html#0;n#!!top" expanded="true" />
                 <element signature="n#style#0;n#div#0;n#div#3;n#div#0;n#div#0;n#div#0;n#body#0;n#html#0;n#!!top" expanded="true" />
@@ -49,33 +31,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="app.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/public/javascripts/main/app.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="309">
-              <caret line="659" column="42" lean-forward="false" selection-start-line="659" selection-start-column="0" selection-end-line="660" selection-end-column="0" />
-              <folding>
-                <element signature="n#!!doc" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="elevation-demo.js" pinned="false" current-in-tab="true">
+      <file leaf-file-name="elevation-demo.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/public/javascripts/main/elevation-demo.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="312">
-              <caret line="262" column="0" lean-forward="true" selection-start-line="262" selection-start-column="0" selection-end-line="262" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="d3.v4.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/public/javascripts/libraries/d3.v4.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-187">
-              <caret line="16729" column="8" lean-forward="false" selection-start-line="16729" selection-start-column="8" selection-end-line="16729" selection-end-column="8" />
+            <state relative-caret-position="518">
+              <caret line="213" column="53" lean-forward="false" selection-start-line="213" selection-start-column="53" selection-end-line="213" selection-end-column="53" />
               <folding />
             </state>
           </provider>
@@ -93,10 +53,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>( function</find>
-      <find>(function</find>
-      <find>state.COLOR</find>
-      <find>.halfedges</find>
       <find>color</find>
       <find>menu</find>
       <find>close</find>
@@ -116,13 +72,17 @@
       <find>voron</find>
       <find>state.vertices</find>
       <find>rgb</find>
-      <find>newG</find>
       <find>find</find>
       <find>clear()</find>
       <find>state.radius</find>
-      <find>wheel</find>
       <find>'$</find>
       <find>toF</find>
+      <find>wheel</find>
+      <find>newG</find>
+      <find>render</find>
+      <find>render()</find>
+      <find>distance</find>
+      <find>mousedown</find>
     </findStrings>
     <replaceStrings>
       <replace>this.state.</replace>
@@ -153,8 +113,8 @@
         <option value="$PROJECT_DIR$/public/app.html" />
         <option value="$PROJECT_DIR$/routes/index.js" />
         <option value="$PROJECT_DIR$/public/javascripts/main/app.js" />
-        <option value="$PROJECT_DIR$/public/elevation-demo.html" />
         <option value="$PROJECT_DIR$/public/javascripts/main/elevation-demo.js" />
+        <option value="$PROJECT_DIR$/public/elevation-demo.html" />
       </list>
     </option>
   </component>
@@ -310,12 +270,12 @@
       <workItem from="1543802523123" duration="162000" />
       <workItem from="1544149239902" duration="11069000" />
       <workItem from="1545152573560" duration="1487000" />
-      <workItem from="1546028352063" duration="196681000" />
+      <workItem from="1546028352063" duration="206631000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="258475000" />
+    <option name="totallyTimeSpent" value="268425000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -703,6 +663,14 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$APPLICATION_HOME_DIR$/plugins/JavaScriptLanguage/jsLanguageServicesImpl/external/lib.es5.d.ts">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="266">
+          <caret line="40" column="17" lean-forward="false" selection-start-line="40" selection-start-column="17" selection-end-line="40" selection-end-column="17" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/public/app.html">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="305">
@@ -715,48 +683,40 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/public/javascripts/libraries/d3.v4.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-187">
-          <caret line="16729" column="8" lean-forward="false" selection-start-line="16729" selection-start-column="8" selection-end-line="16729" selection-end-column="8" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$APPLICATION_HOME_DIR$/plugins/JavaScriptLanguage/jsLanguageServicesImpl/external/lib.es5.d.ts">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="266">
-          <caret line="40" column="17" lean-forward="false" selection-start-line="40" selection-start-column="17" selection-end-line="40" selection-end-column="17" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/public/javascripts/main/app.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="309">
-          <caret line="659" column="42" lean-forward="false" selection-start-line="659" selection-start-column="0" selection-end-line="660" selection-end-column="0" />
+        <state relative-caret-position="249">
+          <caret line="756" column="4" lean-forward="true" selection-start-line="756" selection-start-column="4" selection-end-line="758" selection-end-column="5" />
           <folding>
             <element signature="n#!!doc" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/public/elevation-demo.html">
+    <entry file="file://$PROJECT_DIR$/public/javascripts/libraries/d3.v4.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="533">
-          <caret line="63" column="32" lean-forward="false" selection-start-line="63" selection-start-column="32" selection-end-line="63" selection-end-column="32" />
-          <folding>
-            <element signature="n#style#0;n#a#0;n#div#0;n#nav#0;n#body#0;n#html#0;n#!!top" expanded="true" />
-            <element signature="n#style#0;n#div#0;n#div#3;n#div#0;n#div#0;n#div#0;n#body#0;n#html#0;n#!!top" expanded="true" />
-          </folding>
+        <state relative-caret-position="249">
+          <caret line="16424" column="47" lean-forward="false" selection-start-line="16424" selection-start-column="38" selection-end-line="16424" selection-end-column="47" />
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/public/javascripts/main/elevation-demo.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="312">
-          <caret line="262" column="0" lean-forward="true" selection-start-line="262" selection-start-column="0" selection-end-line="262" selection-end-column="0" />
+        <state relative-caret-position="518">
+          <caret line="213" column="53" lean-forward="false" selection-start-line="213" selection-start-column="53" selection-end-line="213" selection-end-column="53" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/public/elevation-demo.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="455">
+          <caret line="55" column="19" lean-forward="true" selection-start-line="55" selection-start-column="19" selection-end-line="60" selection-end-column="29" />
+          <folding>
+            <element signature="n#style#0;n#a#0;n#div#0;n#nav#0;n#body#0;n#html#0;n#!!top" expanded="true" />
+            <element signature="n#style#0;n#div#0;n#div#3;n#div#0;n#div#0;n#div#0;n#body#0;n#html#0;n#!!top" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

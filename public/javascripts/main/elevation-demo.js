@@ -19,6 +19,7 @@ function Metro(canvas) {
             $('#render').attr('disabled', true);
 
             state.isEditMode = true;
+            render();
         });
 
         $('#stopEdit').click( function() {
@@ -29,12 +30,21 @@ function Metro(canvas) {
             $('#render').removeAttr('disabled', true);
 
             state.isEditMode = false;
+            render();
         });
 
         $('#radius').on('change', function() {
             state.radius = this.value;
-
             render();
+            drawCircle('red');
+        });
+
+        $('#elevationSwitch').on('change', function() {
+            if(this.checked) {
+                state.isIncreasing = false; // decrease
+            } else {
+                state.isIncreasing = true; // increase
+            }
         });
     });
 
@@ -44,8 +54,9 @@ function Metro(canvas) {
         pointer: {},
         vertices: [],
         selectedSites: [],
+        isDragging: false,
         isEditMode: false,
-        isIncreasing: false,
+        isIncreasing: true,
         canvas: canvas.node() || d3.select("canvas").node(),
         width () { return this.canvas.width; },
         height () { return this.canvas.height; },
@@ -57,8 +68,12 @@ function Metro(canvas) {
 
     render();
 
-
     d3.select(state.canvas)
+        .call(d3.drag()
+            .container(state.canvas)
+            .on("start", dragstarted)
+            .on("drag", dragged)
+            .on("end", dragended))
         .on('mousemove', onMouseMove)
         .on("wheel", onScroll);
 
@@ -68,8 +83,13 @@ function Metro(canvas) {
                                              Main Functions
     ======================================================================================================*/
     function Graphics() {
-        this.sites = d3.range(state.N).map( () => [Math.random() * state.width(), Math.random() * state.height(), 0] );
-        this.voronoi = d3.voronoi().extent([[20, 20], [state.width() - 20, state.height() - 20]]);
+        let minWidth = 20;
+        let minHeight = 20;
+        let maxWidth = state.width() - 20;
+        let maxHeight = state.height() - 20;
+
+        this.sites = d3.range(state.N).map( () => [Math.random() * (maxWidth - minWidth) + minWidth, Math.random() * (maxHeight - minHeight) + minHeight, 0] );
+        this.voronoi = d3.voronoi().extent([[minWidth, minHeight], [maxWidth, maxHeight]]);
         this.diagram = this.voronoi( this.sites );
         this.polygons = makePolygons(this.diagram);
         this.cells = this.diagram.cells;
@@ -123,8 +143,7 @@ function Metro(canvas) {
 
         drawPolygons();
         drawEdges(2, '#CBC5B9'); // lineWidth, lineColor
-        drawSites(5, 'black'); // lineWidth
-        drawCircle('red');
+        drawSites(1, 'black'); // lineWidth
     }
 
     function newGraphics() {
@@ -135,56 +154,66 @@ function Metro(canvas) {
         render();
     }
 
-    function findSites(x, y, radius) {
-        var i = 0,
-            n = state.graphics.sites.length,
-            dx,
-            dy,
-            d2,
-            site,
-            closest = [];
-
-        if (radius == null) return;
-        else radius *= radius;
-
-        for (i = 0; i < n; ++i) {
-            site = state.graphics.sites[i];
-            dx = x - site[0];
-            dy = y - site[1];
-            d2 = dx * dx + dy * dy;
-            if (d2 < radius) closest.push(site);
+    /*=====================================================================================================
+                                             Event Functions
+    ======================================================================================================*/
+    function dragstarted() {
+        if(state.isEditMode) {
+            state.isDragging = true;
+            state.selectedSites = findSites(state.pointer[0], state.pointer[1], state.radius);
         }
+    }
 
-        return closest;
+    function dragged() {
+        if(state.isEditMode) {
+            let dist = distance(state.pointer, d3.mouse(this));
+
+            if(state.isIncreasing) {
+                if(state.selectedSites.length > 0) {
+                    state.selectedSites.map(s => {
+                        s[2] += dist / 10000;
+                        if(s[2] > 1) s[2] = 1;
+                    });
+                }
+            } else {
+                if(state.selectedSites.length > 0) {
+                    state.selectedSites.map(s => {
+                        s[2] -= dist / 10000;
+                        if(s[2] < 0) s[2] = 0;
+                    });
+                }
+            }
+            render();
+            drawCircle('red');
+        }
+    }
+
+    function dragended() {
+        if(state.isEditMode) {
+            state.isDragging = false;
+        }
     }
 
     // mouse event
     function onMouseMove() {
-        if(state.isEditMode) {
+        if(state.isEditMode && !state.isDragging) {
             state.pointer = d3.mouse(this);
-            state.selectedSites = findSites(state.pointer[0], state.pointer[1], state.radius);
-
             render();
+            drawCircle('red');
         }
     }
 
     function onScroll() {
         if(state.isEditMode) {
-            if(state.selectedSites.length > 0) {
-                state.selectedSites.map(s => {
-                    s[2] -= d3.event.deltaY / 100;
-                });
-            }
-            render();
+            d3.event.preventDefault();
 
-            // console.log("x: ", d3.event.deltaX, " | y: ", d3.event.deltaY, " | z: ", d3.event.deltaZ);
-            // let direction = d3.event.wheelDelta < 0 ? 'down' : 'up';
-            //
-            // if(direction === 'down') {
-            //     // increase
-            // } else if(direction === 'up') {
-            //     // decrease
-            // }
+            state.radius -= d3.event.deltaX;
+            state.radius -= d3.event.deltaY;
+
+            if(state.radius < 30) state.radius = 30;
+            if(state.radius > 700) state.radius = 700;
+            render();
+            drawCircle('red');
         }
     }
 
@@ -210,7 +239,7 @@ function Metro(canvas) {
         state.context().lineTo(state.pointer[0] - state.radius, state.pointer[1]);
 
         state.context().moveTo(state.pointer[0], state.pointer[1] - state.radius);
-        state.context().lineTo(state.pointer[0], state.height() - 20);
+        state.context().lineTo(state.pointer[0], state.pointer[1] + state.radius);
 
         state.context().lineWidth = 1.5;
         state.context().strokeStyle = color;
@@ -283,6 +312,40 @@ function Metro(canvas) {
         }
         state.context().restore();
     }
+    /*=====================================================================================================
+                                             Additional Functions
+    ======================================================================================================*/
+    function sqr(x) {
+        return x * x;
+    }
 
+    function distance(a, b) {
+        return Math.sqrt(sqr(b[0] - a[0]) + sqr(b[1] - a[1]));
+    }
+
+    function findSites(x, y, radius) {
+        var i = 0,
+            n = state.graphics.sites.length,
+            dx,
+            dy,
+            d2,
+            site,
+            closest = [];
+
+        if (radius == null) return;
+        else radius *= radius;
+
+        for (i = 0; i < n; ++i) {
+            site = state.graphics.sites[i];
+            dx = x - site[0];
+            dy = y - site[1];
+            d2 = dx * dx + dy * dy;
+            if (d2 < radius) closest.push(site);
+        }
+
+        return closest;
+    }
+
+    // return Metro()
     return state;
 }
