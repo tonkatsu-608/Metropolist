@@ -43,7 +43,7 @@ function Metro(canvas) {
                 case 'affluence': state.LAYER = 3; break;
                 case 'desirability':
                     state.LAYER = 4;
-                    state.graphics.sites.map(s => s[4] = s[2] * s[3] * 10);
+                    state.graphics.sites.map(s => s[4] = s[2] * s[3] * 5);
                     break;
             }
             render();
@@ -79,7 +79,8 @@ function Metro(canvas) {
         width () { return this.canvas.width; },
         height () { return this.canvas.height; },
         context () { return this.canvas.getContext("2d"); },
-    };
+        COLOR: [{R: 255, G: 0, B: 0}, {R: 0, G: 255, B: 0}, {R: 0, G: 0, B: 255}],
+};
 
     state.graphics = new Graphics();
     console.log(state);
@@ -110,7 +111,7 @@ function Metro(canvas) {
         this.voronoi = d3.voronoi().extent([[MIN_WIDTH, MIN_HEIGHT], [MAX_WIDTH, MAX_HEIGHT]]);
         this.diagram = this.voronoi( this.sites );
 
-        for( let n = 0; n < 15; n++ ) {
+        for( let n = 0; n < 5; n++ ) {
             this.sites = relax( this.diagram );
             this.diagram = this.voronoi( this.sites );
         }
@@ -126,32 +127,30 @@ function Metro(canvas) {
 
     function getCellCentroid( cell, diagram ) {
         let cx = 0, cy = 0, count = 0;
+
         getCellVertices(cell, diagram).forEach( v => {
             cx += v[0];
             cy += v[1];
             count++;
         });
 
-        return [ cx / count, cy / count, 0, 0, 0 ];
+        let site = [ cx / count, cy / count, 0, 0, 0 ];
+        // site.elevation = 0;
+        // site.affluence = 0;
+        // site.desirability = 0;
+        // site.color = state.COLOR[Math.floor(Math.random() * 2)];
+        site.color = { R: Math.random() * 255, G: Math.random() * 255, B: Math.random() * 255 };
+
+        return site;
     }
 
     function getCellVertices( cell, diagram ) {
-        return cell.halfedges.map(i => {
-
-            let startVertex = cellHalfedgeStart(cell, diagram.edges[i]);
-
-
-            return startVertex;
-        });
+        return cell.halfedges.map(i => cellHalfedgeStart(cell, diagram.edges[i]));
 
     }
 
     function relax( diagram ) {
-        return diagram.cells.map((cell) => {
-
-            return getCellCentroid( cell, diagram );
-
-        });
+        return diagram.cells.map((cell) => getCellCentroid( cell, diagram ));
     }
 
     function makePolygons(diagram) {
@@ -185,6 +184,7 @@ function Metro(canvas) {
     function render() {
         state.context().clearRect(0, 0, state.width(), state.height());
 
+        // renderBackground();
         drawPolygons();
         // drawTriangles();
         drawEdges(2, '#CBC5B9'); // lineWidth, lineColor
@@ -373,6 +373,40 @@ function Metro(canvas) {
         }
         state.context().restore();
     }
+
+    // render background
+    function renderBackground() {
+        state.context().save();
+        state.graphics.triangles.forEach(triangle => {
+            const x1 = triangle[0][0],
+                  y1 = triangle[0][1],
+                  x2 = triangle[1][0],
+                  y2 = triangle[1][1],
+                  x3 = triangle[2][0],
+                  y3 = triangle[2][1],
+                  min_width = Math.min(x1, x2, x3),
+                  max_width = Math.max(x1, x2, x3),
+                  min_height = Math.min(y1, y2, y3),
+                  max_height = Math.max(y1, y2, y3);
+
+            for(let x = min_width; x < max_width; x ++) {
+                for(let y = min_height; y < max_height; y ++) {
+                    let point = [x, y];
+                    if(d3.polygonContains(triangle, point)) {
+                        const weight = getBarycentricValue(x1, x2, x3, y1, y2, y3, point[0], point[1]);
+                        const R = (triangle[0].color.R * weight.w1) + (triangle[1].color.R * weight.w2) + (triangle[2].color.R * weight.w3);
+                        const G = (triangle[0].color.G * weight.w1) + (triangle[1].color.G * weight.w2) + (triangle[2].color.G * weight.w3);
+                        const B = (triangle[0].color.B * weight.w1) + (triangle[1].color.B * weight.w2) + (triangle[2].color.B * weight.w3);
+
+                        state.context().beginPath();
+                        state.context().fillStyle = `rgb(${R}, ${G}, ${B})`;
+                        state.context().fillRect(x,y,1,1);
+                    }
+                }
+            }
+        });
+        state.context().restore();
+    }
     /*=====================================================================================================
                                              Additional Functions
     ======================================================================================================*/
@@ -415,6 +449,18 @@ function Metro(canvas) {
         }
 
         return closest;
+    }
+
+    // https://codeplea.com/triangular-interpolation
+    // https://koozdra.wordpress.com/2012/06/27/javascript-is-point-in-triangle
+    function getBarycentricValue(x1, x2, x3, y1, y2, y3, px, py) {
+        const w1 = ((y2 - y3) * (px - x3) + (x3 - x2) * (py - y3)) / ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3));
+        const w2 = ((y3 - y1) * (px - x3) + (x1 - x3) * (py - y3)) / ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3));
+        const w3 = 1 - w1 - w2;
+        // console.log("w1: ", w1, " | w2: ", w2, " | w3: ", w3, " | sum: ", w1 + w2 + w3);
+        // console.log("R: ", R, " | G: ", G, " | B: ", B);
+
+        return { w1: w1, w2: w2, w3: w3};
     }
 
     // return Metro()
