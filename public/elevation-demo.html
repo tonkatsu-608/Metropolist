@@ -19,7 +19,7 @@
         <ul class="right hide-on-med-and-down">
             <li>
                 <div class="input-field">
-                    <input id="input-sites" type="number" value="30"/>
+                    <input id="input-sites" type="number" value="1000"/>
                     <label for="input-sites">sites</label>
                 </div>
             </li>
@@ -42,23 +42,35 @@
                     </li>
                     <hr/>
 
-                    <li>
+                    <li class="layerSelect" hidden>
+                        <div class="input-field">
+                            <select id="layerSelect">
+                                <option value="elevation" selected>elevation</option>
+                                <option value="affluence">affluence</option>
+                                <option value="desirability">desirability</option>
+                            </select>
+                            <label for="layerSelect">select layer</label>
+                        </div>
+                    </li>
+
+                    <li class="elevationSwitch" hidden>
                         <p>elevation setting</p>
                         <div class="switch">
                             <label>
                                 increase
-                                <input type="checkbox" id="elevationSwitch" disabled>
+                                <input type="checkbox" id="elevationSwitch">
                                 <span class="lever"></span>
                                 decrease
                             </label>
                         </div>
                     </li>
-                    <!--<li>-->
-                        <!--<p class="range-field">-->
-                            <!--<label for="radius">radius</label>-->
-                            <!--<input type="range" id="radius" value="100" min="30" max="700" disabled/>-->
-                        <!--</p>-->
-                    <!--</li>-->
+
+                    <li class="incrementSlider" hidden>
+                        <p class="range-field">
+                            <label for="incrementSlider">increment</label>
+                            <input type="range" id="incrementSlider" value="5" min="0" max="10"/>
+                        </p>
+                    </li>
                 </ul>
             </div>
             <div class="col s10">

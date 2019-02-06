@@ -5,8 +5,12 @@ Array.prototype.clear = function() {
     }
 };
 
+// affluence, desirability
+
 function Metro(canvas) {
     $(document).ready( function() {
+        $('select').formSelect();
+
         $('#render').click( function() {
             newGraphics();
         });
@@ -14,9 +18,9 @@ function Metro(canvas) {
         $('#startEdit').click( function() {
             $('#startEdit').attr('hidden', true);
             $('#stopEdit').removeAttr('hidden', true);
-            $('#elevationSwitch').removeAttr('disabled', true);
-            $('#radius').removeAttr('disabled', true);
-            $('#render').attr('disabled', true);
+            $('.layerSelect').removeAttr('hidden', true);
+            $('.elevationSwitch').removeAttr('hidden', true);
+            $('.incrementSlider').removeAttr('hidden', true);
 
             state.isEditMode = true;
             render();
@@ -25,16 +29,28 @@ function Metro(canvas) {
         $('#stopEdit').click( function() {
             $('#stopEdit').attr('hidden', true);
             $('#startEdit').removeAttr('hidden', true);
-            $('#elevationSwitch').attr('disabled', true);
-            $('#radius').attr('disabled', true);
-            $('#render').removeAttr('disabled', true);
+            $('.layerSelect').attr('hidden', true);
+            $('.elevationSwitch').attr('hidden', true);
+            $('.incrementSlider').attr('hidden', true);
 
             state.isEditMode = false;
             render();
         });
 
-        $('#radius').on('change', function() {
-            state.radius = this.value;
+        $('#layerSelect').on('change', function() {
+            switch (this.value) {
+                case 'elevation': state.LAYER = 2; break;
+                case 'affluence': state.LAYER = 3; break;
+                case 'desirability':
+                    state.LAYER = 4;
+                    state.graphics.sites.map(s => s[4] = s[2] * s[3] * 10);
+                    break;
+            }
+            render();
+        });
+
+        $('#incrementSlider').on('change', function() {
+            state.increment = this.value;
             render();
             drawCircle('red');
         });
@@ -49,8 +65,10 @@ function Metro(canvas) {
     });
 
     var state = {
-        N: 30,
+        N: 1000,
+        LAYER: 2,
         radius: 100,
+        increment: 5,
         pointer: {},
         vertices: [],
         selectedSites: [],
@@ -83,14 +101,20 @@ function Metro(canvas) {
                                              Main Functions
     ======================================================================================================*/
     function Graphics() {
-        let minWidth = 20;
-        let minHeight = 20;
-        let maxWidth = state.width() - 20;
-        let maxHeight = state.height() - 20;
+        const MIN_WIDTH = 20;
+        const MIN_HEIGHT = 20;
+        const MAX_WIDTH = state.width() - 20;
+        const MAX_HEIGHT = state.height() - 20;
 
-        this.sites = d3.range(state.N).map( () => [Math.random() * (maxWidth - minWidth) + minWidth, Math.random() * (maxHeight - minHeight) + minHeight, 0] );
-        this.voronoi = d3.voronoi().extent([[minWidth, minHeight], [maxWidth, maxHeight]]);
+        this.sites = d3.range(state.N).map( () => [Math.random() * (MAX_WIDTH - MIN_WIDTH) + MIN_WIDTH, Math.random() * (MAX_HEIGHT - MIN_HEIGHT) + MIN_HEIGHT, 0] );
+        this.voronoi = d3.voronoi().extent([[MIN_WIDTH, MIN_HEIGHT], [MAX_WIDTH, MAX_HEIGHT]]);
         this.diagram = this.voronoi( this.sites );
+
+        for( let n = 0; n < 15; n++ ) {
+            this.sites = relax( this.diagram );
+            this.diagram = this.voronoi( this.sites );
+        }
+
         this.polygons = makePolygons(this.diagram);
         this.cells = this.diagram.cells;
         this.edges = this.diagram.edges;
@@ -98,6 +122,36 @@ function Metro(canvas) {
         this.triangles = this.diagram.triangles();
         // this.clusters = this.polygons.map( makeCluster );
         // this.buildings = getBuildings( this.clusters );
+    }
+
+    function getCellCentroid( cell, diagram ) {
+        let cx = 0, cy = 0, count = 0;
+        getCellVertices(cell, diagram).forEach( v => {
+            cx += v[0];
+            cy += v[1];
+            count++;
+        });
+
+        return [ cx / count, cy / count, 0, 0, 0 ];
+    }
+
+    function getCellVertices( cell, diagram ) {
+        return cell.halfedges.map(i => {
+
+            let startVertex = cellHalfedgeStart(cell, diagram.edges[i]);
+
+
+            return startVertex;
+        });
+
+    }
+
+    function relax( diagram ) {
+        return diagram.cells.map((cell) => {
+
+            return getCellCentroid( cell, diagram );
+
+        });
     }
 
     function makePolygons(diagram) {
@@ -125,16 +179,6 @@ function Metro(canvas) {
 
             return polygon;
         });
-
-        // get startPoint of edge
-        function cellHalfedgeStart(cell, edge) {
-            return edge[+(edge.left !== cell.site)];
-        }
-
-        // get endPoint of edge
-        function cellHalfedgeEnd(cell, edge) {
-            return edge[+(edge.left === cell.site)];
-        }
     }
 
     // render
@@ -142,13 +186,14 @@ function Metro(canvas) {
         state.context().clearRect(0, 0, state.width(), state.height());
 
         drawPolygons();
+        // drawTriangles();
         drawEdges(2, '#CBC5B9'); // lineWidth, lineColor
         drawSites(1, 'black'); // lineWidth
     }
 
     function newGraphics() {
         state.vertices.clear();
-        state.N = $('#input-sites').val() || 30;
+        state.N = $('#input-sites').val() || 1000;
         state.graphics = new Graphics();
 
         render();
@@ -158,28 +203,29 @@ function Metro(canvas) {
                                              Event Functions
     ======================================================================================================*/
     function dragstarted() {
-        if(state.isEditMode) {
+        if(state.isEditMode && state.LAYER !== 4) {
             state.isDragging = true;
-            state.selectedSites = findSites(state.pointer[0], state.pointer[1], state.radius);
         }
     }
 
     function dragged() {
-        if(state.isEditMode) {
-            let dist = distance(state.pointer, d3.mouse(this));
+        if(state.isEditMode && state.LAYER !== 4) {
+            state.pointer = d3.mouse(this);
+            state.selectedSites = findSites(state.pointer[0], state.pointer[1], state.radius);
+            // let dist = distance(state.pointer, d3.mouse(this));
 
             if(state.isIncreasing) {
                 if(state.selectedSites.length > 0) {
                     state.selectedSites.map(s => {
-                        s[2] += dist / 10000;
-                        if(s[2] > 1) s[2] = 1;
+                        s[state.LAYER] += state.increment / 100;
+                        if(s[state.LAYER] > 1) s[state.LAYER] = 1;
                     });
                 }
             } else {
                 if(state.selectedSites.length > 0) {
                     state.selectedSites.map(s => {
-                        s[2] -= dist / 10000;
-                        if(s[2] < 0) s[2] = 0;
+                        s[state.LAYER] -= state.increment / 100;
+                        if(s[state.LAYER] < 0) s[state.LAYER] = 0;
                     });
                 }
             }
@@ -189,14 +235,14 @@ function Metro(canvas) {
     }
 
     function dragended() {
-        if(state.isEditMode) {
+        if(state.isEditMode && state.LAYER !== 4) {
             state.isDragging = false;
         }
     }
 
     // mouse event
     function onMouseMove() {
-        if(state.isEditMode && !state.isDragging) {
+        if(state.isEditMode && state.LAYER !== 4) {
             state.pointer = d3.mouse(this);
             render();
             drawCircle('red');
@@ -204,7 +250,7 @@ function Metro(canvas) {
     }
 
     function onScroll() {
-        if(state.isEditMode) {
+        if(state.isEditMode && state.LAYER !== 4) {
             d3.event.preventDefault();
 
             state.radius -= d3.event.deltaX;
@@ -263,8 +309,8 @@ function Metro(canvas) {
             state.context().fill();
             state.context().strokeStyle = color;
             state.context().stroke();
-            state.context().font = '15px Monda sans-serif';
-            state.context().fillText(`${site[2].toFixed(1)}`, site[0] - 10, site[1] - 10);
+            // state.context().font = '15px Monda sans-serif';
+            // state.context().fillText(`${site[2].toFixed(1)}`, site[0] - 10, site[1] - 10);
         }
         state.context().restore();
     }
@@ -293,9 +339,8 @@ function Metro(canvas) {
     // draw polygons
     function drawPolygons() {
         state.context().save();
-
         for (let i = 0, polygons = state.graphics.polygons; i < polygons.length; i++) {
-            state.context().fillStyle = `rgba(0, 0, 0, ${state.graphics.sites[polygons[i].site][2].toFixed(1)})`;
+            state.context().fillStyle = `rgba(0, 0, 0, ${state.graphics.sites[polygons[i].site][state.LAYER].toFixed(1)})`;
             state.context().beginPath();
 
             for(let j = 0, vertices = polygons[i].vertices; j < vertices.length; j++) {
@@ -312,9 +357,35 @@ function Metro(canvas) {
         }
         state.context().restore();
     }
+
+    // draw triangles
+    function drawTriangles() {
+        state.context().save();
+        for (let i = 0, n = state.graphics.triangles.length; i < n; ++i) {
+            let triangle = state.graphics.triangles[i];
+            state.context().beginPath();
+            state.context().moveTo(triangle[0][0], triangle[0][1]);
+            state.context().lineTo(triangle[1][0], triangle[1][1]);
+            state.context().lineTo(triangle[2][0], triangle[2][1]);
+            state.context().closePath();
+            state.context().strokeStyle = `rgba(0, 0, 0, 0)`;
+            state.context().stroke();
+        }
+        state.context().restore();
+    }
     /*=====================================================================================================
                                              Additional Functions
     ======================================================================================================*/
+    // get startPoint of edge
+    function cellHalfedgeStart(cell, edge) {
+        return edge[+(edge.left !== cell.site)];
+    }
+
+    // get endPoint of edge
+    function cellHalfedgeEnd(cell, edge) {
+        return edge[+(edge.left === cell.site)];
+    }
+
     function sqr(x) {
         return x * x;
     }
