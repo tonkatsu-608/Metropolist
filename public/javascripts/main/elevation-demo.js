@@ -18,9 +18,9 @@ function Metro(canvas) {
         $('#renderControlLine').click( function() {
             if(state.LAYER === 2) {
                 render();
-                drawContourLines(0.25, 'red', 2);
-                drawContourLines(0.5, 'yellow', 2);
-                drawContourLines(0.75, 'blue', 2);
+                drawContourLines(0.25, 'red', 1);
+                drawContourLines(0.5, 'green', 1);
+                drawContourLines(0.75, 'blue', 1);
             }
         });
 
@@ -79,7 +79,7 @@ function Metro(canvas) {
         N: 1000,
         LAYER: 2,
         radius: 100,
-        increment: 5,
+        increment: 12,
         pointer: {},
         vertices: [],
         selectedSites: [],
@@ -228,14 +228,14 @@ function Metro(canvas) {
             if(state.isIncreasing) {
                 if(state.selectedSites.length > 0) {
                     state.selectedSites.map(s => {
-                        s[state.LAYER] += state.increment / 100;
+                        s[state.LAYER] += (state.increment / 100) * s.delta;
                         if(s[state.LAYER] > 1) s[state.LAYER] = 1;
                     });
                 }
             } else {
                 if(state.selectedSites.length > 0) {
                     state.selectedSites.map(s => {
-                        s[state.LAYER] -= state.increment / 100;
+                        s[state.LAYER] -= (state.increment / 100) * s.delta;
                         if(s[state.LAYER] < 0) s[state.LAYER] = 0;
                     });
                 }
@@ -441,31 +441,24 @@ function Metro(canvas) {
 
                 // https://codegolf.stackexchange.com/questions/8649/shortest-code-to-check-if-a-number-is-in-a-range-in-javascript
                 if((point - site1[2]) * (point - site2[2]) < 0) {
-                    const minX = Math.min(site1[0], site2[0]),
-                        maxX = Math.max(site1[0], site2[0]),
-                        minY = Math.min(site1[1], site2[1]),
-                        maxY = Math.max(site1[1], site2[1]),
-                        minElevation = Math.min(site1[2], site2[2]),
-                        maxElevation = Math.max(site1[2], site2[2]);
-                    const k = (site1[1] - site2[1]) / (site1[0] - site2[0]); // slope of line from site1 to site2
-                    const px = minX + (maxX - minX) * (point - minElevation) / (maxElevation - minElevation);
-                    const py = -k * (site1[0] - px) + site1[1];
+                    let p = pointOnEdge(site1, site2, point);
 
-                    contourPoints.push([px, py]);
+                    contourPoints.push(p);
+                    // draw point position
                     // state.context().fillStyle = 'red';
-                    // state.context().moveTo(px, py);
-                    // state.context().fillRect(px, py, 5, 5);
+                    // state.context().moveTo(p[0], p[1]);
+                    // state.context().fillRect(p[0], p[1], 5, 5);
                 }
             }
-            if(contourPoints.length >= 2) {
+            if(contourPoints.length >= 0) {
                 state.context().beginPath();
                 state.context().lineWidth = width;
                 state.context().strokeStyle = color;
+
                 for(let n = 0; n < contourPoints.length; n ++) {
                     let point = contourPoints[n];
 
                     state.context().moveTo(point[0], point[1]);
-
                     for(let l = 1; l < contourPoints.length; l ++) {
                         let nextPoint = contourPoints[l];
                         state.context().lineTo(nextPoint[0], nextPoint[1]);
@@ -473,12 +466,61 @@ function Metro(canvas) {
                 }
                 state.context().stroke();
             }
+            // let vertices = triangle.sort( (a,b) => {
+            //     if( a[2] < b[2] ) {
+            //         return -1;
+            //     } else if( a[2] > b[2] ) {
+            //         return 1;
+            //     } else  {
+            //         return 0;
+            //     } }  );
+
+            // if( point >= vertices[0][2] && point <= vertices[2][2] ) {
+            //     let e1, e2;
+            //     if( point >= vertices[0][2] && point <= vertices[1][2] ) {
+            //         e1 = [ vertices[0], vertices[1] ];
+            //         if( point >= vertices[0][2] && point <= vertices[2][2] ) {
+            //             e2 = [ vertices[0], vertices[2]];
+            //         } else {
+            //             e2 = [vertices[1], vertices[2]];
+            //         }
+            //     } else {
+            //         e1 = [vertices[1], vertices[2]];
+            //         if( point >= vertices[1][2] && point <= vertices[0][2] ) {
+            //             e2 = [ vertices[0], vertices[1]];
+            //         } else {
+            //             e2 = [vertices[0], vertices[2]];
+            //         }
+            //     }
+            //
+            //     let pt1 = pointOnEdge( e1[0], e1[1], point );
+            //     let pt2 = pointOnEdge( e2[0], e2[1], point );
+            //
+            //     drawLine( pt1, pt2 );
+            // }
+            //
+            // function drawLine(p1, p2) {
+            //     state.context().beginPath();
+            //     state.context().lineWidth = width;
+            //     state.context().strokeStyle = color;
+            //     state.context().moveTo(p1[0], p1[1]);
+            //     state.context().lineTo(p2[0], p2[1]);
+            //     state.context().stroke();
+            // }
         });
         state.context().restore();
     }
     /*=====================================================================================================
                                              Additional Functions
     ======================================================================================================*/
+    function sqr(x) {
+        return x * x;
+    }
+
+    function distance(a, b) {
+        return Math.sqrt(sqr(b[0] - a[0]) + sqr(b[1] - a[1]));
+    }
+
     // get startPoint of edge
     function cellHalfedgeStart(cell, edge) {
         return edge[+(edge.left !== cell.site)];
@@ -487,14 +529,6 @@ function Metro(canvas) {
     // get endPoint of edge
     function cellHalfedgeEnd(cell, edge) {
         return edge[+(edge.left === cell.site)];
-    }
-
-    function sqr(x) {
-        return x * x;
-    }
-
-    function distance(a, b) {
-        return Math.sqrt(sqr(b[0] - a[0]) + sqr(b[1] - a[1]));
     }
 
     function findSites(x, y, radius) {
@@ -514,9 +548,9 @@ function Metro(canvas) {
             dx = x - site[0];
             dy = y - site[1];
             d2 = dx * dx + dy * dy;
+            site.delta = 1 - d2 / radius;
             if (d2 < radius) closest.push(site);
         }
-
         return closest;
     }
 
@@ -526,10 +560,27 @@ function Metro(canvas) {
         const w1 = ((y2 - y3) * (px - x3) + (x3 - x2) * (py - y3)) / ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3));
         const w2 = ((y3 - y1) * (px - x3) + (x1 - x3) * (py - y3)) / ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3));
         const w3 = 1 - w1 - w2;
-        // console.log("w1: ", w1, " | w2: ", w2, " | w3: ", w3, " | sum: ", w1 + w2 + w3);
-        // console.log("R: ", R, " | G: ", G, " | B: ", B);
 
         return { w1: w1, w2: w2, w3: w3};
+    }
+
+
+    /**
+     * get point position in the edge that consists of site1 and site2
+     * @param site1
+     * @param site2
+     * @param point
+     * @returns {*[]}
+     */
+    function pointOnEdge( site1, site2, point ) {
+        const lowest = site1[2] < site2[2] ? site1 : site2;
+        const highest = lowest == site1 ? site2 : site1;
+        const x = lowest[0] + (highest[0] - lowest[0]) * ( point - lowest[2] ) / ( highest[2] - lowest[2] );
+        // const y = lowest[1] + (highest[1] - lowest[1]) * ( point - lowest[2] ) / ( highest[2] - lowest[2] );
+        const k = (lowest[1] - highest[1]) / (lowest[0] - highest[0]); // slope of line from site1 to site2
+        const y = -k * (lowest[0] - x) + lowest[1];
+
+        return [x, y];
     }
 
     // return Metro()
