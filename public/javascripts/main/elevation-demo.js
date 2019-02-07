@@ -18,9 +18,9 @@ function Metro(canvas) {
         $('#renderControlLine').click( function() {
             if(state.LAYER === 2) {
                 render();
-                drawControlLines(0.25, 'blue', 1);
-                drawControlLines(0.5, 'green', 1.5);
-                drawControlLines(0.75, 'red', 2);
+                drawContourLines(0.25, 'red', 2);
+                drawContourLines(0.5, 'yellow', 2);
+                drawContourLines(0.75, 'blue', 2);
             }
         });
 
@@ -424,15 +424,15 @@ function Metro(canvas) {
     }
 
     /**
-     * draw terrain control lines based on given points
+     * draw terrain contour lines based on given points
      * @param point
      * @param color
      */
-    function drawControlLines(point, color, width) {
+    function drawContourLines(point, color, width) {
         state.context().save();
 
         state.graphics.triangles.forEach(triangle => {
-            let controlPoints = [];
+            let contourPoints = [];
 
             for(let i = 0, n = triangle.length; i < n; i ++) {
                 let j = (i + 1) < n ? (i + 1) : 0;
@@ -447,26 +447,27 @@ function Metro(canvas) {
                         maxY = Math.max(site1[1], site2[1]),
                         minElevation = Math.min(site1[2], site2[2]),
                         maxElevation = Math.max(site1[2], site2[2]);
+                    const k = (site1[1] - site2[1]) / (site1[0] - site2[0]); // slope of line from site1 to site2
                     const px = minX + (maxX - minX) * (point - minElevation) / (maxElevation - minElevation);
-                    const py = minY + (maxY - minY) * (point - minElevation) / (maxElevation - minElevation);
+                    const py = -k * (site1[0] - px) + site1[1];
 
-                    controlPoints.push([px, py]);
+                    contourPoints.push([px, py]);
                     // state.context().fillStyle = 'red';
                     // state.context().moveTo(px, py);
                     // state.context().fillRect(px, py, 5, 5);
                 }
             }
-            if(controlPoints.length >= 2) {
+            if(contourPoints.length >= 2) {
                 state.context().beginPath();
                 state.context().lineWidth = width;
                 state.context().strokeStyle = color;
-                for(let n = 0; n < controlPoints.length; n ++) {
-                    let point = controlPoints[n];
+                for(let n = 0; n < contourPoints.length; n ++) {
+                    let point = contourPoints[n];
 
                     state.context().moveTo(point[0], point[1]);
 
-                    for(let l = 1; l < controlPoints.length; l ++) {
-                        let nextPoint = controlPoints[l];
+                    for(let l = 1; l < contourPoints.length; l ++) {
+                        let nextPoint = contourPoints[l];
                         state.context().lineTo(nextPoint[0], nextPoint[1]);
                     }
                 }

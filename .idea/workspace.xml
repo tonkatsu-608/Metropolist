@@ -2,8 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="165d839a-52e7-4e96-a2de-bc583fff601e" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/public/elevation-demo.html" afterPath="$PROJECT_DIR$/public/elevation-demo.html" />
       <change beforePath="$PROJECT_DIR$/public/javascripts/main/elevation-demo.js" afterPath="$PROJECT_DIR$/public/javascripts/main/elevation-demo.js" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
@@ -34,8 +32,8 @@
       <file leaf-file-name="elevation-demo.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/public/javascripts/main/elevation-demo.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="204">
-              <caret line="430" column="13" lean-forward="false" selection-start-line="430" selection-start-column="13" selection-end-line="430" selection-end-column="13" />
+            <state relative-caret-position="529">
+              <caret line="452" column="0" lean-forward="true" selection-start-line="452" selection-start-column="0" selection-end-line="452" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -65,7 +63,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>function b</find>
       <find>radius</find>
       <find>#distance</find>
       <find>drawVet</find>
@@ -95,6 +92,7 @@
       <find>desirability</find>
       <find>s[</find>
       <find>DISTRICT_TYPES</find>
+      <find>control</find>
     </findStrings>
     <replaceStrings>
       <replace>this.state.</replace>
@@ -283,12 +281,12 @@
       <workItem from="1543802523123" duration="162000" />
       <workItem from="1544149239902" duration="11069000" />
       <workItem from="1545152573560" duration="1487000" />
-      <workItem from="1546028352063" duration="232784000" />
+      <workItem from="1546028352063" duration="234009000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="294578000" />
+    <option name="totallyTimeSpent" value="295803000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -727,8 +725,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/public/javascripts/main/elevation-demo.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="204">
-          <caret line="430" column="13" lean-forward="false" selection-start-line="430" selection-start-column="13" selection-end-line="430" selection-end-column="13" />
+        <state relative-caret-position="529">
+          <caret line="452" column="0" lean-forward="true" selection-start-line="452" selection-start-column="0" selection-end-line="452" selection-end-column="0" />
           <folding />
         </state>
       </provider>
