@@ -15,12 +15,22 @@ function Metro(canvas) {
             newGraphics();
         });
 
+        $('#renderControlLine').click( function() {
+            if(state.LAYER === 2) {
+                render();
+                drawControlLines(0.25, 'blue', 1);
+                drawControlLines(0.5, 'green', 1.5);
+                drawControlLines(0.75, 'red', 2);
+            }
+        });
+
         $('#startEdit').click( function() {
             $('#startEdit').attr('hidden', true);
             $('#stopEdit').removeAttr('hidden', true);
             $('.layerSelect').removeAttr('hidden', true);
             $('.elevationSwitch').removeAttr('hidden', true);
             $('.incrementSlider').removeAttr('hidden', true);
+            $('#renderControlLine').removeAttr('hidden', true);
 
             state.isEditMode = true;
             render();
@@ -32,6 +42,7 @@ function Metro(canvas) {
             $('.layerSelect').attr('hidden', true);
             $('.elevationSwitch').attr('hidden', true);
             $('.incrementSlider').attr('hidden', true);
+            $('#renderControlLine').attr('hidden', true);
 
             state.isEditMode = false;
             render();
@@ -43,7 +54,7 @@ function Metro(canvas) {
                 case 'affluence': state.LAYER = 3; break;
                 case 'desirability':
                     state.LAYER = 4;
-                    state.graphics.sites.map(s => s[4] = s[2] * s[3] * 5);
+                    state.graphics.sites.map(s => s[4] = (s[2] + s[3]) / 2);
                     break;
             }
             render();
@@ -80,7 +91,7 @@ function Metro(canvas) {
         height () { return this.canvas.height; },
         context () { return this.canvas.getContext("2d"); },
         COLOR: [{R: 255, G: 0, B: 0}, {R: 0, G: 255, B: 0}, {R: 0, G: 0, B: 255}],
-};
+    };
 
     state.graphics = new Graphics();
     console.log(state);
@@ -184,11 +195,11 @@ function Metro(canvas) {
     function render() {
         state.context().clearRect(0, 0, state.width(), state.height());
 
-        // renderBackground();
         drawPolygons();
         // drawTriangles();
-        drawEdges(2, '#CBC5B9'); // lineWidth, lineColor
-        drawSites(1, 'black'); // lineWidth
+        // renderBackground();
+        drawEdges(0.5, 'grey'); // lineWidth, lineColor
+        // drawSites(1, 'black'); // lineWidth
     }
 
     function newGraphics() {
@@ -340,7 +351,10 @@ function Metro(canvas) {
     function drawPolygons() {
         state.context().save();
         for (let i = 0, polygons = state.graphics.polygons; i < polygons.length; i++) {
-            state.context().fillStyle = `rgba(0, 0, 0, ${state.graphics.sites[polygons[i].site][state.LAYER].toFixed(1)})`;
+            let grayscale = (1 - state.graphics.sites[polygons[i].site][state.LAYER]) * 255;
+
+            grayscale = grayscale.toFixed(1);
+            state.context().fillStyle = `rgb( ${grayscale},${grayscale}, ${grayscale} )`;
             state.context().beginPath();
 
             for(let j = 0, vertices = polygons[i].vertices; j < vertices.length; j++) {
@@ -368,7 +382,7 @@ function Metro(canvas) {
             state.context().lineTo(triangle[1][0], triangle[1][1]);
             state.context().lineTo(triangle[2][0], triangle[2][1]);
             state.context().closePath();
-            state.context().strokeStyle = `rgba(0, 0, 0, 0)`;
+            state.context().strokeStyle = `black`;
             state.context().stroke();
         }
         state.context().restore();
@@ -377,17 +391,18 @@ function Metro(canvas) {
     // render background
     function renderBackground() {
         state.context().save();
+
         state.graphics.triangles.forEach(triangle => {
-            const x1 = triangle[0][0],
-                  y1 = triangle[0][1],
-                  x2 = triangle[1][0],
-                  y2 = triangle[1][1],
-                  x3 = triangle[2][0],
-                  y3 = triangle[2][1],
-                  min_width = Math.min(x1, x2, x3),
-                  max_width = Math.max(x1, x2, x3),
-                  min_height = Math.min(y1, y2, y3),
-                  max_height = Math.max(y1, y2, y3);
+            const x1       = triangle[0][0],
+                y1         = triangle[0][1],
+                x2         = triangle[1][0],
+                y2         = triangle[1][1],
+                x3         = triangle[2][0],
+                y3         = triangle[2][1],
+                min_width  = Math.min(x1, x2, x3),
+                max_width  = Math.max(x1, x2, x3),
+                min_height = Math.min(y1, y2, y3),
+                max_height = Math.max(y1, y2, y3);
 
             for(let x = min_width; x < max_width; x ++) {
                 for(let y = min_height; y < max_height; y ++) {
@@ -400,9 +415,62 @@ function Metro(canvas) {
 
                         state.context().beginPath();
                         state.context().fillStyle = `rgb(${R}, ${G}, ${B})`;
-                        state.context().fillRect(x,y,1,1);
+                        state.context().fillRect(x, y, 1, 1);
                     }
                 }
+            }
+        });
+        state.context().restore();
+    }
+
+    /**
+     * draw terrain control lines based on given points
+     * @param point
+     * @param color
+     */
+    function drawControlLines(point, color, width) {
+        state.context().save();
+
+        state.graphics.triangles.forEach(triangle => {
+            let controlPoints = [];
+
+            for(let i = 0, n = triangle.length; i < n; i ++) {
+                let j = (i + 1) < n ? (i + 1) : 0;
+                let site1 = triangle[i];
+                let site2 = triangle[j];
+
+                // https://codegolf.stackexchange.com/questions/8649/shortest-code-to-check-if-a-number-is-in-a-range-in-javascript
+                if((point - site1[2]) * (point - site2[2]) < 0) {
+                    const minX = Math.min(site1[0], site2[0]),
+                        maxX = Math.max(site1[0], site2[0]),
+                        minY = Math.min(site1[1], site2[1]),
+                        maxY = Math.max(site1[1], site2[1]),
+                        minElevation = Math.min(site1[2], site2[2]),
+                        maxElevation = Math.max(site1[2], site2[2]);
+                    const px = minX + (maxX - minX) * (point - minElevation) / (maxElevation - minElevation);
+                    const py = minY + (maxY - minY) * (point - minElevation) / (maxElevation - minElevation);
+
+                    controlPoints.push([px, py]);
+                    // state.context().fillStyle = 'red';
+                    // state.context().moveTo(px, py);
+                    // state.context().fillRect(px, py, 5, 5);
+                }
+            }
+            if(controlPoints.length >= 2) {
+                state.context().beginPath();
+                state.context().lineWidth = width;
+                state.context().strokeStyle = color;
+                for(let n = 0; n < controlPoints.length; n ++) {
+                    let point = controlPoints[n];
+
+                    state.context().moveTo(point[0], point[1]);
+
+                    for(let l = 1; l < controlPoints.length; l ++) {
+                        let nextPoint = controlPoints[l];
+                        state.context().lineTo(nextPoint[0], nextPoint[1]);
+                    }
+                }
+                state.context().stroke();
             }
         });
         state.context().restore();
@@ -464,5 +532,9 @@ function Metro(canvas) {
     }
 
     // return Metro()
-    return state;
+    return {
+        state: state,
+        graphics: state.graphics,
+        newGraphics: newGraphics,
+    };
 }
