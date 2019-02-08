@@ -133,7 +133,7 @@ function Metro( canvas, data ) {
     };
 
     state.graphics = new Graphics();
-    console.log(state.graphics)
+    console.log(state.graphics);
     /*=====================================================================================================
                                          Constructor Functions
     ======================================================================================================*/

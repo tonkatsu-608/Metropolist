@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="165d839a-52e7-4e96-a2de-bc583fff601e" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change beforePath="$PROJECT_DIR$/public/elevation-demo.html" afterPath="$PROJECT_DIR$/public/elevation-demo.html" />
+      <change beforePath="$PROJECT_DIR$/public/javascripts/main/app.js" afterPath="$PROJECT_DIR$/public/javascripts/main/app.js" />
       <change beforePath="$PROJECT_DIR$/public/javascripts/main/elevation-demo.js" afterPath="$PROJECT_DIR$/public/javascripts/main/elevation-demo.js" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
@@ -21,8 +21,8 @@
       <file leaf-file-name="elevation-demo.html" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/public/elevation-demo.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="431">
-              <caret line="70" column="78" lean-forward="false" selection-start-line="70" selection-start-column="78" selection-end-line="70" selection-end-column="78" />
+            <state relative-caret-position="522">
+              <caret line="75" column="54" lean-forward="false" selection-start-line="75" selection-start-column="54" selection-end-line="75" selection-end-column="54" />
               <folding>
                 <element signature="n#style#0;n#a#0;n#div#0;n#nav#0;n#body#0;n#html#0;n#!!top" expanded="true" />
                 <element signature="n#style#0;n#div#0;n#div#3;n#div#0;n#div#0;n#div#0;n#body#0;n#html#0;n#!!top" expanded="true" />
@@ -34,11 +34,9 @@
       <file leaf-file-name="elevation-demo.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/public/javascripts/main/elevation-demo.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="597">
-              <caret line="468" column="45" lean-forward="false" selection-start-line="468" selection-start-column="45" selection-end-line="468" selection-end-column="45" />
-              <folding>
-                <element signature="n#!!block;n#findSites#0;n#!!block;n#Metro#0" expanded="false" />
-              </folding>
+            <state relative-caret-position="2959">
+              <caret line="616" column="62" lean-forward="true" selection-start-line="616" selection-start-column="62" selection-end-line="616" selection-end-column="62" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -46,8 +44,8 @@
       <file leaf-file-name="app.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/public/javascripts/main/app.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-622">
-              <caret line="637" column="51" lean-forward="true" selection-start-line="637" selection-start-column="51" selection-end-line="637" selection-end-column="51" />
+            <state relative-caret-position="321">
+              <caret line="131" column="27" lean-forward="true" selection-start-line="131" selection-start-column="0" selection-end-line="132" selection-end-column="0" />
               <folding>
                 <element signature="n#!!doc" expanded="true" />
               </folding>
@@ -67,8 +65,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>radius</find>
-      <find>#distance</find>
       <find>drawVet</find>
       <find>state.ver</find>
       <find>polygonContains</find>
@@ -97,6 +93,8 @@
       <find>s[</find>
       <find>DISTRICT_TYPES</find>
       <find>control</find>
+      <find>state.COLOR</find>
+      <find>.color</find>
     </findStrings>
     <replaceStrings>
       <replace>this.state.</replace>
@@ -127,8 +125,8 @@
         <option value="$PROJECT_DIR$/public/javascripts/main/app-2.js" />
         <option value="$PROJECT_DIR$/public/app.html" />
         <option value="$PROJECT_DIR$/routes/index.js" />
-        <option value="$PROJECT_DIR$/public/javascripts/main/app.js" />
         <option value="$PROJECT_DIR$/public/elevation-demo.html" />
+        <option value="$PROJECT_DIR$/public/javascripts/main/app.js" />
         <option value="$PROJECT_DIR$/public/javascripts/main/elevation-demo.js" />
       </list>
     </option>
@@ -285,12 +283,12 @@
       <workItem from="1543802523123" duration="162000" />
       <workItem from="1544149239902" duration="11069000" />
       <workItem from="1545152573560" duration="1487000" />
-      <workItem from="1546028352063" duration="239932000" />
+      <workItem from="1546028352063" duration="248348000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="301726000" />
+    <option name="totallyTimeSpent" value="310142000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -699,16 +697,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/public/javascripts/main/app.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-622">
-          <caret line="637" column="51" lean-forward="true" selection-start-line="637" selection-start-column="51" selection-end-line="637" selection-end-column="51" />
-          <folding>
-            <element signature="n#!!doc" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/node_modules/mongoose/lib/query.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="173">
@@ -717,10 +705,20 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/public/javascripts/main/app.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="321">
+          <caret line="131" column="27" lean-forward="true" selection-start-line="131" selection-start-column="0" selection-end-line="132" selection-end-column="0" />
+          <folding>
+            <element signature="n#!!doc" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/public/elevation-demo.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="431">
-          <caret line="70" column="78" lean-forward="false" selection-start-line="70" selection-start-column="78" selection-end-line="70" selection-end-column="78" />
+        <state relative-caret-position="522">
+          <caret line="75" column="54" lean-forward="false" selection-start-line="75" selection-start-column="54" selection-end-line="75" selection-end-column="54" />
           <folding>
             <element signature="n#style#0;n#a#0;n#div#0;n#nav#0;n#body#0;n#html#0;n#!!top" expanded="true" />
             <element signature="n#style#0;n#div#0;n#div#3;n#div#0;n#div#0;n#div#0;n#body#0;n#html#0;n#!!top" expanded="true" />
@@ -730,11 +728,9 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/public/javascripts/main/elevation-demo.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="597">
-          <caret line="468" column="45" lean-forward="false" selection-start-line="468" selection-start-column="45" selection-end-line="468" selection-end-column="45" />
-          <folding>
-            <element signature="n#!!block;n#findSites#0;n#!!block;n#Metro#0" expanded="false" />
-          </folding>
+        <state relative-caret-position="2959">
+          <caret line="616" column="62" lean-forward="true" selection-start-line="616" selection-start-column="62" selection-end-line="616" selection-end-column="62" />
+          <folding />
         </state>
       </provider>
     </entry>

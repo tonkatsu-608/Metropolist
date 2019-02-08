@@ -48,6 +48,7 @@
                                 <option value="elevation" selected>elevation</option>
                                 <option value="affluence">affluence</option>
                                 <option value="desirability">desirability</option>
+                                <option value="river">river</option>
                             </select>
                             <label for="layerSelect">select layer</label>
                         </div>
@@ -72,8 +73,15 @@
                         </p>
                     </li>
 
-                    <li id="renderControlLine" hidden>
-                        <a class="btn">control line</a>
+                    <li class="waterLineSlider" hidden>
+                        <p class="range-field">
+                            <label for="waterLineSlider">water-line</label>
+                            <input type="range" id="waterLineSlider" value="5" min="0" max="10"/>
+                        </p>
+                    </li>
+
+                    <li id="renderContourLine" hidden>
+                        <a class="btn">contour line</a>
                     </li>
                 </ul>
             </div>

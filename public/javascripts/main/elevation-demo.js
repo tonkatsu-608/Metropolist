@@ -15,7 +15,7 @@ function Metro(canvas) {
             newGraphics();
         });
 
-        $('#renderControlLine').click( function() {
+        $('#renderContourLine').click( function() {
             if(state.LAYER === 2) {
                 render();
                 drawContourLines(0.25, 'red', 1);
@@ -30,7 +30,8 @@ function Metro(canvas) {
             $('.layerSelect').removeAttr('hidden', true);
             $('.elevationSwitch').removeAttr('hidden', true);
             $('.incrementSlider').removeAttr('hidden', true);
-            $('#renderControlLine').removeAttr('hidden', true);
+            $('.waterLineSlider').removeAttr('hidden', true);
+            $('#renderContourLine').removeAttr('hidden', true);
 
             state.isEditMode = true;
             render();
@@ -42,7 +43,8 @@ function Metro(canvas) {
             $('.layerSelect').attr('hidden', true);
             $('.elevationSwitch').attr('hidden', true);
             $('.incrementSlider').attr('hidden', true);
-            $('#renderControlLine').attr('hidden', true);
+            $('.waterLineSlider').attr('hidden', true);
+            $('#renderContourLine').attr('hidden', true);
 
             state.isEditMode = false;
             render();
@@ -56,6 +58,7 @@ function Metro(canvas) {
                     state.LAYER = 4;
                     state.graphics.sites.map(s => s[4] = (s[2] + s[3]) / 2);
                     break;
+                case 'river': state.LAYER = 5; break;
             }
             render();
         });
@@ -66,12 +69,13 @@ function Metro(canvas) {
             drawCircle('red');
         });
 
+        $('#waterLineSlider').on('change', function() {
+            state.waterline = this.value / 10;
+            render();
+        });
+
         $('#elevationSwitch').on('change', function() {
-            if(this.checked) {
-                state.isIncreasing = false; // decrease
-            } else {
-                state.isIncreasing = true; // increase
-            }
+            state.isIncreasing = !this.checked;
         });
     });
 
@@ -80,6 +84,7 @@ function Metro(canvas) {
         LAYER: 2,
         radius: 100,
         increment: 12,
+        waterline: .2,
         pointer: {},
         vertices: [],
         selectedSites: [],
@@ -90,11 +95,11 @@ function Metro(canvas) {
         width () { return this.canvas.width; },
         height () { return this.canvas.height; },
         context () { return this.canvas.getContext("2d"); },
+        DISTRICT_TYPES: ['rich', 'medium','poor','plaza', 'empty'],
         COLOR: [{R: 255, G: 0, B: 0}, {R: 0, G: 255, B: 0}, {R: 0, G: 0, B: 255}],
     };
 
-    state.graphics = new Graphics();
-    console.log(state);
+    state.graphics = new Graphics(); console.log(state);
 
     render();
 
@@ -145,11 +150,12 @@ function Metro(canvas) {
             count++;
         });
 
-        let site = [ cx / count, cy / count, 0, 0, 0 ];
+        let site = [ cx / count, cy / count, 0.5, 0, 0, 0 ];
         // site.elevation = 0;
         // site.affluence = 0;
         // site.desirability = 0;
         // site.color = state.COLOR[Math.floor(Math.random() * 2)];
+        site.type = state.DISTRICT_TYPES[Math.floor(Math.random() * 4)];
         site.color = { R: Math.random() * 255, G: Math.random() * 255, B: Math.random() * 255 };
 
         return site;
@@ -199,7 +205,7 @@ function Metro(canvas) {
         // drawTriangles();
         // renderBackground();
         drawEdges(0.5, 'grey'); // lineWidth, lineColor
-        // drawSites(1, 'black'); // lineWidth
+        // drawSites(1, 'black'); // lineWidth, lineColor
     }
 
     function newGraphics() {
@@ -229,6 +235,7 @@ function Metro(canvas) {
                 if(state.selectedSites.length > 0) {
                     state.selectedSites.map(s => {
                         s[state.LAYER] += (state.increment / 100) * s.delta;
+                        if(state.LAYER === 5) s[2] += (state.increment / 100) * s.delta;
                         if(s[state.LAYER] > 1) s[state.LAYER] = 1;
                     });
                 }
@@ -236,6 +243,7 @@ function Metro(canvas) {
                 if(state.selectedSites.length > 0) {
                     state.selectedSites.map(s => {
                         s[state.LAYER] -= (state.increment / 100) * s.delta;
+                        if(state.LAYER === 5) s[2] -= (state.increment / 100) * s.delta;
                         if(s[state.LAYER] < 0) s[state.LAYER] = 0;
                     });
                 }
@@ -339,7 +347,7 @@ function Metro(canvas) {
                 state.context().beginPath();
                 state.context().moveTo(start[0], start[1]);
                 state.context().lineTo(end[0], end[1]);
-                state.context().lineWidth = width
+                state.context().lineWidth = width;
                 state.context().strokeStyle = color;
                 state.context().stroke();
             }
@@ -351,12 +359,21 @@ function Metro(canvas) {
     function drawPolygons() {
         state.context().save();
         for (let i = 0, polygons = state.graphics.polygons; i < polygons.length; i++) {
-            let grayscale = (1 - state.graphics.sites[polygons[i].site][state.LAYER]) * 255;
+            let value = state.graphics.sites[polygons[i].site][state.LAYER];
+            if(state.LAYER === 5) value = state.graphics.sites[polygons[i].site][2];
 
-            grayscale = grayscale.toFixed(1);
-            state.context().fillStyle = `rgb( ${grayscale},${grayscale}, ${grayscale} )`;
+            let grayScale = (1 - value) * 255;
+            grayScale = grayScale.toFixed(1);
+
+            state.context().fillStyle = `rgb( ${grayScale},${grayScale}, ${grayScale} )`;
+
+            // set color for [river] mode
+            if(state.LAYER === 5 && value <= state.waterline) {
+                state.context().fillStyle = `lightBlue`;
+            }
+
+            // start drawing polygon
             state.context().beginPath();
-
             for(let j = 0, vertices = polygons[i].vertices; j < vertices.length; j++) {
                 let vertex = state.vertices[vertices[j]];
                 state.context().moveTo(vertex[0], vertex[1]);
@@ -382,7 +399,7 @@ function Metro(canvas) {
             state.context().lineTo(triangle[1][0], triangle[1][1]);
             state.context().lineTo(triangle[2][0], triangle[2][1]);
             state.context().closePath();
-            state.context().strokeStyle = `black`;
+            state.context().strokeStyle = `grey`;
             state.context().stroke();
         }
         state.context().restore();
@@ -427,6 +444,7 @@ function Metro(canvas) {
      * draw terrain contour lines based on given points
      * @param point
      * @param color
+     * @param width
      */
     function drawContourLines(point, color, width) {
         state.context().save();
@@ -532,7 +550,7 @@ function Metro(canvas) {
     }
 
     function findSites(x, y, radius) {
-        var i = 0,
+        let i = 0,
             n = state.graphics.sites.length,
             dx,
             dy,
@@ -581,6 +599,29 @@ function Metro(canvas) {
         const y = -k * (lowest[0] - x) + lowest[1];
 
         return [x, y];
+    }
+
+
+    /**
+     * find adjacent sites on mouse position
+     * @param site
+     * @returns {Array}
+     */
+    function findAdjacentSites(site) {
+        let sites = [];
+
+        state.graphics.links.forEach(function(link) {
+            if (link.source == site || link.target == site) {
+
+                //get corresponding polygons
+                state.graphics.polygons.forEach(function (p) {
+                    if (state.graphics.sites[p.site] == link.target || state.graphics.sites[p.site] == link.source) {
+                        sites.push(p.site);
+                    }
+                });
+            }
+        });
+        return sites;
     }
 
     // return Metro()
