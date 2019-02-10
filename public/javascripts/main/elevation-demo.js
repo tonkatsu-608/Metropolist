@@ -56,9 +56,12 @@ function Metro(canvas) {
                 case 'affluence': state.LAYER = 3; break;
                 case 'desirability':
                     state.LAYER = 4;
-                    state.graphics.sites.map(s => s[4] = (s[2] + s[3]) / 2);
+                    state.graphics.sites.map(s => {
+                        s[4] = (s[2] + s[3]) / 2;
+                        if(s[2] <= state.waterline) s[4] = 0;
+                    });
                     break;
-                case 'river': state.LAYER = 5; break;
+                case 'district': state.LAYER = 5;
             }
             render();
         });
@@ -97,6 +100,13 @@ function Metro(canvas) {
         context () { return this.canvas.getContext("2d"); },
         DISTRICT_TYPES: ['rich', 'medium','poor','plaza', 'empty'],
         COLOR: [{R: 255, G: 0, B: 0}, {R: 0, G: 255, B: 0}, {R: 0, G: 0, B: 255}],
+        POLYGON_TYPE_COLOR: {
+            "rich" : "Black",
+            "medium" : "DimGray",
+            "poor" : "Silver",
+            "plaza" : "Orange",
+            "empty" : "White",
+        },
     };
 
     state.graphics = new Graphics(); console.log(state);
@@ -141,7 +151,7 @@ function Metro(canvas) {
         // this.buildings = getBuildings( this.clusters );
     }
 
-    function getCellCentroid( cell, diagram ) {
+    function getCellCentroid( cell, diagram, index ) {
         let cx = 0, cy = 0, count = 0;
 
         getCellVertices(cell, diagram).forEach( v => {
@@ -155,19 +165,38 @@ function Metro(canvas) {
         // site.affluence = 0;
         // site.desirability = 0;
         // site.color = state.COLOR[Math.floor(Math.random() * 2)];
-        site.type = state.DISTRICT_TYPES[Math.floor(Math.random() * 4)];
+        site.type = null;
+        site.index = index;
         site.color = { R: Math.random() * 255, G: Math.random() * 255, B: Math.random() * 255 };
 
         return site;
     }
 
+    function assignTypeForSite(index) {
+        let types = new Set();
+        let s = state.graphics.sites[index];
+
+        if(s[3] >= 0.7) {
+            s.type = 'rich';
+        } else if(s[3] < 0.7 && s[3] > 0.3) {
+            s.type = 'medium';
+        } else if(s[3] <= 0.3) {
+            s.type = 'poor';
+        }
+
+        findAdjacentSites(s).forEach(i => {
+            types.add(state.graphics.sites[i].type);
+        });
+
+        if(types.has('poor') && types.has('medium') && types.has('rich')) s.type = 'plaza';
+    }
+
     function getCellVertices( cell, diagram ) {
         return cell.halfedges.map(i => cellHalfedgeStart(cell, diagram.edges[i]));
-
     }
 
     function relax( diagram ) {
-        return diagram.cells.map((cell) => getCellCentroid( cell, diagram ));
+        return diagram.cells.map((cell, index) => getCellCentroid( cell, diagram, index));
     }
 
     function makePolygons(diagram) {
@@ -235,16 +264,16 @@ function Metro(canvas) {
                 if(state.selectedSites.length > 0) {
                     state.selectedSites.map(s => {
                         s[state.LAYER] += (state.increment / 100) * s.delta;
-                        if(state.LAYER === 5) s[2] += (state.increment / 100) * s.delta;
                         if(s[state.LAYER] > 1) s[state.LAYER] = 1;
+                        assignTypeForSite(s.index);
                     });
                 }
             } else {
                 if(state.selectedSites.length > 0) {
                     state.selectedSites.map(s => {
                         s[state.LAYER] -= (state.increment / 100) * s.delta;
-                        if(state.LAYER === 5) s[2] -= (state.increment / 100) * s.delta;
                         if(s[state.LAYER] < 0) s[state.LAYER] = 0;
+                        assignTypeForSite(s.index);
                     });
                 }
             }
@@ -275,7 +304,7 @@ function Metro(canvas) {
             state.radius -= d3.event.deltaX;
             state.radius -= d3.event.deltaY;
 
-            if(state.radius < 30) state.radius = 30;
+            if(state.radius < 15) state.radius = 15;
             if(state.radius > 700) state.radius = 700;
             render();
             drawCircle('red');
@@ -360,24 +389,25 @@ function Metro(canvas) {
         state.context().save();
         for (let i = 0, polygons = state.graphics.polygons; i < polygons.length; i++) {
             let value = state.graphics.sites[polygons[i].site][state.LAYER];
-            if(state.LAYER === 5) value = state.graphics.sites[polygons[i].site][2];
+            // if(state.LAYER === 5) value = state.graphics.sites[polygons[i].site][2];
 
             let grayScale = (1 - value) * 255;
             grayScale = grayScale.toFixed(1);
 
-            state.context().fillStyle = `rgb( ${grayScale},${grayScale}, ${grayScale} )`;
-
+            state.context().fillStyle = `rgb( ${grayScale}, ${grayScale}, ${grayScale} )`;
             // set color for [river] mode
-            if(state.LAYER === 5 && value <= state.waterline) {
-                state.context().fillStyle = `lightBlue`;
+            if(state.LAYER === 2 && value <= state.waterline) state.context().fillStyle = `lightBlue`;
+            if(state.LAYER === 3) {
+                let color = state.POLYGON_TYPE_COLOR[state.graphics.sites[state.graphics.polygons[i].site].type];
+                state.context().fillStyle = color;
             }
 
             // start drawing polygon
             state.context().beginPath();
             for(let j = 0, vertices = polygons[i].vertices; j < vertices.length; j++) {
                 let vertex = state.vertices[vertices[j]];
-                state.context().moveTo(vertex[0], vertex[1]);
 
+                state.context().moveTo(vertex[0], vertex[1]);
                 for(let l = 1; l < vertices.length; l ++) {
                     let nextVertex= state.vertices[vertices[l]];
                     state.context().lineTo(nextVertex[0], nextVertex[1]);
@@ -450,81 +480,81 @@ function Metro(canvas) {
         state.context().save();
 
         state.graphics.triangles.forEach(triangle => {
-            let contourPoints = [];
-
-            for(let i = 0, n = triangle.length; i < n; i ++) {
-                let j = (i + 1) < n ? (i + 1) : 0;
-                let site1 = triangle[i];
-                let site2 = triangle[j];
-
-                // https://codegolf.stackexchange.com/questions/8649/shortest-code-to-check-if-a-number-is-in-a-range-in-javascript
-                if((point - site1[2]) * (point - site2[2]) < 0) {
-                    let p = pointOnEdge(site1, site2, point);
-
-                    contourPoints.push(p);
-                    // draw point position
-                    // state.context().fillStyle = 'red';
-                    // state.context().moveTo(p[0], p[1]);
-                    // state.context().fillRect(p[0], p[1], 5, 5);
-                }
-            }
-            if(contourPoints.length >= 0) {
-                state.context().beginPath();
-                state.context().lineWidth = width;
-                state.context().strokeStyle = color;
-
-                for(let n = 0; n < contourPoints.length; n ++) {
-                    let point = contourPoints[n];
-
-                    state.context().moveTo(point[0], point[1]);
-                    for(let l = 1; l < contourPoints.length; l ++) {
-                        let nextPoint = contourPoints[l];
-                        state.context().lineTo(nextPoint[0], nextPoint[1]);
-                    }
-                }
-                state.context().stroke();
-            }
-            // let vertices = triangle.sort( (a,b) => {
-            //     if( a[2] < b[2] ) {
-            //         return -1;
-            //     } else if( a[2] > b[2] ) {
-            //         return 1;
-            //     } else  {
-            //         return 0;
-            //     } }  );
-
-            // if( point >= vertices[0][2] && point <= vertices[2][2] ) {
-            //     let e1, e2;
-            //     if( point >= vertices[0][2] && point <= vertices[1][2] ) {
-            //         e1 = [ vertices[0], vertices[1] ];
-            //         if( point >= vertices[0][2] && point <= vertices[2][2] ) {
-            //             e2 = [ vertices[0], vertices[2]];
-            //         } else {
-            //             e2 = [vertices[1], vertices[2]];
-            //         }
-            //     } else {
-            //         e1 = [vertices[1], vertices[2]];
-            //         if( point >= vertices[1][2] && point <= vertices[0][2] ) {
-            //             e2 = [ vertices[0], vertices[1]];
-            //         } else {
-            //             e2 = [vertices[0], vertices[2]];
-            //         }
+            // let contourPoints = [];
+            //
+            // for(let i = 0, n = triangle.length; i < n; i ++) {
+            //     let j = (i + 1) < n ? (i + 1) : 0;
+            //     let site1 = triangle[i];
+            //     let site2 = triangle[j];
+            //
+            //     // https://codegolf.stackexchange.com/questions/8649/shortest-code-to-check-if-a-number-is-in-a-range-in-javascript
+            //     if((point - site1[2]) * (point - site2[2]) < 0) {
+            //         let p = pointOnEdge(site1, site2, point);
+            //
+            //         contourPoints.push(p);
+            //         // draw point position
+            //         // state.context().fillStyle = 'red';
+            //         // state.context().moveTo(p[0], p[1]);
+            //         // state.context().fillRect(p[0], p[1], 5, 5);
             //     }
-            //
-            //     let pt1 = pointOnEdge( e1[0], e1[1], point );
-            //     let pt2 = pointOnEdge( e2[0], e2[1], point );
-            //
-            //     drawLine( pt1, pt2 );
             // }
-            //
-            // function drawLine(p1, p2) {
+            // if(contourPoints.length >= 0) {
             //     state.context().beginPath();
             //     state.context().lineWidth = width;
             //     state.context().strokeStyle = color;
-            //     state.context().moveTo(p1[0], p1[1]);
-            //     state.context().lineTo(p2[0], p2[1]);
+            //
+            //     for(let n = 0; n < contourPoints.length; n ++) {
+            //         let point = contourPoints[n];
+            //
+            //         state.context().moveTo(point[0], point[1]);
+            //         for(let l = 1; l < contourPoints.length; l ++) {
+            //             let nextPoint = contourPoints[l];
+            //             state.context().lineTo(nextPoint[0], nextPoint[1]);
+            //         }
+            //     }
             //     state.context().stroke();
             // }
+            let vertices = triangle.sort( (a,b) => {
+                if( a[2] < b[2] ) {
+                    return -1;
+                } else if( a[2] > b[2] ) {
+                    return 1;
+                } else  {
+                    return 0;
+                } }  );
+
+            if( point >= vertices[0][2] && point <= vertices[2][2] ) {
+                let e1, e2;
+                if( point >= vertices[0][2] && point <= vertices[1][2] ) {
+                    e1 = [ vertices[0], vertices[1] ];
+                    if( point >= vertices[0][2] && point <= vertices[2][2] ) {
+                        e2 = [ vertices[0], vertices[2]];
+                    } else {
+                        e2 = [vertices[1], vertices[2]];
+                    }
+                } else {
+                    e1 = [vertices[1], vertices[2]];
+                    if( point >= vertices[1][2] && point <= vertices[0][2] ) {
+                        e2 = [ vertices[0], vertices[1]];
+                    } else {
+                        e2 = [vertices[0], vertices[2]];
+                    }
+                }
+
+                let pt1 = pointOnEdge( e1[0], e1[1], point );
+                let pt2 = pointOnEdge( e2[0], e2[1], point );
+
+                drawLine( pt1, pt2 );
+            }
+
+            function drawLine(p1, p2) {
+                state.context().beginPath();
+                state.context().lineWidth = width;
+                state.context().strokeStyle = color;
+                state.context().moveTo(p1[0], p1[1]);
+                state.context().lineTo(p2[0], p2[1]);
+                state.context().stroke();
+            }
         });
         state.context().restore();
     }
@@ -613,7 +643,7 @@ function Metro(canvas) {
         state.graphics.links.forEach(function(link) {
             if (link.source == site || link.target == site) {
 
-                //get corresponding polygons
+                //get adjacent polygons
                 state.graphics.polygons.forEach(function (p) {
                     if (state.graphics.sites[p.site] == link.target || state.graphics.sites[p.site] == link.source) {
                         sites.push(p.site);
