@@ -173,7 +173,6 @@ function Metro(canvas) {
     }
 
     function assignTypeForSite(index) {
-        let types = new Set();
         let s = state.graphics.sites[index];
 
         if(s[3] >= 0.7) {
@@ -184,11 +183,15 @@ function Metro(canvas) {
             s.type = 'poor';
         }
 
+        let types = new Set();
+
         findAdjacentSites(s).forEach(i => {
             types.add(state.graphics.sites[i].type);
         });
 
-        if(types.has('poor') && types.has('medium') && types.has('rich')) s.type = 'plaza';
+        if(types.size === 3 && types.has('poor') && types.has('medium') && types.has('rich')) {
+            s.type = 'plaza';
+        }
     }
 
     function getCellVertices( cell, diagram ) {
@@ -265,7 +268,7 @@ function Metro(canvas) {
                     state.selectedSites.map(s => {
                         s[state.LAYER] += (state.increment / 100) * s.delta;
                         if(s[state.LAYER] > 1) s[state.LAYER] = 1;
-                        assignTypeForSite(s.index);
+                        if(state.LAYER === 3) assignTypeForSite(s.index);
                     });
                 }
             } else {
@@ -273,7 +276,7 @@ function Metro(canvas) {
                     state.selectedSites.map(s => {
                         s[state.LAYER] -= (state.increment / 100) * s.delta;
                         if(s[state.LAYER] < 0) s[state.LAYER] = 0;
-                        assignTypeForSite(s.index);
+                        if(state.LAYER === 3) assignTypeForSite(s.index);
                     });
                 }
             }
@@ -321,6 +324,40 @@ function Metro(canvas) {
     /*=====================================================================================================
                                              Draw Functions
     ======================================================================================================*/
+    // draw polygons
+    function drawPolygons() {
+        state.context().save();
+        for (let i = 0, polygons = state.graphics.polygons; i < polygons.length; i++) {
+            let value = state.graphics.sites[polygons[i].site][state.LAYER];
+            // if(state.LAYER === 5) value = state.graphics.sites[polygons[i].site][2];
+
+            let grayScale = (1 - value) * 255;
+            grayScale = grayScale.toFixed(1);
+            state.context().fillStyle = `rgb( ${grayScale}, ${grayScale}, ${grayScale} )`;
+
+            if(state.LAYER === 2 && value <= state.waterline) state.context().fillStyle = `lightBlue`; // set color for [river] mode
+            if(state.LAYER === 3) {
+                let color = state.POLYGON_TYPE_COLOR[state.graphics.sites[state.graphics.polygons[i].site].type];
+                state.context().fillStyle = color;
+            }
+
+            // start drawing polygon
+            state.context().beginPath();
+            for(let j = 0, vertices = polygons[i].vertices; j < vertices.length; j++) {
+                let vertex = state.vertices[vertices[j]];
+
+                state.context().moveTo(vertex[0], vertex[1]);
+                for(let l = 1; l < vertices.length; l ++) {
+                    let nextVertex= state.vertices[vertices[l]];
+                    state.context().lineTo(nextVertex[0], nextVertex[1]);
+                }
+            }
+            state.context().closePath();
+            state.context().fill();
+        }
+        state.context().restore();
+    }
+
     // draw circle following mouse
     function drawCircle(color) {
         state.context().save();
@@ -380,41 +417,6 @@ function Metro(canvas) {
                 state.context().strokeStyle = color;
                 state.context().stroke();
             }
-        }
-        state.context().restore();
-    }
-
-    // draw polygons
-    function drawPolygons() {
-        state.context().save();
-        for (let i = 0, polygons = state.graphics.polygons; i < polygons.length; i++) {
-            let value = state.graphics.sites[polygons[i].site][state.LAYER];
-            // if(state.LAYER === 5) value = state.graphics.sites[polygons[i].site][2];
-
-            let grayScale = (1 - value) * 255;
-            grayScale = grayScale.toFixed(1);
-
-            state.context().fillStyle = `rgb( ${grayScale}, ${grayScale}, ${grayScale} )`;
-            // set color for [river] mode
-            if(state.LAYER === 2 && value <= state.waterline) state.context().fillStyle = `lightBlue`;
-            if(state.LAYER === 3) {
-                let color = state.POLYGON_TYPE_COLOR[state.graphics.sites[state.graphics.polygons[i].site].type];
-                state.context().fillStyle = color;
-            }
-
-            // start drawing polygon
-            state.context().beginPath();
-            for(let j = 0, vertices = polygons[i].vertices; j < vertices.length; j++) {
-                let vertex = state.vertices[vertices[j]];
-
-                state.context().moveTo(vertex[0], vertex[1]);
-                for(let l = 1; l < vertices.length; l ++) {
-                    let nextVertex= state.vertices[vertices[l]];
-                    state.context().lineTo(nextVertex[0], nextVertex[1]);
-                }
-            }
-            state.context().closePath();
-            state.context().fill();
         }
         state.context().restore();
     }
@@ -622,7 +624,7 @@ function Metro(canvas) {
      */
     function pointOnEdge( site1, site2, point ) {
         const lowest = site1[2] < site2[2] ? site1 : site2;
-        const highest = lowest == site1 ? site2 : site1;
+        const highest = lowest === site1 ? site2 : site1;
         const x = lowest[0] + (highest[0] - lowest[0]) * ( point - lowest[2] ) / ( highest[2] - lowest[2] );
         // const y = lowest[1] + (highest[1] - lowest[1]) * ( point - lowest[2] ) / ( highest[2] - lowest[2] );
         const k = (lowest[1] - highest[1]) / (lowest[0] - highest[0]); // slope of line from site1 to site2
@@ -641,11 +643,11 @@ function Metro(canvas) {
         let sites = [];
 
         state.graphics.links.forEach(function(link) {
-            if (link.source == site || link.target == site) {
+            if (link.source.index === site.index || link.target.index === site.index) {
 
                 //get adjacent polygons
                 state.graphics.polygons.forEach(function (p) {
-                    if (state.graphics.sites[p.site] == link.target || state.graphics.sites[p.site] == link.source) {
+                    if (state.graphics.sites[p.site].index === link.target.index || state.graphics.sites[p.site].index === link.source.index) {
                         sites.push(p.site);
                     }
                 });
