@@ -16,11 +16,14 @@ function Metro(canvas) {
         });
 
         $('#renderContourLine').click( function() {
-            if(state.LAYER === 'elevation' || state.LAYER === 'wall') {
+            if(state.LAYER === 'elevation') {
                 render();
                 drawContourLines(0.25, 'red', 1);
                 drawContourLines(0.5, 'green', 1);
                 drawContourLines(0.75, 'blue', 1);
+            }
+            if(state.LAYER === 'wall') {
+                drawContourLines(0.25, 'black', 8);
             }
         });
 
@@ -61,7 +64,13 @@ function Metro(canvas) {
                         if(s['elevation'] <= state.waterline) s['desirability'] = 0;
                     });
                     break;
-                case 'district': state.LAYER = 'district'; break;
+                case 'district':
+                    state.LAYER = 'district';
+                    state.graphics.sites.map(s => {
+                        s['desirability'] = (s['elevation'] + s['affluence']) / 2;
+                        if(s['elevation'] <= state.waterline) s['desirability'] = 0;
+                    });
+                    break;
                 case 'wall': state.LAYER = 'wall'; break;
             }
             render();
@@ -138,7 +147,7 @@ function Metro(canvas) {
         this.voronoi = d3.voronoi().extent([[MIN_WIDTH, MIN_HEIGHT], [MAX_WIDTH, MAX_HEIGHT]]);
         this.diagram = this.voronoi( this.sites );
 
-        for( let n = 0; n < 5; n++ ) {
+        for( let n = 0; n < 10; n++ ) {
             this.sites = relax( this.diagram );
             this.diagram = this.voronoi( this.sites );
         }
@@ -180,14 +189,13 @@ function Metro(canvas) {
     function assignTypeForSite(index) {
         let s = state.graphics.sites[index];
 
-        if(s['affluence'] >= 0.7) {
+        if(s['desirability'] >= 0.7) {
             s.type = 'rich';
-        } else if(s['affluence'] < 0.7 && s['affluence'] > 0.3) {
+        } else if(s['desirability'] < 0.7 && s['desirability'] > 0.3) {
             s.type = 'medium';
-        } else if(s['affluence'] <= 0.3) {
+        } else if(s['desirability'] <= 0.3) {
             s.type = 'poor';
         }
-
 
         // assign type [plaza] for district only if it is adjacent to [poor] && [medium] && [rich]
         let types = new Set();
@@ -244,6 +252,7 @@ function Metro(canvas) {
         // drawTriangles();
         // renderBackground();
         drawEdges(0.5, 'grey'); // lineWidth, lineColor
+        drawContourLines(0.25, 'black', 8);
         // drawSites(1, 'black'); // lineWidth, lineColor
     }
 
@@ -259,13 +268,13 @@ function Metro(canvas) {
                                              Event Functions
     ======================================================================================================*/
     function dragstarted() {
-        if(state.isEditMode && state.LAYER !== 'desirability' && state.LAYER !== 'district') {
+        if(state.isEditMode && state.LAYER !== 'desirability') {
             state.isDragging = true;
         }
     }
 
     function dragged() {
-        if(state.isEditMode && state.LAYER !== 'desirability' && state.LAYER !== 'district') {
+        if(state.isEditMode && state.LAYER !== 'desirability') {
             state.pointer = d3.mouse(this);
             state.selectedSites = findSites(state.pointer[0], state.pointer[1], state.radius);
             // let dist = distance(state.pointer, d3.mouse(this));
@@ -275,13 +284,13 @@ function Metro(canvas) {
                     state.selectedSites.map(s => {
                         if(state.LAYER === 'wall') {
                             s.isInside = true;
-                            s['wall'] = 1;
-                            makeWall();
+                            // s.isWall = false;
+                            s['wall'] = 0.5;
                         } else {
                             s[state.LAYER] += (state.increment / 100) * s.delta;
                         }
                         if(s[state.LAYER] >= 1) s[state.LAYER] = 1;
-                        if(state.LAYER === 'affluence') assignTypeForSite(s.index);
+                        if(state.LAYER === 'elevation' || state.LAYER === 'affluence') assignTypeForSite(s.index);
                     });
                 }
             } else {
@@ -289,15 +298,17 @@ function Metro(canvas) {
                     state.selectedSites.map(s => {
                         if(state.LAYER === 'wall') {
                             s.isInside = false;
+                            // s.isWall = false;
                             s['wall'] = 0;
-                            makeWall();
                         } else {
                             s[state.LAYER] -= (state.increment / 100) * s.delta;
                         }
                         if(s[state.LAYER] <= 0) s[state.LAYER] = 0;
-                        if(state.LAYER === 'affluence') assignTypeForSite(s.index);
+                        if(state.LAYER === 'elevation' || state.LAYER === 'affluence') assignTypeForSite(s.index);
                     });
                 }
+            }
+            if(state.LAYER === 'wall') {
             }
             render();
             drawCircle('red');
@@ -305,14 +316,14 @@ function Metro(canvas) {
     }
 
     function dragended() {
-        if(state.isEditMode && state.LAYER !== 'desirability' && state.LAYER !== 'district') {
+        if(state.isEditMode && state.LAYER !== 'desirability') {
             state.isDragging = false;
         }
     }
 
     // mouse event
     function onMouseMove() {
-        if(state.isEditMode && state.LAYER !== 'desirability' && state.LAYER !== 'district') {
+        if(state.isEditMode && state.LAYER !== 'desirability') {
             state.pointer = d3.mouse(this);
             render();
             drawCircle('red');
@@ -320,7 +331,7 @@ function Metro(canvas) {
     }
 
     function onScroll() {
-        if(state.isEditMode && state.LAYER !== 'desirability' && state.LAYER !== 'district') {
+        if(state.isEditMode && state.LAYER !== 'desirability') {
             d3.event.preventDefault();
 
             state.radius -= d3.event.deltaX;
@@ -365,15 +376,14 @@ function Metro(canvas) {
             }
             if(state.LAYER === 'wall') {
                 // set color for [wall] mode
-                if(site.isInside && value === 1) {
-                    color = `silver`;
-                }
-                if(!site.isInside && value === 0) {
+                if(value === 0.5) {
+                    color = `white`;
+                } else if(value === 0) {
                     color = `white`;
                 }
-                if(site.isWall && value === 0.5) {
-                    color = `black`;
-                }
+                // else if(site.isWall && !site.isInside && value === 0.5) {
+                //     color = `black`;
+                // }
             }
 
             // start drawing polygon
@@ -552,7 +562,7 @@ function Metro(canvas) {
             //     }
             //     state.context().stroke();
             // }
-            let vertices = triangle.sort( (a,b) => {
+            let vertices = triangle.sort((a,b) => {
                 if (a[state.LAYER] < b[state.LAYER]) {
                     return -1;
                 } else if (a[state.LAYER] > b[state.LAYER]) {
@@ -672,30 +682,37 @@ function Metro(canvas) {
     // find wall, assign wall
     function makeWall() {
         let sites = new Set();
-        let sitesNotWall = new Set();
+        let sitesIsNotWall = new Set();
 
-        state.graphics.links.forEach(function(link) {
-            if(state.graphics.sites[link.source.index].isInside && !state.graphics.sites[link.target.index].isInside) {
+        state.graphics.links.forEach(link => {
+            let source = state.graphics.sites[link.source.index];
+            let target = state.graphics.sites[link.target.index];
+
+            if(source.isInside && !target.isInside) {
                 sites.add(link.target.index);
-            } else if(state.graphics.sites[link.target.index].isInside && !state.graphics.sites[link.source.index].isInside) {
+            } else if(target.isInside && !source.isInside) {
                 sites.add(link.source.index);
-            } else {
-                sitesNotWall.add(link.source.index);
-                sitesNotWall.add(link.target.index);
+            } else if((source.isInside && target.isInside)) {
+                sitesIsNotWall.add(link.source.index);
+                sitesIsNotWall.add(link.target.index);
             }
         });
+        //
+        // // assign wall
+        // sites.forEach(s => {
+        //     state.graphics.sites[s]['wall'] = 0.5;
+        //     state.graphics.sites[s].isWall = true;
+        //     state.graphics.sites[s].isInside = false;
+        // });
 
         // unassign wall
-        sitesNotWall.forEach(s => {
-            state.graphics.sites[s]['wall'] = 0;
-            state.graphics.sites[s].isWall = false;
-        });
+        // sitesIsNotWall.forEach(s => {
+        //     state.graphics.sites[s]['wall'] = 0;
+        //     state.graphics.sites[s].isWall = false;
+        //     state.graphics.sites[s].isInside = false;
+        // });
 
-        // assign wall
-        sites.forEach(s => {
-            state.graphics.sites[s]['wall'] = 0.5;
-            state.graphics.sites[s].isWall = true;
-        });
+        // // console.log(state.graphics.sites.filter(s => s.isWall).length);
     }
 
     /**
