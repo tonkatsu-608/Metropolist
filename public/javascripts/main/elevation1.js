@@ -16,15 +16,14 @@ function Metro(canvas) {
         });
 
         $('#renderContourLine').click( function() {
-            if(state.LAYERS.has(elevation)) {
+            if(state.LAYER === 'elevation') {
                 render();
-                drawContourLines(0.25, 'elevation', 'red', 1);
-                drawContourLines(0.5, 'elevation', 'green', 1, 'elevation');
-                drawContourLines(0.75, 'elevation', 'blue', 1, 'elevation');
+                drawContourLines(0.25, 'red', 1);
+                drawContourLines(0.5, 'green', 1);
+                drawContourLines(0.75, 'blue', 1);
             }
-            if(state.LAYERS.has(district)) {
-                render();
-                drawContourLines(0.25, 'wall', 'black', 8);
+            if(state.LAYER === 'wall') {
+                drawContourLines(0.25, 'black', 8);
             }
         });
 
@@ -61,11 +60,12 @@ function Metro(canvas) {
                 if(state.LAYERS.size === 1) {
                     this.checked = true;
                     return;
-                }else if(state.LAYERS.has(elevation)) {
+                }
+                if(state.LAYERS.has(elevation)) {
                     state.LAYERS.delete(elevation);
                 }
             }
-            render();
+            console.log(state.LAYERS);
         });
 
         $('#affluence-checkbox').on('change', function () {
@@ -75,11 +75,12 @@ function Metro(canvas) {
                 if(state.LAYERS.size === 1) {
                     this.checked = true;
                     return;
-                } else if(state.LAYERS.has(affluence)) {
+                }
+                if(state.LAYERS.has(affluence) && state.LAYERS.size > 1) {
                     state.LAYERS.delete(affluence);
                 }
             }
-            render();
+            console.log(state.LAYERS);
         });
 
         $('#desirability-checkbox').on('change', function () {
@@ -89,11 +90,12 @@ function Metro(canvas) {
                 if(state.LAYERS.size === 1) {
                     this.checked = true;
                     return;
-                }else if(state.LAYERS.has(desirability)) {
+                }
+                if(state.LAYERS.has(desirability) && state.LAYERS.size > 1) {
                     state.LAYERS.delete(desirability);
                 }
             }
-            render();
+            console.log(state.LAYERS);
         });
 
         $('#district-checkbox').on('change', function () {
@@ -103,11 +105,12 @@ function Metro(canvas) {
                 if(state.LAYERS.size === 1) {
                     this.checked = true;
                     return;
-                }else if(state.LAYERS.has(district)) {
+                }
+                if(state.LAYERS.has(district) && state.LAYERS.size > 1) {
                     state.LAYERS.delete(district);
                 }
             }
-            render();
+            console.log(state.LAYERS);
         });
 
         $('#wall-checkbox').on('change', function () {
@@ -117,12 +120,36 @@ function Metro(canvas) {
                 if(state.LAYERS.size === 1) {
                     this.checked = true;
                     return;
-                }else if(state.LAYERS.has(wall)) {
+                }
+                if(state.LAYERS.has(wall) && state.LAYERS.size > 1) {
                     state.LAYERS.delete(wall);
                 }
             }
-            render();
+            console.log(state.LAYERS);
         });
+
+        // $('#layerSelect').on('change', function() {
+        //     switch (this.value) {
+        //         case 'elevation': state.LAYER = 'elevation'; break;
+        //         case 'affluence': state.LAYER = 'affluence'; break;
+        //         case 'desirability':
+        //             state.LAYER = 'desirability';
+        //             state.graphics.sites.map(s => {
+        //                 s['desirability'] = (s['elevation'] + s['affluence']) / 2;
+        //                 if(s['elevation'] <= state.waterline) s['desirability'] = 0;
+        //             });
+        //             break;
+        //         case 'district':
+        //             state.LAYER = 'district';
+        //             state.graphics.sites.map(s => {
+        //                 s['desirability'] = (s['elevation'] + s['affluence']) / 2;
+        //                 if(s['elevation'] <= state.waterline) s['desirability'] = 0;
+        //             });
+        //             break;
+        //         case 'wall': state.LAYER = 'wall'; break;
+        //     }
+        //     render();
+        // });
 
         $('#incrementSlider').on('change', function() {
             state.increment = this.value;
@@ -140,50 +167,23 @@ function Metro(canvas) {
         });
     });
 
-    var elevation = (site_index) => {
-        let value = state.graphics.sites[site_index]['elevation'];
-        let grayScale = ((1 - value) * 255).toFixed(1);
-
-        if(value <= state.waterline) {
-            // set color for river in [elevation] mode
-            return [173, 216, 230]; // lightBlue
-        }
-
-        return [grayScale, grayScale, grayScale];
+    var elevation = (site) => {
+        return 'elevation';
     };
 
-    var affluence = (site_index) => {
-        let value = state.graphics.sites[site_index]['affluence'];
-        let grayScale = ((1 - value) * 255).toFixed(1);
-
-        return [grayScale, grayScale, grayScale];
+    var affluence = (site) => {
+        return 'affluence';
     };
 
-    var desirability = (site_index) => {
-        let site = state.graphics.sites[site_index];
-        let value = (site['elevation'] + site['affluence']) / 2;
-        if(site['elevation'] <= state.waterline) value = 0;
-        let grayScale = ((1 - value) * 255).toFixed(1);
-
-        return [grayScale, grayScale, grayScale];
+    var desirability = (site) => {
+        return 'desirability';
     };
 
-    var district = (site_index) => {
-        let site = state.graphics.sites[site_index];
-
-        return state.POLYGON_TYPE_COLOR[site.type] || [255, 255, 255];
+    var district = (site) => {
+        return 'district';
     };
-
-    var wall = (site_index) => {
-        let value = state.graphics.sites[site_index]['wall'];
-
-        if(value === 0.5) {
-            return [128, 128, 128]; // grey
-        } else if(value === 0) {
-            return [255, 255, 255]; // white
-        }
-
-        return [255, 255, 255];
+    var wall = (site) => {
+        return 'wall';
     };
 
     var state = {
@@ -206,11 +206,11 @@ function Metro(canvas) {
         DISTRICT_TYPES: ['rich', 'medium','poor','plaza', 'empty'],
         COLOR: [{R: 255, G: 0, B: 0}, {R: 0, G: 255, B: 0}, {R: 0, G: 0, B: 255}],
         POLYGON_TYPE_COLOR: {
-            "rich" : [0, 0, 0],
-            "medium" : [105, 105, 105],
-            "poor" : [192, 192, 192],
-            "plaza" : [255, 140, 0],
-            "empty" : [255, 255, 255],
+            "rich" : "black",
+            "medium" : "dimGray",
+            "poor" : "silver",
+            "plaza" : "orange",
+            "empty" : "white",
         },
     };
 
@@ -268,11 +268,13 @@ function Metro(canvas) {
         let site = [ cx / count, cy / count];
         site.elevation = 0.5;
         site.affluence = 0;
+        site.desirability = 0;
         site.district = 0;
         site.wall = 0;
         // site.color = state.COLOR[Math.floor(Math.random() * 2)];
         site.type = null;
         site.index = index;
+        site.isWall = false;
         site.isInside = false;
         site.color = { R: Math.random() * 255, G: Math.random() * 255, B: Math.random() * 255 };
 
@@ -281,14 +283,12 @@ function Metro(canvas) {
 
     function assignTypeForSite(index) {
         let s = state.graphics.sites[index];
-        let value = (s['elevation'] + s['affluence']) / 2;
-        if(s['elevation'] <= state.waterline) value = 0;
 
-        if(value >= 0.7) {
+        if(s['desirability'] >= 0.7) {
             s.type = 'rich';
-        } else if(value < 0.7 && value > 0.3) {
+        } else if(s['desirability'] < 0.7 && s['desirability'] > 0.3) {
             s.type = 'medium';
-        } else if(value <= 0.3) {
+        } else if(s['desirability'] <= 0.3) {
             s.type = 'poor';
         }
 
@@ -347,9 +347,7 @@ function Metro(canvas) {
         // drawTriangles();
         // renderBackground();
         drawEdges(0.5, 'grey'); // lineWidth, lineColor
-        if(state.LAYERS.has(district)) {
-            drawContourLines(0.25, 'wall', 'black', 8);
-        }
+        drawContourLines(0.25, 'black', 8);
         // drawSites(1, 'black'); // lineWidth, lineColor
     }
 
@@ -365,46 +363,47 @@ function Metro(canvas) {
                                              Event Functions
     ======================================================================================================*/
     function dragstarted() {
-        if(state.isEditMode && !ifOnlyHasDesirabilityMode()) {
+        if(state.isEditMode && state.LAYER !== 'desirability') {
             state.isDragging = true;
         }
     }
 
     function dragged() {
-        if(state.isEditMode && !ifOnlyHasDesirabilityMode()) {
+        if(state.isEditMode && state.LAYER !== 'desirability') {
             state.pointer = d3.mouse(this);
             state.selectedSites = findSites(state.pointer[0], state.pointer[1], state.radius);
+            // let dist = distance(state.pointer, d3.mouse(this));
 
             if(state.isIncreasing) {
                 if(state.selectedSites.length > 0) {
                     state.selectedSites.map(s => {
-                        if(state.LAYERS.has(district)) {
+                        if(state.LAYER === 'wall') {
                             s.isInside = true;
+                            // s.isWall = false;
                             s['wall'] = 0.5;
-                        } else if(state.LAYERS.has(elevation)) {
-                            s['elevation'] += (state.increment / 100) * s.delta;
-                        } else if(state.LAYERS.has(affluence)) {
-                            s['affluence'] += (state.increment / 100) * s.delta;
+                        } else {
+                            s[state.LAYER] += (state.increment / 100) * s.delta;
                         }
                         if(s[state.LAYER] >= 1) s[state.LAYER] = 1;
-                        if(state.LAYERS.has(elevation) || state.LAYERS.has(affluence)) assignTypeForSite(s.index);
+                        if(state.LAYER === 'elevation' || state.LAYER === 'affluence') assignTypeForSite(s.index);
                     });
                 }
             } else {
                 if(state.selectedSites.length > 0) {
                     state.selectedSites.map(s => {
-                        if(state.LAYERS.has(district)) {
+                        if(state.LAYER === 'wall') {
                             s.isInside = false;
+                            // s.isWall = false;
                             s['wall'] = 0;
-                        } else if(state.LAYERS.has(elevation)) {
-                            s['elevation'] -= (state.increment / 100) * s.delta;
-                        } else if(state.LAYERS.has(affluence)) {
-                            s['affluence'] -= (state.increment / 100) * s.delta;
+                        } else {
+                            s[state.LAYER] -= (state.increment / 100) * s.delta;
                         }
                         if(s[state.LAYER] <= 0) s[state.LAYER] = 0;
-                        if(state.LAYERS.has(elevation) || state.LAYERS.has(affluence)) assignTypeForSite(s.index);
+                        if(state.LAYER === 'elevation' || state.LAYER === 'affluence') assignTypeForSite(s.index);
                     });
                 }
+            }
+            if(state.LAYER === 'wall') {
             }
             render();
             drawCircle('red');
@@ -412,14 +411,14 @@ function Metro(canvas) {
     }
 
     function dragended() {
-        if(state.isEditMode && !ifOnlyHasDesirabilityMode()) {
+        if(state.isEditMode && state.LAYER !== 'desirability') {
             state.isDragging = false;
         }
     }
 
     // mouse event
     function onMouseMove() {
-        if(state.isEditMode && !ifOnlyHasDesirabilityMode()) {
+        if(state.isEditMode && state.LAYER !== 'desirability') {
             state.pointer = d3.mouse(this);
             render();
             drawCircle('red');
@@ -427,7 +426,7 @@ function Metro(canvas) {
     }
 
     function onScroll() {
-        if(state.isEditMode && !ifOnlyHasDesirabilityMode()) {
+        if(state.isEditMode && state.LAYER !== 'desirability') {
             d3.event.preventDefault();
 
             state.radius -= d3.event.deltaX;
@@ -453,14 +452,39 @@ function Metro(canvas) {
     // draw polygons
     function drawPolygons() {
         state.context().save();
-        state.graphics.polygons.forEach(p => {
-            let colors = [...state.LAYERS].map(layer => layer(p.site));
-            let color = combineColors(colors);
+        for (let i = 0, polygons = state.graphics.polygons; i < polygons.length; i++) {
+            let site = state.graphics.sites[polygons[i].site];
+            let value = site[state.LAYER];
+            let grayScale = (1 - value) * 255;
+            let color = null;
+
+            grayScale = grayScale.toFixed(1);
+            color = `rgb( ${grayScale}, ${grayScale}, ${grayScale} )`;
+
+            if(state.LAYER === 'elevation' && value <= state.waterline) {
+                // set color for river in [elevation] mode
+                color = `lightBlue`;
+            }
+            if(state.LAYER === 'district') {
+                // set color for [district] mode
+                color = state.POLYGON_TYPE_COLOR[state.graphics.sites[site.index].type] || `white`;
+            }
+            if(state.LAYER === 'wall') {
+                // set color for [wall] mode
+                if(value === 0.5) {
+                    color = `white`;
+                } else if(value === 0) {
+                    color = `white`;
+                }
+                // else if(site.isWall && !site.isInside && value === 0.5) {
+                //     color = `black`;
+                // }
+            }
 
             // start drawing polygon
             state.context().beginPath();
             state.context().fillStyle = color;
-            for(let j = 0, vertices = p.vertices; j < vertices.length; j++) {
+            for(let j = 0, vertices = polygons[i].vertices; j < vertices.length; j++) {
                 let vertex = state.vertices[vertices[j]];
 
                 state.context().moveTo(vertex[0], vertex[1]);
@@ -471,7 +495,7 @@ function Metro(canvas) {
             }
             state.context().closePath();
             state.context().fill();
-        });
+        }
         state.context().restore();
     }
 
@@ -595,40 +619,74 @@ function Metro(canvas) {
      * @param color
      * @param width
      */
-    function drawContourLines(point, layer, color, width) {
+    function drawContourLines(point, color, width) {
         state.context().save();
 
         state.graphics.triangles.forEach(triangle => {
+            // let contourPoints = [];
+            //
+            // for(let i = 0, n = triangle.length; i < n; i ++) {
+            //     let j = (i + 1) < n ? (i + 1) : 0;
+            //     let site1 = triangle[i];
+            //     let site2 = triangle[j];
+            //
+            //     // https://codegolf.stackexchange.com/questions/8649/shortest-code-to-check-if-a-number-is-in-a-range-in-javascript
+            //     if((point - site1[state.LAYER]) * (point - site2[state.LAYER]) < 0) {
+            //         let p = pointOnEdge(site1, site2, point);
+            //
+            //         contourPoints.push(p);
+            //         // draw point position
+            //         // state.context().fillStyle = 'red';
+            //         // state.context().moveTo(p[0], p[1]);
+            //         // state.context().fillRect(p[0], p[1], 5, 5);
+            //     }
+            // }
+            // if(contourPoints.length >= 0) {
+            //     state.context().beginPath();
+            //     state.context().lineWidth = width;
+            //     state.context().strokeStyle = color;
+            //
+            //     for(let n = 0; n < contourPoints.length; n ++) {
+            //         let point = contourPoints[n];
+            //
+            //         state.context().moveTo(point[0], point[1]);
+            //         for(let l = 1; l < contourPoints.length; l ++) {
+            //             let nextPoint = contourPoints[l];
+            //             state.context().lineTo(nextPoint[0], nextPoint[1]);
+            //         }
+            //     }
+            //     state.context().stroke();
+            // }
             let vertices = triangle.sort((a,b) => {
-                if (a[layer] < b[layer]) {
+                if (a[state.LAYER] < b[state.LAYER]) {
                     return -1;
-                } else if (a[layer] > b[layer]) {
+                } else if (a[state.LAYER] > b[state.LAYER]) {
                     return 1;
                 } else {
                     return 0;
                 }
             });
 
-            if( point >= vertices[0][layer] && point <= vertices[2][layer] ) {
+            if( point >= vertices[0][state.LAYER] && point <= vertices[2][state.LAYER] ) {
                 let e1, e2;
-                if( point >= vertices[0][layer] && point <= vertices[1][layer] ) {
+                if( point >= vertices[0][state.LAYER] && point <= vertices[1][state.LAYER] ) {
                     e1 = [ vertices[0], vertices[1] ];
-                    if( point >= vertices[0][layer] && point <= vertices[2][layer] ) {
+                    if( point >= vertices[0][state.LAYER] && point <= vertices[2][state.LAYER] ) {
                         e2 = [ vertices[0], vertices[2]];
                     } else {
                         e2 = [vertices[1], vertices[2]];
                     }
                 } else {
                     e1 = [vertices[1], vertices[2]];
-                    if( point >= vertices[1][layer] && point <= vertices[0][layer] ) {
+                    if( point >= vertices[1][state.LAYER] && point <= vertices[0][state.LAYER] ) {
                         e2 = [ vertices[0], vertices[1]];
                     } else {
                         e2 = [vertices[0], vertices[2]];
                     }
                 }
 
-                let pt1 = pointOnEdge( e1[0], e1[1], point, layer );
-                let pt2 = pointOnEdge( e2[0], e2[1], point, layer );
+                let pt1 = pointOnEdge( e1[0], e1[1], point );
+                let pt2 = pointOnEdge( e2[0], e2[1], point );
 
                 drawLine( pt1, pt2, width, color);
             }
@@ -706,14 +764,50 @@ function Metro(canvas) {
      * @param point: Number
      * @returns {*[]}
      */
-    function pointOnEdge( site1, site2, point, layer ) {
-        const lowest = site1[layer] < site2[layer] ? site1 : site2;
+    function pointOnEdge( site1, site2, point ) {
+        const lowest = site1[state.LAYER] < site2[state.LAYER] ? site1 : site2;
         const highest = lowest === site1 ? site2 : site1;
-        const x = lowest[0] + (highest[0] - lowest[0]) * ( point - lowest[layer] ) / ( highest[layer] - lowest[layer] );
+        const x = lowest[0] + (highest[0] - lowest[0]) * ( point - lowest[state.LAYER] ) / ( highest[state.LAYER] - lowest[state.LAYER] );
         // const y = lowest[1] + (highest[1] - lowest[1]) * ( point - lowest['elevation'] ) / ( highest['elevation'] - lowest['elevation'] );
         const k = (lowest[1] - highest[1]) / (lowest[0] - highest[0]); // slope of line from site1 to site2
         const y = -k * (lowest[0] - x) + lowest[1];
         return [x, y];
+    }
+
+    // find wall, assign wall
+    function makeWall() {
+        let sites = new Set();
+        let sitesIsNotWall = new Set();
+
+        state.graphics.links.forEach(link => {
+            let source = state.graphics.sites[link.source.index];
+            let target = state.graphics.sites[link.target.index];
+
+            if(source.isInside && !target.isInside) {
+                sites.add(link.target.index);
+            } else if(target.isInside && !source.isInside) {
+                sites.add(link.source.index);
+            } else if((source.isInside && target.isInside)) {
+                sitesIsNotWall.add(link.source.index);
+                sitesIsNotWall.add(link.target.index);
+            }
+        });
+        //
+        // // assign wall
+        // sites.forEach(s => {
+        //     state.graphics.sites[s]['wall'] = 0.5;
+        //     state.graphics.sites[s].isWall = true;
+        //     state.graphics.sites[s].isInside = false;
+        // });
+
+        // unassign wall
+        // sitesIsNotWall.forEach(s => {
+        //     state.graphics.sites[s]['wall'] = 0;
+        //     state.graphics.sites[s].isWall = false;
+        //     state.graphics.sites[s].isInside = false;
+        // });
+
+        // // console.log(state.graphics.sites.filter(s => s.isWall).length);
     }
 
     /**
@@ -738,28 +832,7 @@ function Metro(canvas) {
         return sites;
     }
 
-    function ifOnlyHasDesirabilityMode() {
-        if(state.LAYERS.has(desirability) && state.LAYERS.size === 1) {
-            return true;
-        }
-        return false;
-    }
-
-    function combineColors(colors) {
-        let r = 0, g = 0, b = 0;
-
-        colors.forEach(color => {
-            r += Number(color[0]);
-            g += Number(color[1]);
-            b += Number(color[2]);
-        });
-
-        return `rgb(${r}, ${g}, ${b})`;
-    }
-
-    /*=====================================================================================================
-                                             return Metro
-    ======================================================================================================*/
+    // return Metro()
     return {
         state: state,
         graphics: state.graphics,
