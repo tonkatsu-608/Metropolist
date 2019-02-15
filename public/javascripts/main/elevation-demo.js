@@ -22,39 +22,32 @@ function Metro(canvas) {
                 drawContourLines(0.5, 'elevation', 'green', 1, 'elevation');
                 drawContourLines(0.75, 'elevation', 'blue', 1, 'elevation');
             }
-            if(state.LAYERS.has(district)) {
-                render();
-                drawContourLines(0.25, 'wall', 'black', 8);
-            }
         });
 
         $('#startEdit').click( function() {
-            $('#startEdit').attr('hidden', true);
-            $('#stopEdit').removeAttr('hidden', true);
-            $('.layerSelect').removeAttr('hidden', true);
-            $('.elevationSwitch').removeAttr('hidden', true);
-            $('.incrementSlider').removeAttr('hidden', true);
-            $('.waterLineSlider').removeAttr('hidden', true);
-            $('#renderContourLine').removeAttr('hidden', true);
-
-            state.isEditMode = true;
+            $('#startEdit').prop('hidden', true);
+            $('#stopEdit').prop('hidden', false);
+            $('.layerSelect').prop('hidden', false);
+            $('.elevationSwitch').prop('hidden', false);
+            $('.incrementSlider').prop('hidden', false);
+            $('.waterLineSlider').prop('hidden', false);
+            $('#renderContourLine').prop('hidden', false);
             render();
         });
 
         $('#stopEdit').click( function() {
-            $('#stopEdit').attr('hidden', true);
-            $('#startEdit').removeAttr('hidden', true);
-            $('.layerSelect').attr('hidden', true);
-            $('.elevationSwitch').attr('hidden', true);
-            $('.incrementSlider').attr('hidden', true);
-            $('.waterLineSlider').attr('hidden', true);
-            $('#renderContourLine').attr('hidden', true);
-
-            state.isEditMode = false;
+            $('#stopEdit').prop('hidden', true);
+            $('#startEdit').prop('hidden', false);
+            $('.layerSelect').prop('hidden', true);
+            $('.elevationSwitch').prop('hidden', true);
+            $('.incrementSlider').prop('hidden', true);
+            $('.waterLineSlider').prop('hidden', true);
+            $('#renderContourLine').prop('hidden', true);
             render();
         });
 
-        $('#elevation-checkbox').on('change', function () {
+        // view
+        $('#elevation-view-checkbox').on('change', function() {
             if(this.checked) {
                 state.LAYERS.add(elevation);
             } else {
@@ -63,12 +56,14 @@ function Metro(canvas) {
                     return;
                 }else if(state.LAYERS.has(elevation)) {
                     state.LAYERS.delete(elevation);
+                    state.EDIT_MODES.delete('elevation');
+                    $('#elevation-edit-checkbox').prop('checked', false);
                 }
             }
             render();
         });
 
-        $('#affluence-checkbox').on('change', function () {
+        $('#affluence-view-checkbox').on('change', function() {
             if(this.checked) {
                 state.LAYERS.add(affluence);
             } else {
@@ -77,12 +72,14 @@ function Metro(canvas) {
                     return;
                 } else if(state.LAYERS.has(affluence)) {
                     state.LAYERS.delete(affluence);
+                    state.EDIT_MODES.delete('affluence');
+                    $('#affluence-edit-checkbox').prop('checked', false);
                 }
             }
             render();
         });
 
-        $('#desirability-checkbox').on('change', function () {
+        $('#desirability-view-checkbox').on('change', function() {
             if(this.checked) {
                 state.LAYERS.add(desirability);
             } else {
@@ -91,12 +88,14 @@ function Metro(canvas) {
                     return;
                 }else if(state.LAYERS.has(desirability)) {
                     state.LAYERS.delete(desirability);
+                    state.EDIT_MODES.delete('desirability');
+                    $('#desirability-edit-checkbox').prop('checked', false);
                 }
             }
             render();
         });
 
-        $('#district-checkbox').on('change', function () {
+        $('#district-view-checkbox').on('change', function() {
             if(this.checked) {
                 state.LAYERS.add(district);
             } else {
@@ -105,23 +104,63 @@ function Metro(canvas) {
                     return;
                 }else if(state.LAYERS.has(district)) {
                     state.LAYERS.delete(district);
+                    state.EDIT_MODES.delete('district');
+                    $('#district-edit-checkbox').prop('checked', false);
                 }
             }
             render();
         });
 
-        $('#wall-checkbox').on('change', function () {
+        // edit
+        $('#elevation-edit-checkbox').on('change', function() {
             if(this.checked) {
-                state.LAYERS.add(wall);
+                state.LAYERS.add(elevation);
+                state.EDIT_MODES.add('elevation');
+                $('#elevation-view-checkbox').prop('checked', true);
             } else {
-                if(state.LAYERS.size === 1) {
-                    this.checked = true;
-                    return;
-                }else if(state.LAYERS.has(wall)) {
-                    state.LAYERS.delete(wall);
-                }
+                state.EDIT_MODES.delete('elevation');
             }
             render();
+            console.log(state.EDIT_MODES);
+
+        });
+
+        $('#affluence-edit-checkbox').on('change', function() {
+            if(this.checked) {
+                state.LAYERS.add(affluence);
+                state.EDIT_MODES.add('affluence');
+                $('#affluence-view-checkbox').prop('checked', true);
+            } else {
+                state.EDIT_MODES.delete('affluence');
+            }
+            render();
+            console.log(state.EDIT_MODES);
+
+        });
+
+        $('#desirability-edit-checkbox').on('change', function() {
+            if(this.checked) {
+                state.LAYERS.add(desirability);
+                state.EDIT_MODES.add('desirability');
+                $('#desirability-view-checkbox').prop('checked', true);
+            } else {
+                state.EDIT_MODES.delete('desirability');
+            }
+            render();
+            console.log(state.EDIT_MODES);
+
+        });
+
+        $('#district-edit-checkbox').on('change', function() {
+            if(this.checked) {
+                state.LAYERS.add(district);
+                state.EDIT_MODES.add('district');
+                $('#district-view-checkbox').prop('checked', true);
+            } else {
+                state.EDIT_MODES.delete('district');
+            }
+            render();
+            console.log(state.EDIT_MODES);
         });
 
         $('#incrementSlider').on('change', function() {
@@ -188,6 +227,7 @@ function Metro(canvas) {
 
     var state = {
         N: 1000,
+        EDIT_MODES: new Set(),
         LAYERS: new Set([elevation]),
         LAYER: 'elevation',
         radius: 100,
@@ -197,7 +237,6 @@ function Metro(canvas) {
         vertices: [],
         selectedSites: [],
         isDragging: false,
-        isEditMode: false,
         isIncreasing: true,
         canvas: canvas.node() || d3.select("canvas").node(),
         width () { return this.canvas.width; },
@@ -206,11 +245,11 @@ function Metro(canvas) {
         DISTRICT_TYPES: ['rich', 'medium','poor','plaza', 'empty'],
         COLOR: [{R: 255, G: 0, B: 0}, {R: 0, G: 255, B: 0}, {R: 0, G: 0, B: 255}],
         POLYGON_TYPE_COLOR: {
-            "rich" : [0, 0, 0],
-            "medium" : [105, 105, 105],
-            "poor" : [192, 192, 192],
-            "plaza" : [255, 140, 0],
-            "empty" : [255, 255, 255],
+            "rich" : [0, 0, 0], // black
+            "medium" : [105, 105, 105], // dimGray
+            "poor" : [192, 192, 192], // silver
+            "plaza" : [255, 140, 0], // orange
+            "empty" : [255, 255, 255], // white
         },
     };
 
@@ -225,7 +264,9 @@ function Metro(canvas) {
             .on("drag", dragged)
             .on("end", dragended))
         .on('mousemove', onMouseMove)
-        .on("wheel", onScroll);
+        .on("wheel", onScroll)
+        .on("contextmenu", d3.contextMenu(menu));
+
 
     d3.select("body")
         .on("keydown", onKeyDown);
@@ -271,7 +312,7 @@ function Metro(canvas) {
         site.district = 0;
         site.wall = 0;
         // site.color = state.COLOR[Math.floor(Math.random() * 2)];
-        site.type = null;
+        site.type = 'empty';
         site.index = index;
         site.isInside = false;
         site.color = { R: Math.random() * 255, G: Math.random() * 255, B: Math.random() * 255 };
@@ -348,7 +389,7 @@ function Metro(canvas) {
         // renderBackground();
         drawEdges(0.5, 'grey'); // lineWidth, lineColor
         if(state.LAYERS.has(district)) {
-            drawContourLines(0.25, 'wall', 'black', 8);
+            drawContourLines(0.25, 'wall', '#191970', 8);
         }
         // drawSites(1, 'black'); // lineWidth, lineColor
     }
@@ -361,48 +402,99 @@ function Metro(canvas) {
         render();
     }
 
+    function menu() {
+        let x = d3.event.layerX;
+        let y = d3.event.layerY;
+        let site = findSite(x, y);
+
+        return [{
+            title: 'Current Type: ' + site.type,
+        },
+            {
+                divider: true
+            },
+            {
+                title: 'Change type to rich',
+                action: function() {
+                    site.type = 'rich';
+                    render();
+                }
+            },
+            {
+                title: 'Change type to medium',
+                action: function() {
+                    site.type = 'medium';
+                    render();
+                }
+            },
+            {
+                title: 'Change type to poor',
+                action: function() {
+                    site.type = 'poor';
+                    render();
+                }
+            },
+            {
+                title: 'Change type to plaza',
+                action: function() {
+                    site.type = 'plaza';
+                    render();
+                }
+            },
+            {
+                title: 'Change type to empty',
+                action: function() {
+                    site.type = 'empty';
+                    render();
+                }
+            }];
+    };
     /*=====================================================================================================
                                              Event Functions
     ======================================================================================================*/
     function dragstarted() {
-        if(state.isEditMode && !ifOnlyHasDesirabilityMode()) {
+        if(state.EDIT_MODES.size >= 1) {
             state.isDragging = true;
         }
     }
 
     function dragged() {
-        if(state.isEditMode && !ifOnlyHasDesirabilityMode()) {
+        if(state.EDIT_MODES.size >= 1) {
             state.pointer = d3.mouse(this);
             state.selectedSites = findSites(state.pointer[0], state.pointer[1], state.radius);
 
             if(state.isIncreasing) {
                 if(state.selectedSites.length > 0) {
                     state.selectedSites.map(s => {
-                        if(state.LAYERS.has(district)) {
+                        if(state.EDIT_MODES.has('district')) {
                             s.isInside = true;
                             s['wall'] = 0.5;
-                        } else if(state.LAYERS.has(elevation)) {
+                        }
+                        if(state.EDIT_MODES.has('elevation')) {
                             s['elevation'] += (state.increment / 100) * s.delta;
-                        } else if(state.LAYERS.has(affluence)) {
+                        }
+                        if(state.EDIT_MODES.has('affluence')) {
                             s['affluence'] += (state.increment / 100) * s.delta;
                         }
                         if(s[state.LAYER] >= 1) s[state.LAYER] = 1;
-                        if(state.LAYERS.has(elevation) || state.LAYERS.has(affluence)) assignTypeForSite(s.index);
+                        if(state.EDIT_MODES.has('elevation') || state.EDIT_MODES.has('affluence')) assignTypeForSite(s.index);
                     });
                 }
             } else {
                 if(state.selectedSites.length > 0) {
                     state.selectedSites.map(s => {
-                        if(state.LAYERS.has(district)) {
+                        if(state.EDIT_MODES.has('district')) {
                             s.isInside = false;
                             s['wall'] = 0;
-                        } else if(state.LAYERS.has(elevation)) {
+                        }
+                        if(state.EDIT_MODES.has('elevation')) {
                             s['elevation'] -= (state.increment / 100) * s.delta;
-                        } else if(state.LAYERS.has(affluence)) {
+                        }
+                        if(state.EDIT_MODES.has('affluence')) {
                             s['affluence'] -= (state.increment / 100) * s.delta;
                         }
                         if(s[state.LAYER] <= 0) s[state.LAYER] = 0;
-                        if(state.LAYERS.has(elevation) || state.LAYERS.has(affluence)) assignTypeForSite(s.index);
+                        if(state.EDIT_MODES.has('elevation') || state.EDIT_MODES.has('affluence')) assignTypeForSite(s.index);
                     });
                 }
             }
@@ -412,14 +504,14 @@ function Metro(canvas) {
     }
 
     function dragended() {
-        if(state.isEditMode && !ifOnlyHasDesirabilityMode()) {
+        if(state.EDIT_MODES.size >= 1) {
             state.isDragging = false;
         }
     }
 
     // mouse event
     function onMouseMove() {
-        if(state.isEditMode && !ifOnlyHasDesirabilityMode()) {
+        if(state.EDIT_MODES.size >= 1) {
             state.pointer = d3.mouse(this);
             render();
             drawCircle('red');
@@ -427,7 +519,7 @@ function Metro(canvas) {
     }
 
     function onScroll() {
-        if(state.isEditMode && !ifOnlyHasDesirabilityMode()) {
+        if(state.EDIT_MODES.size >= 1) {
             d3.event.preventDefault();
 
             state.radius -= d3.event.deltaX;
@@ -652,10 +744,6 @@ function Metro(canvas) {
         return x * x;
     }
 
-    function distance(a, b) {
-        return Math.sqrt(sqr(b[0] - a[0]) + sqr(b[1] - a[1]));
-    }
-
     // get startPoint of edge
     function cellHalfedgeStart(cell, edge) {
         return edge[+(edge.left !== cell.site)];
@@ -746,7 +834,7 @@ function Metro(canvas) {
     }
 
     function combineColors(colors) {
-        let r = 0, g = 0, b = 0;
+        let r = 0, g = 0, b = 0, n = colors.length;
 
         colors.forEach(color => {
             r += Number(color[0]);
@@ -754,9 +842,33 @@ function Metro(canvas) {
             b += Number(color[2]);
         });
 
+        r /= n; g /= n; b /= n;
+
         return `rgb(${r}, ${g}, ${b})`;
     }
 
+    function findSite(x, y, radius) {
+        var i = 0,
+            n = state.graphics.sites.length,
+            dx,
+            dy,
+            d2,
+            site,
+            closest;
+
+        if (radius == null) radius = Infinity;
+        else radius *= radius;
+
+        for (i = 0; i < n; ++i) {
+            site = state.graphics.sites[i];
+            dx = x - site[0];
+            dy = y - site[1];
+            d2 = dx * dx + dy * dy;
+            if (d2 < radius) closest = site, radius = d2;
+        }
+
+        return closest;
+    }
     /*=====================================================================================================
                                              return Metro
     ======================================================================================================*/
