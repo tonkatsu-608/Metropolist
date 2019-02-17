@@ -5,9 +5,10 @@ Array.prototype.clear = function() {
     }
 };
 
-// affluence, desirability
-
 function Metro(canvas) {
+    /*=====================================================================================================
+                                             Dom Functions
+    ======================================================================================================*/
     $(document).ready( function() {
         $('select').formSelect();
 
@@ -15,12 +16,12 @@ function Metro(canvas) {
             newGraphics();
         });
 
-        $('#renderContourLine').click( function() {
+        $('.renderContourLine').click( function() {
             if(state.LAYERS.has(elevation)) {
                 render();
-                drawContourLines(0.25, 'elevation', 'red', 1);
-                drawContourLines(0.5, 'elevation', 'green', 1, 'elevation');
-                drawContourLines(0.75, 'elevation', 'blue', 1, 'elevation');
+                drawContourLines(0.25, 'elevation', 'red', 8);
+                drawContourLines(0.5, 'elevation', 'green', 8);
+                drawContourLines(0.75, 'elevation', 'blue', 8);
             }
         });
 
@@ -31,7 +32,7 @@ function Metro(canvas) {
             $('.elevationSwitch').prop('hidden', false);
             $('.incrementSlider').prop('hidden', false);
             $('.waterLineSlider').prop('hidden', false);
-            $('#renderContourLine').prop('hidden', false);
+            $('.renderContourLine').prop('hidden', false);
             render();
         });
 
@@ -42,7 +43,7 @@ function Metro(canvas) {
             $('.elevationSwitch').prop('hidden', true);
             $('.incrementSlider').prop('hidden', true);
             $('.waterLineSlider').prop('hidden', true);
-            $('#renderContourLine').prop('hidden', true);
+            $('.renderContourLine').prop('hidden', true);
             render();
         });
 
@@ -121,7 +122,6 @@ function Metro(canvas) {
                 state.EDIT_MODES.delete('elevation');
             }
             render();
-            console.log(state.EDIT_MODES);
 
         });
 
@@ -134,7 +134,6 @@ function Metro(canvas) {
                 state.EDIT_MODES.delete('affluence');
             }
             render();
-            console.log(state.EDIT_MODES);
 
         });
 
@@ -147,7 +146,6 @@ function Metro(canvas) {
                 state.EDIT_MODES.delete('desirability');
             }
             render();
-            console.log(state.EDIT_MODES);
 
         });
 
@@ -160,7 +158,6 @@ function Metro(canvas) {
                 state.EDIT_MODES.delete('district');
             }
             render();
-            console.log(state.EDIT_MODES);
         });
 
         $('#incrementSlider').on('change', function() {
@@ -179,6 +176,7 @@ function Metro(canvas) {
         });
     });
 
+    // elevation layer
     var elevation = (site_index) => {
         let value = state.graphics.sites[site_index]['elevation'];
         let grayScale = ((1 - value) * 255).toFixed(1);
@@ -191,6 +189,7 @@ function Metro(canvas) {
         return [grayScale, grayScale, grayScale];
     };
 
+    // affluence layer
     var affluence = (site_index) => {
         let value = state.graphics.sites[site_index]['affluence'];
         let grayScale = ((1 - value) * 255).toFixed(1);
@@ -198,6 +197,7 @@ function Metro(canvas) {
         return [grayScale, grayScale, grayScale];
     };
 
+    // desirability layer
     var desirability = (site_index) => {
         let site = state.graphics.sites[site_index];
         let value = (site['elevation'] + site['affluence']) / 2;
@@ -207,22 +207,11 @@ function Metro(canvas) {
         return [grayScale, grayScale, grayScale];
     };
 
+    // district layer
     var district = (site_index) => {
         let site = state.graphics.sites[site_index];
 
         return state.POLYGON_TYPE_COLOR[site.type] || [255, 255, 255];
-    };
-
-    var wall = (site_index) => {
-        let value = state.graphics.sites[site_index]['wall'];
-
-        if(value === 0.5) {
-            return [128, 128, 128]; // grey
-        } else if(value === 0) {
-            return [255, 255, 255]; // white
-        }
-
-        return [255, 255, 255];
     };
 
     var state = {
@@ -238,6 +227,8 @@ function Metro(canvas) {
         selectedSites: [],
         isDragging: false,
         isIncreasing: true,
+        isAltPressed: false,
+        transform: d3.zoomIdentity, // scale parameter of zoom
         canvas: canvas.node() || d3.select("canvas").node(),
         width () { return this.canvas.width; },
         height () { return this.canvas.height; },
@@ -263,12 +254,13 @@ function Metro(canvas) {
             .on("start", dragstarted)
             .on("drag", dragged)
             .on("end", dragended))
-        .on('mousemove', onMouseMove)
         .on("wheel", onScroll)
-        .on("contextmenu", d3.contextMenu(menu));
-
+        .on('mousemove', onMouseMove)
+        .on("contextmenu", d3.contextMenu(menu))
+        .call(d3.zoom().scaleExtent([1/2, 4]).on("zoom", zoomed));
 
     d3.select("body")
+        .on("keyup", onKeyUp)
         .on("keydown", onKeyDown);
     /*=====================================================================================================
                                              Main Functions
@@ -382,16 +374,19 @@ function Metro(canvas) {
 
     // render
     function render() {
+        state.context().save();
         state.context().clearRect(0, 0, state.width(), state.height());
+        state.context().translate(state.transform.x, state.transform.y);
+        state.context().scale(state.transform.k, state.transform.k);
 
         drawPolygons();
         // drawTriangles();
         // renderBackground();
-        drawEdges(0.5, 'grey'); // lineWidth, lineColor
-        if(state.LAYERS.has(district)) {
-            drawContourLines(0.25, 'wall', '#191970', 8);
-        }
         // drawSites(1, 'black'); // lineWidth, lineColor
+        drawEdges(0.5, 'grey'); // lineWidth, lineColor
+        if(state.LAYERS.has(district)) drawContourLines(0.25, 'wall', '#191970', 8);
+
+        state.context().restore();
     }
 
     function newGraphics() {
@@ -402,9 +397,10 @@ function Metro(canvas) {
         render();
     }
 
-    function menu() {
-        let x = d3.event.layerX;
-        let y = d3.event.layerY;
+    function menu(d) {
+        if(!state.EDIT_MODES.has('district')) d3.select('.d3-context-menu').remove();
+        let x = state.transform.invertX(d3.event.layerX);
+        let y = state.transform.invertY(d3.event.layerY);
         let site = findSite(x, y);
 
         return [{
@@ -453,15 +449,18 @@ function Metro(canvas) {
                                              Event Functions
     ======================================================================================================*/
     function dragstarted() {
-        if(state.EDIT_MODES.size >= 1) {
+        if(state.EDIT_MODES.size >= 1 && !state.isAltPressed) {
+            d3.contextMenu('close');
             state.isDragging = true;
         }
     }
 
     function dragged() {
-        if(state.EDIT_MODES.size >= 1) {
+        if(state.EDIT_MODES.size >= 1 && state.isDragging) {
             state.pointer = d3.mouse(this);
-            state.selectedSites = findSites(state.pointer[0], state.pointer[1], state.radius);
+            let x = state.transform.invertX(state.pointer[0]);
+            let y = state.transform.invertY(state.pointer[1]);
+            state.selectedSites = findSites(x, y, state.radius);
 
             if(state.isIncreasing) {
                 if(state.selectedSites.length > 0) {
@@ -475,6 +474,10 @@ function Metro(canvas) {
                         }
                         if(state.EDIT_MODES.has('affluence')) {
                             s['affluence'] += (state.increment / 100) * s.delta;
+                        }
+                        if(state.EDIT_MODES.has('desirability') && state.EDIT_MODES.size === 1) {
+                            s['elevation'] += ((state.increment / 100) * s.delta) / 2;
+                            s['affluence'] += ((state.increment / 100) * s.delta) / 2;
                         }
                         if(s[state.LAYER] >= 1) s[state.LAYER] = 1;
                         if(state.EDIT_MODES.has('elevation') || state.EDIT_MODES.has('affluence')) assignTypeForSite(s.index);
@@ -493,6 +496,10 @@ function Metro(canvas) {
                         if(state.EDIT_MODES.has('affluence')) {
                             s['affluence'] -= (state.increment / 100) * s.delta;
                         }
+                        if(state.EDIT_MODES.has('desirability') && state.EDIT_MODES.size === 1) {
+                            s['elevation'] -= ((state.increment / 100) * s.delta) / 2;
+                            s['affluence'] -= ((state.increment / 100) * s.delta) / 2;
+                        }
                         if(s[state.LAYER] <= 0) s[state.LAYER] = 0;
                         if(state.EDIT_MODES.has('elevation') || state.EDIT_MODES.has('affluence')) assignTypeForSite(s.index);
                     });
@@ -504,14 +511,14 @@ function Metro(canvas) {
     }
 
     function dragended() {
-        if(state.EDIT_MODES.size >= 1) {
+        if(state.EDIT_MODES.size >= 1 && state.isDragging) {
             state.isDragging = false;
         }
     }
 
     // mouse event
     function onMouseMove() {
-        if(state.EDIT_MODES.size >= 1) {
+        if(!state.isAltPressed && state.EDIT_MODES.size >= 1) {
             state.pointer = d3.mouse(this);
             render();
             drawCircle('red');
@@ -519,9 +526,10 @@ function Metro(canvas) {
     }
 
     function onScroll() {
-        if(state.EDIT_MODES.size >= 1) {
-            d3.event.preventDefault();
-
+        if(state.isAltPressed) {
+            console.log("panning...");
+        }
+        if(!state.isAltPressed && state.EDIT_MODES.size >= 1) {
             state.radius -= d3.event.deltaX;
             state.radius -= d3.event.deltaY;
 
@@ -532,12 +540,26 @@ function Metro(canvas) {
         }
     }
 
+    // set zoom arguments
+    function zoomed() {
+        if(state.isAltPressed) {
+            state.transform = d3.event.transform;
+            render();
+        }
+    }
+
     function onKeyDown() {
+        if(d3.event.altKey) state.isAltPressed = true;
+
         if(d3.event.keyCode === 13) {
             if($('#sites').val() !== "") {
                 newGraphics();
             }
         }
+    }
+
+    function onKeyUp() {
+        if(state.isAltPressed) state.isAltPressed = false;
     }
     /*=====================================================================================================
                                              Draw Functions
@@ -545,6 +567,7 @@ function Metro(canvas) {
     // draw polygons
     function drawPolygons() {
         state.context().save();
+
         state.graphics.polygons.forEach(p => {
             let colors = [...state.LAYERS].map(layer => layer(p.site));
             let color = combineColors(colors);
@@ -571,6 +594,7 @@ function Metro(canvas) {
     function drawCircle(color) {
         state.context().save();
         state.context().beginPath();
+        
         state.context().moveTo(state.pointer[0], state.pointer[1]);
         state.context().arc(state.pointer[0], state.pointer[1], state.radius, 0, 2 * Math.PI, false);
         state.context().arc(state.pointer[0], state.pointer[1], state.radius / 2, 0, 2 * Math.PI, false);
@@ -593,10 +617,11 @@ function Metro(canvas) {
      */
     function drawSites(radius, color) {
         state.context().save();
+        state.context().beginPath();
 
         for (let i = 0, n = state.graphics.polygons.length; i < n; i++) {
             let site = state.graphics.sites[state.graphics.polygons[i].site];
-            state.context().beginPath();
+
             state.context().moveTo(site[0] + radius, site[1]);
             state.context().arc(site[0], site[1], radius, 0, 2 * Math.PI, false);
             state.context().fillStyle = color;
@@ -618,7 +643,6 @@ function Metro(canvas) {
             if (edge !== null && edge !== undefined) {
                 let start = state.vertices[edge[0].vertexIndex];
                 let end = state.vertices[edge[1].vertexIndex];
-
                 state.context().beginPath();
                 state.context().moveTo(start[0], start[1]);
                 state.context().lineTo(end[0], end[1]);
@@ -633,9 +657,11 @@ function Metro(canvas) {
     // draw triangles
     function drawTriangles() {
         state.context().save();
+        state.context().beginPath();
+        
+
         for (let i = 0, n = state.graphics.triangles.length; i < n; ++i) {
             let triangle = state.graphics.triangles[i];
-            state.context().beginPath();
             state.context().moveTo(triangle[0][0], triangle[0][1]);
             state.context().lineTo(triangle[1][0], triangle[1][1]);
             state.context().lineTo(triangle[2][0], triangle[2][1]);
@@ -649,7 +675,7 @@ function Metro(canvas) {
     // render background
     function renderBackground() {
         state.context().save();
-
+        
         state.graphics.triangles.forEach(triangle => {
             const x1       = triangle[0][0],
                 y1         = triangle[0][1],
@@ -672,6 +698,7 @@ function Metro(canvas) {
                         const B = (triangle[0].color.B * weight.w1) + (triangle[1].color.B * weight.w2) + (triangle[2].color.B * weight.w3);
 
                         state.context().beginPath();
+
                         state.context().fillStyle = `rgb(${R}, ${G}, ${B})`;
                         state.context().fillRect(x, y, 1, 1);
                     }
@@ -689,6 +716,8 @@ function Metro(canvas) {
      */
     function drawContourLines(point, layer, color, width) {
         state.context().save();
+        state.context().translate(state.transform.x, state.transform.y);
+        state.context().scale(state.transform.k, state.transform.k);
 
         state.graphics.triangles.forEach(triangle => {
             let vertices = triangle.sort((a,b) => {

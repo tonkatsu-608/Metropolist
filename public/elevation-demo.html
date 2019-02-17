@@ -43,61 +43,78 @@
                     <hr/>
 
                     <li class="layerSelect" hidden>
-                        <p>select layers</p>
-                        <p>
-                            <p><label>elevation</label></p>
-                            <label>
-                                <input type="checkbox" class="filled-in" id="elevation-view-checkbox" checked/>
-                                <span>view</span>
-                            </label>
-                            &nbsp;&nbsp;&nbsp;&nbsp;
-                            <label>
-                                <input type="checkbox" class="filled-in" id="elevation-edit-checkbox"/>
-                                <span>edit</span>
-                            </label>
-                        </p>
-                        <p>
-                            <p><label>affluence</label></p>
-                            <label>
-                                <input type="checkbox" class="filled-in" id="affluence-view-checkbox"/>
-                                <span>view</span>
-                            </label>
-                            &nbsp;&nbsp;&nbsp;&nbsp;
-                            <label>
-                                <input type="checkbox" class="filled-in" id="affluence-edit-checkbox"/>
-                                <span>edit</span>
-                            </label>
-                        </p>
-                        <p>
-                            <p><label>desirability</label></p>
-                            <label>
-                                <input type="checkbox" class="filled-in" id="desirability-view-checkbox"/>
-                                <span>view</span>
-                            </label>
-                            &nbsp;&nbsp;&nbsp;&nbsp;
-                            <label>
-                                <input type="checkbox" class="filled-in" id="desirability-edit-checkbox"/>
-                                <span>edit</span>
-                            </label>
-                        </p>
-                        <p>
-                            <p><label>district</label></p>
-                            <label>
-                                <input type="checkbox" class="filled-in" id="district-view-checkbox"/>
-                                <span>view</span>
-                            </label>
-                            &nbsp;&nbsp;&nbsp;&nbsp;
-                            <label>
-                                <input type="checkbox" class="filled-in" id="district-edit-checkbox"/>
-                                <span>edit</span>
-                            </label>
-                        </p>
-                        <!--<p>-->
-                            <!--<label>-->
-                                <!--<input type="checkbox" class="filled-in" id="wall-checkbox"/>-->
-                                <!--<span>wall</span>-->
-                            <!--</label>-->
-                        <!--</p>-->
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>Layer</th>
+                                <th>View</th>
+                                <th>Edit</th>
+                            </tr>
+                            </thead>
+
+                            <tbody>
+                            <tr>
+                                <td>elevation</td>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" class="filled-in" id="elevation-view-checkbox" checked/>
+                                        <span></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" class="filled-in" id="elevation-edit-checkbox"/>
+                                        <span></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>affluence</td>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" class="filled-in" id="affluence-view-checkbox"/>
+                                        <span></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" class="filled-in" id="affluence-edit-checkbox"/>
+                                        <span></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>desirability</td>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" class="filled-in" id="desirability-view-checkbox"/>
+                                        <span></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" class="filled-in" id="desirability-edit-checkbox"/>
+                                        <span></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>district</td>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" class="filled-in" id="district-view-checkbox"/>
+                                        <span></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" class="filled-in" id="district-edit-checkbox"/>
+                                        <span></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
                     </li>
 
                     <li class="elevationSwitch" hidden>
@@ -126,7 +143,7 @@
                         </p>
                     </li>
 
-                    <li id="renderContourLine" hidden>
+                    <li class="renderContourLine" hidden>
                         <a class="btn">contour line</a>
                     </li>
                 </ul>
