@@ -251,6 +251,7 @@ function Metro(canvas) {
     d3.select(state.canvas)
         .call(d3.drag()
             .container(state.canvas)
+            .subject(dragsubject)
             .on("start", dragstarted)
             .on("drag", dragged)
             .on("end", dragended))
@@ -306,7 +307,6 @@ function Metro(canvas) {
         // site.color = state.COLOR[Math.floor(Math.random() * 2)];
         site.type = 'empty';
         site.index = index;
-        site.isInside = false;
         site.color = { R: Math.random() * 255, G: Math.random() * 255, B: Math.random() * 255 };
 
         return site;
@@ -448,6 +448,11 @@ function Metro(canvas) {
     /*=====================================================================================================
                                              Event Functions
     ======================================================================================================*/
+    function dragsubject() {
+        if(state.isAltPressed) return null;
+        else return 0;
+    }
+    
     function dragstarted() {
         if(state.EDIT_MODES.size >= 1 && !state.isAltPressed) {
             d3.contextMenu('close');
@@ -466,7 +471,6 @@ function Metro(canvas) {
                 if(state.selectedSites.length > 0) {
                     state.selectedSites.map(s => {
                         if(state.EDIT_MODES.has('district')) {
-                            s.isInside = true;
                             s['wall'] = 0.5;
                         }
                         if(state.EDIT_MODES.has('elevation')) {
@@ -487,7 +491,6 @@ function Metro(canvas) {
                 if(state.selectedSites.length > 0) {
                     state.selectedSites.map(s => {
                         if(state.EDIT_MODES.has('district')) {
-                            s.isInside = false;
                             s['wall'] = 0;
                         }
                         if(state.EDIT_MODES.has('elevation')) {
@@ -526,9 +529,6 @@ function Metro(canvas) {
     }
 
     function onScroll() {
-        if(state.isAltPressed) {
-            console.log("panning...");
-        }
         if(!state.isAltPressed && state.EDIT_MODES.size >= 1) {
             state.radius -= d3.event.deltaX;
             state.radius -= d3.event.deltaY;
@@ -716,9 +716,6 @@ function Metro(canvas) {
      */
     function drawContourLines(point, layer, color, width) {
         state.context().save();
-        state.context().translate(state.transform.x, state.transform.y);
-        state.context().scale(state.transform.k, state.transform.k);
-
         state.graphics.triangles.forEach(triangle => {
             let vertices = triangle.sort((a,b) => {
                 if (a[layer] < b[layer]) {
