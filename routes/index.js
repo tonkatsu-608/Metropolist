@@ -201,4 +201,8 @@ router.get('/elevation-demo', function(req, res, next) {
     res.sendFile('elevation-demo.html', {root: __dirname + "/../public"});
 });
 
+router.get('/split-poly', function(req, res, next) {
+    res.sendFile('split-poly.html', {root: __dirname + "/../public"});
+});
+
 module.exports = router;

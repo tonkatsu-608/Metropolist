@@ -181,7 +181,7 @@ function Metro( canvas, data ) {
             polygon.children = null;
             polygon.vertices = vertices;
             polygon.bounds = bounds(vertices);
-            polygon.area = d3.polygonArea(vertices);
+            polygon.area = Math.abs(d3.polygonArea(vertices));
             polygon.center = { x: d3.polygonCentroid(vertices)[0], y: d3.polygonCentroid(vertices)[1] };
             polygon.type = getType(polygon);
             switch (polygon.type) {

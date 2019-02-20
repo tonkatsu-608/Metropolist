@@ -34,15 +34,14 @@
         <div class="row">
             <div class="col s2">
                 <ul class="right hide-on-med-and-down">
-                    <li id="startEdit">
-                        <a class="btn">edit</a>
-                    </li>
-                    <li id="stopEdit" hidden>
-                        <a class="btn red">stop edit</a>
-                    </li>
-                    <hr/>
-
-                    <li class="layerSelect" hidden>
+                    <!--<li id="startEdit">-->
+                        <!--<a class="btn">edit</a>-->
+                    <!--</li>-->
+                    <!--<li id="stopEdit">-->
+                        <!--<a class="btn red">stop edit</a>-->
+                    <!--</li>-->
+                    <!--<hr/>-->
+                    <li class="layerSelect">
                         <table>
                             <thead>
                             <tr>
@@ -113,11 +112,26 @@
                                     </label>
                                 </td>
                             </tr>
+                            <tr>
+                                <td>building</td>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" class="filled-in" id="building-view-checkbox"/>
+                                        <span></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" class="filled-in" id="building-edit-checkbox"/>
+                                        <span></span>
+                                    </label>
+                                </td>
+                            </tr>
                             </tbody>
                         </table>
                     </li>
 
-                    <li class="elevationSwitch" hidden>
+                    <li class="elevationSwitch">
                         <p>elevation setting</p>
                         <div class="switch">
                             <label>
@@ -129,21 +143,21 @@
                         </div>
                     </li>
 
-                    <li class="incrementSlider" hidden>
+                    <li class="incrementSlider">
                         <p class="range-field">
                             <label for="incrementSlider">increment</label>
                             <input type="range" id="incrementSlider" value="25" min="0" max="50"/>
                         </p>
                     </li>
 
-                    <li class="waterLineSlider" hidden>
+                    <li class="waterLineSlider">
                         <p class="range-field">
                             <label for="waterLineSlider">water-line</label>
-                            <input type="range" id="waterLineSlider" value="5" min="0" max="10"/>
+                            <input type="range" id="waterLineSlider" value="2" min="0" max="10"/>
                         </p>
                     </li>
 
-                    <li class="renderContourLine" hidden>
+                    <li class="renderContourLine">
                         <a class="btn">contour line</a>
                     </li>
                 </ul>
@@ -158,7 +172,7 @@
 </div>
 </div>
 
-<!---------------------------------------Js libraries------------------------------------->
+<!---------------------------------------JS libraries------------------------------------->
 <script type="text/javascript" src="javascripts/libraries/jquery.js"></script>
 <script type="text/javascript" src="javascripts/libraries/materialize.min.js"></script>
 <script type="text/javascript" src="javascripts/libraries/jquery.Shortcut.js"></script>
@@ -166,7 +180,11 @@
 <script type="text/javascript" src="javascripts/libraries/d3-context-menu.js"></script>
 <script type="text/javascript" src="javascripts/libraries/canvas2image.js"></script>
 <script type="text/javascript" src="javascripts/libraries/html2canvas.js"></script>
-<!-----------------------------------------Main Js----------------------------------------->
+<!--------------------------------------Split-Poly JS------------------------------------->
+<script src="./javascripts/split-poly-objects/vector.js"></script>
+<script src="./javascripts/split-poly-objects/line.js"></script>
+<script src="./javascripts/split-poly-objects/polygon.js"></script>
+<!-----------------------------------------Main JS----------------------------------------->
 <script type="text/javascript" src="javascripts/main/elevation-demo.js"></script>
 <script>
     var metro = new Metro(d3.select("#myCanvas"));
