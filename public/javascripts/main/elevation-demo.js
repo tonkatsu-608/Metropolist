@@ -269,10 +269,10 @@ function Metro(canvas) {
         COLOR: [{R: 255, G: 0, B: 0}, {R: 0, G: 255, B: 0}, {R: 0, G: 0, B: 255}],
         RANDOM_COLOR: d3.scaleOrdinal().range(d3.schemeCategory20), // random color
         POLYGON_TYPE_COLOR: {
-            "rich" : [0, 0, 0], // black
-            "medium" : [105, 105, 105], // dimGray
-            "poor" : [192, 192, 192], // silver
-            "plaza" : [255, 140, 0], // orange
+            "rich" : [42, 101, 146], // blue #2a6592
+            "medium" : [246, 216, 172], // rice #f6d8ac
+            "poor" : [126, 154, 154], // grey #7e9a9a
+            "plaza" : [219, 152, 51], // orange #db9833
             "empty" : [255, 255, 255], // white
         },
     };
@@ -316,13 +316,13 @@ function Metro(canvas) {
         }
 
         this.polygons = makePolygons(this.diagram);
-        this.buildings = makeSplittedPolygons(this.polygons, 5); // num of iterators
-        this.cells = this.diagram.cells;
+        // this.buildings = makeSplittedPolygons(this.sites, this.polygons);
         this.edges = this.diagram.edges;
         this.links = this.diagram.links();
         this.triangles = this.diagram.triangles();
         // this.clusters = this.polygons.map( makeCluster );
         // this.buildings = getBuildings( this.clusters );
+        this.buildings = [];
     }
 
     function getCellCentroid( cell, diagram, index ) {
@@ -347,41 +347,7 @@ function Metro(canvas) {
         return site;
     }
 
-    function assignTypeForSite(index) {
-        let s = state.graphics.sites[index];
-        let value = (s['elevation'] + s['affluence']) / 2;
-        if(s['elevation'] <= state.waterline) value = 0;
-
-        if(value >= 0.7 && value <= 1) {
-            s.type = 'rich';
-        } else if(value < 0.7 && value > 0.3) {
-            s.type = 'medium';
-        } else if(value <= 0.3 && value > 0) {
-            s.type = 'poor';
-        } else if(value === 0) {
-            s.type = 'empty';
-        }
-
-        // assign type [plaza] for district only if it is adjacent to [poor] && [medium] && [rich]
-        let types = new Set();
-
-        findAdjacentSites(s).forEach(i => {
-            types.add(state.graphics.sites[i].type);
-        });
-
-        if(types.size === 3 && types.has('poor') && types.has('medium') && types.has('rich')) {
-            s.type = 'plaza';
-        }
-    }
-
-    function getCellVertices( cell, diagram ) {
-        return cell.halfedges.map(i => cellHalfedgeStart(cell, diagram.edges[i]));
-    }
-
-    function relax( diagram ) {
-        return diagram.cells.map((cell, index) => getCellCentroid( cell, diagram, index));
-    }
-
+    // make polygons(districts)
     function makePolygons(diagram) {
         return diagram.cells.map((cell, index) => {
             let polygon = {};
@@ -404,41 +370,89 @@ function Metro(canvas) {
 
                 return startVertex.vertexIndex;
             });
+            polygon.buildings = 0;
+            polygon.area = Math.abs(d3.polygonArea(polygon.vertices));
 
             return polygon;
         });
     }
 
-    function makeSplittedPolygons(polygons, iterations) {
-        let buildings = [];
-        let splitResult = null;
-        let squareToCut = null;
+    // function makeSplittedPolygons(sites, polygons) {
+    //     let buildings = [];
+    //     polygons.forEach(p => {
+    //         let BUILDINGS_NUMBER = {
+    //             "rich" : Math.round(Math.random() * 5 + 5),
+    //             "medium" : Math.round(Math.random() * 15 + 25),
+    //             "poor" : Math.round(Math.random() * 10 + 45),
+    //             "plaza" : Math.round(Math.random() * 2 + 2),
+    //             "empty" : 0,
+    //         };
+    //         let site = sites[p.site];
+    //         let n = BUILDINGS_NUMBER[site.type];
+    //         let vertices = p.vertices.map(v => state.vertices[v]);
+    //         let resultArr = splitPolygon(vertices, n);
+    //
+    //         buildings = buildings.concat(resultArr);
+    //     });
+    //
+    //     return buildings;
+    // }
 
-        polygons.forEach(p => {
-            let vertices = p.vertices.map(v => state.vertices[v]);
-            splitPolygons(vertices);
-        });
+    // assign type to site(polygon/district)
+    function assignType4Site(index) {
+        let s = state.graphics.sites[index];
+        let value = s['elevation'] <= state.waterline ? 0 : (s['elevation'] + s['affluence']) / 2;
 
-        while(iterations > 0) {
-            iterations --;
-            buildings.forEach(b => {
-                let vertices = b.poly.arrVector.map(v => [v.x, v.y]);
-                splitPolygons(vertices);
-            });
+        if(value >= 0.7 && value <= 1) {
+            s.type = 'rich';
+        } else if(value < 0.7 && value > 0.3) {
+            s.type = 'medium';
+        } else if(value <= 0.3 && value > 0) {
+            s.type = 'poor';
+        } else if(value === 0) {
+            s.type = 'empty';
         }
 
-        return buildings;
+        // assign type [plaza] for district only if it is adjacent to [poor] && [medium] && [rich]
+        let types = new Set();
+        findAdjacentSites(s).forEach(i => types.add(state.graphics.sites[i].type));
 
-        function splitPolygons(vertices) {
-            let area = Math.abs(d3.polygonArea(vertices));
-            let poly = new Polygon();
+        // condition of type 'plaza'
+        if(types.size === 3 && types.has('poor') && types.has('medium') && types.has('rich')) s.type = 'plaza';
 
-            vertices.forEach(v => poly.push_back(new Vector(v[0], v[1])));
-            squareToCut = area / 2.0;
-            splitResult = poly.split(squareToCut);
-            buildings.push(splitResult.poly1);
-            buildings.push(splitResult.poly2);
-        }
+        // split polygons
+        assignBuildings4Polygon(index);
+    }
+
+    // make buildings
+    function assignBuildings4Polygon(index) {
+        let polygon = state.graphics.polygons[index];
+        let site = state.graphics.sites[index];
+        let BUILDINGS_NUMBER = {
+            "rich" : Math.round(Math.random() * 5 + 5),
+            "medium" : Math.round(Math.random() * 15 + 25),
+            "poor" : Math.round(Math.random() * 10 + 45),
+            "plaza" : Math.round(Math.random() * 2 + 2),
+            "empty" : 0,
+        };
+        let size = BUILDINGS_NUMBER[site.type];
+        polygon.buildings = size;
+        let vertices = polygon.vertices.map(v => state.vertices[v]);
+        let resultArr = splitPolygon(vertices, size);
+        resultArr.forEach(r => r.color = state.POLYGON_TYPE_COLOR[site.type]);
+        state.graphics.buildings = state.graphics.buildings.concat(resultArr);
+        // while(size > 0) {
+        //     size --;
+        //     state.graphics.buildings.splice(Math.floor(Math.random() * state.graphics.buildings.length), 1, 0);
+        // }
+    }
+
+    function getCellVertices( cell, diagram ) {
+        return cell.halfedges.map(i => cellHalfedgeStart(cell, diagram.edges[i]));
+    }
+
+    function relax( diagram ) {
+        return diagram.cells.map((cell, index) => getCellCentroid( cell, diagram, index));
     }
 
     // render
@@ -453,7 +467,7 @@ function Metro(canvas) {
         // drawTriangles();
         // renderBackground();
         // drawSites(1, 'black'); // lineWidth, lineColor
-        // drawEdges(2, 'black'); // lineWidth, lineColor
+        // drawEdges(3, 'black'); // lineWidth, lineColor
         if(state.LAYERS.has(district)) drawContourLines(0.25, 'wall', '#191970', 8);
 
         state.context().restore();
@@ -466,55 +480,6 @@ function Metro(canvas) {
 
         render();
     }
-
-    function menu() {
-        if(!state.EDIT_MODES.has('district')) d3.select('.d3-context-menu').remove();
-        let x = state.transform.invertX(d3.event.layerX);
-        let y = state.transform.invertY(d3.event.layerY);
-        let site = findSite(x, y);
-
-        return [{
-            title: 'Current Type: ' + site.type,
-        },
-            {
-                divider: true
-            },
-            {
-                title: 'Change type to rich',
-                action: function() {
-                    site.type = 'rich';
-                    render();
-                }
-            },
-            {
-                title: 'Change type to medium',
-                action: function() {
-                    site.type = 'medium';
-                    render();
-                }
-            },
-            {
-                title: 'Change type to poor',
-                action: function() {
-                    site.type = 'poor';
-                    render();
-                }
-            },
-            {
-                title: 'Change type to plaza',
-                action: function() {
-                    site.type = 'plaza';
-                    render();
-                }
-            },
-            {
-                title: 'Change type to empty',
-                action: function() {
-                    site.type = 'empty';
-                    render();
-                }
-            }];
-    };
     /*=====================================================================================================
                                              Event Functions
     ======================================================================================================*/
@@ -555,7 +520,8 @@ function Metro(canvas) {
                         }
                         if(s['elevation'] >= 1) s['elevation'] = 1;
                         if(s['affluence'] >= 1) s['affluence'] = 1;
-                        if(state.EDIT_MODES.has('elevation') || state.EDIT_MODES.has('affluence')) assignTypeForSite(s.index);
+                        if(state.EDIT_MODES.has('elevation') || state.EDIT_MODES.has('affluence')) assignType4Site(s.index);
+                        // if(state.EDIT_MODES.has('building')) assignBuildings4Polygon(s.index);
                     });
                 }
             } else {
@@ -576,12 +542,13 @@ function Metro(canvas) {
                         }
                         if(s['elevation'] <= 0) s['elevation'] = 0;
                         if(s['affluence'] <= 0) s['affluence'] = 0;
-                        if(state.EDIT_MODES.has('elevation') || state.EDIT_MODES.has('affluence')) assignTypeForSite(s.index);
+                        if(state.EDIT_MODES.has('elevation') || state.EDIT_MODES.has('affluence')) assignType4Site(s.index);
+                        // if(state.EDIT_MODES.has('building')) assignBuildings4Polygon(s.index);
                     });
                 }
             }
             render();
-            drawCircle('red');
+            if(!(state.EDIT_MODES.has('building') && state.EDIT_MODES.size === 1)) drawCircle('red');
         }
     }
 
@@ -596,7 +563,7 @@ function Metro(canvas) {
         if(!state.isAltPressed && state.EDIT_MODES.size >= 1) {
             state.pointer = d3.mouse(this);
             render();
-            drawCircle('red');
+            if(!(state.EDIT_MODES.has('building') && state.EDIT_MODES.size === 1)) drawCircle('red');
         }
     }
 
@@ -608,7 +575,7 @@ function Metro(canvas) {
             if(state.radius < 15) state.radius = 15;
             if(state.radius > 700) state.radius = 700;
             render();
-            drawCircle('red');
+            if(!(state.EDIT_MODES.has('building') && state.EDIT_MODES.size === 1)) drawCircle('red');
         }
     }
 
@@ -651,12 +618,11 @@ function Metro(canvas) {
                 let vertex = state.vertices[vertices[i]];
 
                 state.context().moveTo(vertex[0], vertex[1]);
-                for(let j = 1; j < vertices.length; j ++) {
+                for(let j = 0; j < vertices.length; j ++) {
                     let nextVertex = state.vertices[vertices[j]];
                     state.context().lineTo(nextVertex[0], nextVertex[1]);
                 }
             }
-            state.context().closePath();
             state.context().fill();
         });
         state.context().restore();
@@ -665,24 +631,24 @@ function Metro(canvas) {
     // draw buildings(splitted polygon)
     function drawBuildings() {
         state.context().save();
-
-        state.graphics.buildings.forEach(b => {
+        state.graphics.buildings.forEach(buildings => {
+            if(buildings === 0 || buildings.length === 0) return;
             // start drawing building
             state.context().beginPath();
-            // state.context().fillStyle = 'white';
-            state.context().fillStyle = state.RANDOM_COLOR(Math.random());
-            for(let i = 0, vertices = b.poly.arrVector; i < vertices.length; i++) {
-                let vertex = vertices[i];
+            state.context().lineWidth = 0;
+            state.context().strokeStyle = 'black';
+            state.context().fillStyle = `rgb( ${buildings.color[0]}, ${buildings.color[1]}, ${buildings.color[2]} )`;
+            // state.context().fillStyle = state.RANDOM_COLOR(Math.random());
+            for(let i = 0; i < buildings.length; i++) {
+                let vertex = buildings[i];
 
-                state.context().moveTo(vertex.x, vertex.y);
-                for(let j = 1; j < vertices.length; j ++) {
-                    let nextVertex = vertices[j];
-                    state.context().lineTo(nextVertex.x, nextVertex.y);
-                    state.context().strokeStyle = 'black';
-                    state.context().stroke();
+                state.context().moveTo(vertex[0], vertex[1]);
+                for(let j = 0; j < buildings.length; j ++) {
+                    let nextVertex = buildings[j];
+                    state.context().lineTo(nextVertex[0], nextVertex[1]);
                 }
             }
-            state.context().closePath();
+            state.context().stroke();
             state.context().fill();
         });
 
@@ -865,10 +831,6 @@ function Metro(canvas) {
     /*=====================================================================================================
                                              Additional Functions
     ======================================================================================================*/
-    function sqr(x) {
-        return x * x;
-    }
-
     // get startPoint of edge
     function cellHalfedgeStart(cell, edge) {
         return edge[+(edge.left !== cell.site)];
@@ -877,6 +839,112 @@ function Metro(canvas) {
     // get endPoint of edge
     function cellHalfedgeEnd(cell, edge) {
         return edge[+(edge.left === cell.site)];
+    }
+
+    // context menu event
+    function menu() {
+        if(!state.EDIT_MODES.has('district') && !state.EDIT_MODES.has('building')) d3.select('.d3-context-menu').remove();
+        let x = state.transform.invertX(d3.event.layerX);
+        let y = state.transform.invertY(d3.event.layerY);
+        let site = findSite(x, y);
+
+        return [{
+            title: 'Current Type: ' + site.type,
+        },
+            {
+                divider: true
+            },
+            {
+                title: 'Change type to rich',
+                action: function() {
+                    site.type = 'rich';
+                    assignBuildings4Polygon(site.index);
+                    render();
+                }
+            },
+            {
+                title: 'Change type to medium',
+                action: function() {
+                    site.type = 'medium';
+                    assignBuildings4Polygon(site.index);
+                    render();
+                }
+            },
+            {
+                title: 'Change type to poor',
+                action: function() {
+                    site.type = 'poor';
+                    assignBuildings4Polygon(site.index);
+                    render();
+                }
+            },
+            {
+                title: 'Change type to plaza',
+                action: function() {
+                    site.type = 'plaza';
+                    assignBuildings4Polygon(site.index);
+                    render();
+                }
+            },
+            {
+                title: 'Change type to empty',
+                action: function() {
+                    site.type = 'empty';
+                    assignBuildings4Polygon(site.index);
+                    render();
+                }
+            }];
+    };
+
+    // split 1 polygon into n sub-polygons
+    // polygon [[0,1], ... [0,1]]
+    function splitPolygon(polygon, n) {
+        let subPoly = [polygon];
+
+        while(subPoly.length < n) {
+            let p = subPoly.shift();
+            let splitResult = splitPolyInto2(p);
+            let poly1 = splitResult.poly1.poly.arrVector.map(p => [p.x, p.y]);
+            let poly2 = splitResult.poly2.poly.arrVector.map(p => [p.x, p.y]);
+            subPoly.push(poly1);
+            subPoly.push(poly2);
+        }
+
+        return subPoly;
+    }
+
+    // split 1 polygon into 2 sub-polygons
+    // polygon [[0,1], ... [0,1]]
+    function splitPolyInto2(polygon) {
+        let poly = new Polygon();
+        let k = Math.random() * .6 + .2;
+        let area = Math.abs(d3.polygonArea(polygon)) * k;
+
+        polygon.forEach(v => poly.push_back(new Vector(v[0], v[1])));
+        return poly.split(area);
+    }
+
+    function findSite(x, y, radius) {
+        var i = 0,
+            n = state.graphics.sites.length,
+            dx,
+            dy,
+            d2,
+            site,
+            closest;
+
+        if (radius == null) radius = Infinity;
+        else radius *= radius;
+
+        for (i = 0; i < n; ++i) {
+            site = state.graphics.sites[i];
+            dx = x - site[0];
+            dy = y - site[1];
+            d2 = dx * dx + dy * dy;
+            if (d2 < radius) closest = site, radius = d2;
+        }
+
+        return closest;
     }
 
     function findSites(x, y, radius) {
@@ -970,29 +1038,6 @@ function Metro(canvas) {
         r /= n; g /= n; b /= n;
 
         return `rgb(${r}, ${g}, ${b})`;
-    }
-
-    function findSite(x, y, radius) {
-        var i = 0,
-            n = state.graphics.sites.length,
-            dx,
-            dy,
-            d2,
-            site,
-            closest;
-
-        if (radius == null) radius = Infinity;
-        else radius *= radius;
-
-        for (i = 0; i < n; ++i) {
-            site = state.graphics.sites[i];
-            dx = x - site[0];
-            dy = y - site[1];
-            d2 = dx * dx + dy * dy;
-            if (d2 < radius) closest = site, radius = d2;
-        }
-
-        return closest;
     }
     /*=====================================================================================================
                                              return Metro
