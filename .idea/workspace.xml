@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="165d839a-52e7-4e96-a2de-bc583fff601e" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change beforePath="$PROJECT_DIR$/public/javascripts/main/elevation-demo.js" afterPath="$PROJECT_DIR$/public/javascripts/main/elevation-demo.js" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
@@ -29,8 +30,8 @@
       <file leaf-file-name="elevation-demo.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/public/javascripts/main/elevation-demo.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="195">
-              <caret line="434" column="54" lean-forward="false" selection-start-line="434" selection-start-column="54" selection-end-line="434" selection-end-column="54" />
+            <state relative-caret-position="101">
+              <caret line="443" column="21" lean-forward="false" selection-start-line="443" selection-start-column="21" selection-end-line="443" selection-end-column="21" />
               <folding>
                 <element signature="e#443#7196#0" expanded="false" />
               </folding>
@@ -60,7 +61,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>isEditMode</find>
       <find>isDragging</find>
       <find>keyCode</find>
       <find>find</find>
@@ -90,6 +90,7 @@
       <find>squareToCut</find>
       <find>assignTypeForSite</find>
       <find>diagram.cells</find>
+      <find>arc</find>
     </findStrings>
     <replaceStrings>
       <replace>this.state.</replace>
@@ -316,12 +317,12 @@
       <workItem from="1545152573560" duration="1487000" />
       <workItem from="1546028352063" duration="250483000" />
       <workItem from="1549672899474" duration="32057000" />
-      <workItem from="1550108404426" duration="73070000" />
+      <workItem from="1550108404426" duration="78966000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="432050000" />
+    <option name="totallyTimeSpent" value="437946000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -715,14 +716,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/public/javascripts/libraries/d3.v4.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="259">
-          <caret line="13365" column="8" lean-forward="false" selection-start-line="13365" selection-start-column="8" selection-end-line="13365" selection-end-column="8" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/public/split-poly.html">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="300">
@@ -755,10 +748,18 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/public/javascripts/libraries/d3.v4.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1806">
+          <caret line="11003" column="30" lean-forward="true" selection-start-line="11003" selection-start-column="30" selection-end-line="11003" selection-end-column="30" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/public/javascripts/main/elevation-demo.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="195">
-          <caret line="434" column="54" lean-forward="false" selection-start-line="434" selection-start-column="54" selection-end-line="434" selection-end-column="54" />
+        <state relative-caret-position="101">
+          <caret line="443" column="21" lean-forward="false" selection-start-line="443" selection-start-column="21" selection-end-line="443" selection-end-column="21" />
           <folding>
             <element signature="e#443#7196#0" expanded="false" />
           </folding>

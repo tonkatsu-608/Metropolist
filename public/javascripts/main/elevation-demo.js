@@ -243,11 +243,13 @@ function Metro(canvas) {
 
     // building layer
     var building = (site_index) => {
-        return [255, 255, 255];
+        let site = state.graphics.sites[site_index];
+
+        return state.POLYGON_TYPE_COLOR[site.type];
     }
 
     var state = {
-        N: 50,
+        N: 200,
         EDIT_MODES: new Set(),
         LAYERS: new Set([elevation]),
         LAYER: 'elevation',
@@ -291,7 +293,7 @@ function Metro(canvas) {
         .on("wheel", onScroll)
         .on('mousemove', onMouseMove)
         .on("contextmenu", d3.contextMenu(menu))
-        .call(d3.zoom().scaleExtent([1/2, 4]).on("zoom", zoomed));
+        .call(d3.zoom().scaleExtent([1 / 4, 8]).on("zoom", zoomed));
 
     d3.select("body")
         .on("keyup", onKeyUp)
@@ -309,19 +311,16 @@ function Metro(canvas) {
         this.voronoi = d3.voronoi().extent([[MIN_WIDTH, MIN_HEIGHT], [MAX_WIDTH, MAX_HEIGHT]]);
         this.diagram = this.voronoi( this.sites );
 
-        // relax sites (Lloyd's algorithm)
+        // relax sites in using Lloyd's algorithm
         for(let n = 0; n < 2; n++) {
             this.sites = relax( this.diagram );
             this.diagram = this.voronoi( this.sites );
         }
 
         this.polygons = makePolygons(this.diagram);
-        // this.buildings = makeSplittedPolygons(this.sites, this.polygons);
-        this.edges = this.diagram.edges;
-        this.links = this.diagram.links();
         this.triangles = this.diagram.triangles();
-        // this.clusters = this.polygons.map( makeCluster );
-        // this.buildings = getBuildings( this.clusters );
+        this.links = this.diagram.links();
+        this.edges = this.diagram.edges;
         this.buildings = [];
     }
 
@@ -351,8 +350,8 @@ function Metro(canvas) {
     function makePolygons(diagram) {
         return diagram.cells.map((cell, index) => {
             let polygon = {};
-
             polygon.index = index;
+            polygon.buildings = null;
             polygon.vertices = cell.halfedges.map(i => {
                 polygon.site = cell.site.index;
 
@@ -370,8 +369,8 @@ function Metro(canvas) {
 
                 return startVertex.vertexIndex;
             });
-            polygon.buildings = 0;
-            polygon.area = Math.abs(d3.polygonArea(polygon.vertices));
+            let vertices = polygon.vertices.map(v => state.vertices[v]);
+            polygon.area = Math.abs(d3.polygonArea(vertices));
 
             return polygon;
         });
@@ -436,21 +435,23 @@ function Metro(canvas) {
             "empty" : 0,
         };
         let size = BUILDINGS_NUMBER[site.type];
-        polygon.buildings = size;
         let vertices = polygon.vertices.map(v => state.vertices[v]);
         let resultArr = splitPolygon(vertices, size);
         resultArr.forEach(r => r.color = state.POLYGON_TYPE_COLOR[site.type]);
-        state.graphics.buildings = state.graphics.buildings.concat(resultArr);
-        // while(size > 0) {
-        //     size --;
-        //     state.graphics.buildings.splice(Math.floor(Math.random() * state.graphics.buildings.length), 1, 0);
-        // }
+        polygon.buildings = resultArr;
+
+        while(size > 0) {
+            size -= 2;
+            polygon.buildings.splice(Math.floor(Math.random() * polygon.buildings.length), 1, []);
+        }
     }
 
+    // get vertices from diagram.cell
     function getCellVertices( cell, diagram ) {
         return cell.halfedges.map(i => cellHalfedgeStart(cell, diagram.edges[i]));
     }
 
+    // relax sites, get average positions
     function relax( diagram ) {
         return diagram.cells.map((cell, index) => getCellCentroid( cell, diagram, index));
     }
@@ -520,7 +521,9 @@ function Metro(canvas) {
                         }
                         if(s['elevation'] >= 1) s['elevation'] = 1;
                         if(s['affluence'] >= 1) s['affluence'] = 1;
-                        if(state.EDIT_MODES.has('elevation') || state.EDIT_MODES.has('affluence')) assignType4Site(s.index);
+                        if(state.EDIT_MODES.has('elevation') || state.EDIT_MODES.has('affluence')) {
+                            assignType4Site(s.index);
+                        }
                         // if(state.EDIT_MODES.has('building')) assignBuildings4Polygon(s.index);
                     });
                 }
@@ -598,7 +601,9 @@ function Metro(canvas) {
     }
 
     function onKeyUp() {
-        if(state.isAltPressed) state.isAltPressed = false;
+        if(state.isAltPressed) {
+            state.isAltPressed = false;
+        }
     }
     /*=====================================================================================================
                                              Draw Functions
@@ -623,35 +628,41 @@ function Metro(canvas) {
                     state.context().lineTo(nextVertex[0], nextVertex[1]);
                 }
             }
+            state.context().closePath();
             state.context().fill();
         });
         state.context().restore();
     }
 
-    // draw buildings(splitted polygon)
+    // draw buildings(splitted polygon) of polygon that has buildings
     function drawBuildings() {
         state.context().save();
-        state.graphics.buildings.forEach(buildings => {
-            if(buildings === 0 || buildings.length === 0) return;
-            // start drawing building
-            state.context().beginPath();
-            state.context().lineWidth = 0;
-            state.context().strokeStyle = 'black';
-            state.context().fillStyle = `rgb( ${buildings.color[0]}, ${buildings.color[1]}, ${buildings.color[2]} )`;
-            // state.context().fillStyle = state.RANDOM_COLOR(Math.random());
-            for(let i = 0; i < buildings.length; i++) {
-                let vertex = buildings[i];
+        state.graphics.polygons.forEach(p => {
 
-                state.context().moveTo(vertex[0], vertex[1]);
-                for(let j = 0; j < buildings.length; j ++) {
-                    let nextVertex = buildings[j];
-                    state.context().lineTo(nextVertex[0], nextVertex[1]);
+            if(!p.buildings) return;
+            p.buildings.forEach(buildings => {
+
+                if(buildings === 0 || buildings.length === 0) return;
+                // start drawing building
+                state.context().beginPath();
+                state.context().lineWidth = 0;
+                state.context().strokeStyle = 'black';
+                state.context().fillStyle = `rgb( ${buildings.color[0]}, ${buildings.color[1]}, ${buildings.color[2]} )`;
+                // state.context().fillStyle = state.RANDOM_COLOR(Math.random());
+                for(let i = 0; i < buildings.length; i++) {
+                    let vertex = buildings[i];
+
+                    state.context().moveTo(vertex[0], vertex[1]);
+                    for(let j = 0; j < buildings.length; j ++) {
+                        let nextVertex = buildings[j];
+                        state.context().lineTo(nextVertex[0], nextVertex[1]);
+                    }
                 }
-            }
-            state.context().stroke();
-            state.context().fill();
+                state.context().closePath();
+                state.context().stroke();
+                state.context().fill();
+            });
         });
-
         state.context().restore();
     }
 
@@ -763,7 +774,6 @@ function Metro(canvas) {
                         const B = (triangle[0].color.B * weight.w1) + (triangle[1].color.B * weight.w2) + (triangle[2].color.B * weight.w3);
 
                         state.context().beginPath();
-
                         state.context().fillStyle = `rgb(${R}, ${G}, ${B})`;
                         state.context().fillRect(x, y, 1, 1);
                     }
@@ -822,10 +832,12 @@ function Metro(canvas) {
     // draw a line from p1[0, 1] to p2[0, 1]
     function drawLine(p1, p2, width, color) {
         state.context().beginPath();
+        state.context().fillStyle = color;
         state.context().lineWidth = width;
         state.context().strokeStyle = color;
         state.context().moveTo(p1[0], p1[1]);
         state.context().lineTo(p2[0], p2[1]);
+        state.context().fill();
         state.context().stroke();
     }
     /*=====================================================================================================
@@ -899,6 +911,7 @@ function Metro(canvas) {
     // split 1 polygon into n sub-polygons
     // polygon [[0,1], ... [0,1]]
     function splitPolygon(polygon, n) {
+        if( n == 0 ) return [];
         let subPoly = [polygon];
 
         while(subPoly.length < n) {
