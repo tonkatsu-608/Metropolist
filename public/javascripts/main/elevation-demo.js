@@ -19,9 +19,10 @@ function Metro(canvas) {
         $('.renderContourLine').click( function() {
             if(state.LAYERS.has(elevation)) {
                 render();
-                drawContourLines(0.25, 'elevation', 'red', 8);
-                drawContourLines(0.5, 'elevation', 'green', 8);
-                drawContourLines(0.75, 'elevation', 'blue', 8);
+                drawContourLines(state.waterline, 'elevation', 'blue', 4);
+                drawContourLines(0.25, 'elevation', 'red', 4);
+                drawContourLines(0.5, 'elevation', 'green', 4);
+                drawContourLines(0.75, 'elevation', 'yellow', 4);
             }
         });
 
@@ -190,12 +191,14 @@ function Metro(canvas) {
         $('#incrementSlider').on('change', function() {
             state.increment = this.value;
             render();
-            drawCircle('red');
+            drawCursor('red');
         });
 
         $('#waterLineSlider').on('change', function() {
-            state.waterline = this.value / 10;
             render();
+            state.waterline = this.value / 10;
+            state.contourLines.clear();
+            drawContourLines(state.waterline, 'elevation', 'blue', 4);
         });
 
         $('#elevationSwitch').on('change', function() {
@@ -258,6 +261,7 @@ function Metro(canvas) {
         waterline: .2,
         pointer: {},
         vertices: [],
+        contourLines: [],
         selectedSites: [],
         isDragging: false,
         isIncreasing: true,
@@ -267,7 +271,7 @@ function Metro(canvas) {
         width () { return this.canvas.width; },
         height () { return this.canvas.height; },
         context () { return this.canvas.getContext("2d"); },
-        DISTRICT_TYPES: ['rich', 'medium','poor','plaza', 'empty'],
+        DISTRICT_TYPES: ['rich', 'medium','poor','plaza', 'empty', 'water'],
         COLOR: [{R: 255, G: 0, B: 0}, {R: 0, G: 255, B: 0}, {R: 0, G: 0, B: 255}],
         RANDOM_COLOR: d3.scaleOrdinal().range(d3.schemeCategory20), // random color
         POLYGON_TYPE_COLOR: {
@@ -276,6 +280,7 @@ function Metro(canvas) {
             "poor" : [126, 154, 154], // grey #7e9a9a
             "plaza" : [219, 152, 51], // orange #db9833
             "empty" : [255, 255, 255], // white
+            "water" : [173, 216, 230], // light blue
         },
     };
 
@@ -400,13 +405,13 @@ function Metro(canvas) {
     // assign type to site(polygon/district)
     function assignType4Site(index) {
         let s = state.graphics.sites[index];
-        let value = s['elevation'] <= state.waterline ? 0 : (s['elevation'] + s['affluence']) / 2;
+        let value = (s['elevation'] + s['affluence']) / 2;
 
         if(value >= 0.7 && value <= 1) {
             s.type = 'rich';
-        } else if(value < 0.7 && value > 0.3) {
+        } else if(value < 0.7 && value > 0.4) {
             s.type = 'medium';
-        } else if(value <= 0.3 && value > 0) {
+        } else if(value <= 0.4 && value > state.waterline) {
             s.type = 'poor';
         } else if(value === 0) {
             s.type = 'empty';
@@ -417,7 +422,12 @@ function Metro(canvas) {
         findAdjacentSites(s).forEach(i => types.add(state.graphics.sites[i].type));
 
         // condition of type 'plaza'
-        if(types.size === 3 && types.has('poor') && types.has('medium') && types.has('rich')) s.type = 'plaza';
+        if(types.size === 3 && types.has('poor') && types.has('medium') && types.has('rich')) {
+            s.type = 'plaza';
+        }
+        if(value <= state.waterline) {
+            s.type = 'water';
+        }
 
         // split polygons
         assignBuildings4Polygon(index);
@@ -433,6 +443,7 @@ function Metro(canvas) {
             "poor" : Math.round(Math.random() * 10 + 45),
             "plaza" : Math.round(Math.random() * 2 + 2),
             "empty" : 0,
+            "water" : 0,
         };
         let size = BUILDINGS_NUMBER[site.type];
         let vertices = polygon.vertices.map(v => state.vertices[v]);
@@ -440,8 +451,8 @@ function Metro(canvas) {
         resultArr.forEach(r => r.color = state.POLYGON_TYPE_COLOR[site.type]);
         polygon.buildings = resultArr;
 
-        while(size > 0) {
-            size -= 2;
+        while (size > 0) {
+            size = size % 3 - 1;
             polygon.buildings.splice(Math.floor(Math.random() * polygon.buildings.length), 1, []);
         }
     }
@@ -508,6 +519,7 @@ function Metro(canvas) {
                     state.selectedSites.map(s => {
                         if(state.EDIT_MODES.has('district')) {
                             s['wall'] = 0.5;
+                            if(s.type === 'water') s['wall'] = 0;
                         }
                         if(state.EDIT_MODES.has('elevation')) {
                             s['elevation'] += (state.increment / 100) * s.delta;
@@ -524,7 +536,6 @@ function Metro(canvas) {
                         if(state.EDIT_MODES.has('elevation') || state.EDIT_MODES.has('affluence')) {
                             assignType4Site(s.index);
                         }
-                        // if(state.EDIT_MODES.has('building')) assignBuildings4Polygon(s.index);
                     });
                 }
             } else {
@@ -551,7 +562,7 @@ function Metro(canvas) {
                 }
             }
             render();
-            if(!(state.EDIT_MODES.has('building') && state.EDIT_MODES.size === 1)) drawCircle('red');
+            if(!(state.EDIT_MODES.has('building') && state.EDIT_MODES.size === 1)) drawCursor('red');
         }
     }
 
@@ -566,7 +577,7 @@ function Metro(canvas) {
         if(!state.isAltPressed && state.EDIT_MODES.size >= 1) {
             state.pointer = d3.mouse(this);
             render();
-            if(!(state.EDIT_MODES.has('building') && state.EDIT_MODES.size === 1)) drawCircle('red');
+            if(!(state.EDIT_MODES.has('building') && state.EDIT_MODES.size === 1)) drawCursor('red');
         }
     }
 
@@ -578,7 +589,7 @@ function Metro(canvas) {
             if(state.radius < 15) state.radius = 15;
             if(state.radius > 700) state.radius = 700;
             render();
-            if(!(state.EDIT_MODES.has('building') && state.EDIT_MODES.size === 1)) drawCircle('red');
+            if(!(state.EDIT_MODES.has('building') && state.EDIT_MODES.size === 1)) drawCursor('red');
         }
     }
 
@@ -587,6 +598,7 @@ function Metro(canvas) {
         if(state.isAltPressed) {
             state.transform = d3.event.transform;
             render();
+            drawCursor('red');
         }
     }
 
@@ -667,10 +679,10 @@ function Metro(canvas) {
     }
 
     // draw circle following mouse
-    function drawCircle(color) {
+    function drawCursor(color) {
         state.context().save();
         state.context().beginPath();
-        
+
         state.context().moveTo(state.pointer[0], state.pointer[1]);
         state.context().arc(state.pointer[0], state.pointer[1], state.radius, 0, 2 * Math.PI, false);
         state.context().arc(state.pointer[0], state.pointer[1], state.radius / 2, 0, 2 * Math.PI, false);
@@ -823,6 +835,7 @@ function Metro(canvas) {
                 let pt1 = pointOnEdge( e1[0], e1[1], point, layer );
                 let pt2 = pointOnEdge( e2[0], e2[1], point, layer );
 
+                state.contourLines.push([pt1, pt2]);
                 drawLine( pt1, pt2, width, color);
             }
         });
@@ -894,6 +907,16 @@ function Metro(canvas) {
                 title: 'Change type to plaza',
                 action: function() {
                     site.type = 'plaza';
+                    assignBuildings4Polygon(site.index);
+                    render();
+                }
+            },
+            {
+                title: 'Change type to water',
+                action: function() {
+                    site.type = 'water';
+                    site['elevation'] = state.waterline / 2;
+                    site['affluence'] = state.waterline / 2;
                     assignBuildings4Polygon(site.index);
                     render();
                 }

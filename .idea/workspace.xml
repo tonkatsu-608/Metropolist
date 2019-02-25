@@ -2,7 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="165d839a-52e7-4e96-a2de-bc583fff601e" name="Default" comment="">
+      <change beforePath="" afterPath="$PROJECT_DIR$/public/images/arrow.cur" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change beforePath="$PROJECT_DIR$/public/elevation-demo.html" afterPath="$PROJECT_DIR$/public/elevation-demo.html" />
       <change beforePath="$PROJECT_DIR$/public/javascripts/main/elevation-demo.js" afterPath="$PROJECT_DIR$/public/javascripts/main/elevation-demo.js" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
@@ -20,8 +22,8 @@
       <file leaf-file-name="elevation-demo.html" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/public/elevation-demo.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2082">
-              <caret line="183" column="52" lean-forward="false" selection-start-line="183" selection-start-column="52" selection-end-line="183" selection-end-column="52" />
+            <state relative-caret-position="642">
+              <caret line="187" column="48" lean-forward="false" selection-start-line="187" selection-start-column="48" selection-end-line="187" selection-end-column="48" />
               <folding />
             </state>
           </provider>
@@ -30,20 +32,8 @@
       <file leaf-file-name="elevation-demo.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/public/javascripts/main/elevation-demo.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="101">
-              <caret line="443" column="21" lean-forward="false" selection-start-line="443" selection-start-column="21" selection-end-line="443" selection-end-column="21" />
-              <folding>
-                <element signature="e#443#7196#0" expanded="false" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="app.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/public/javascripts/main/app.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="179">
-              <caret line="171" column="52" lean-forward="true" selection-start-line="171" selection-start-column="52" selection-end-line="171" selection-end-column="52" />
+            <state relative-caret-position="487">
+              <caret line="910" column="29" lean-forward="true" selection-start-line="910" selection-start-column="29" selection-end-line="910" selection-end-column="29" />
               <folding />
             </state>
           </provider>
@@ -61,14 +51,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>isDragging</find>
-      <find>keyCode</find>
-      <find>find</find>
-      <find>transform</find>
-      <find>pointer</find>
-      <find>menu</find>
-      <find>state.pointer</find>
-      <find>// state.context().translate(state.transform.x, state.transform.y);state.context().scale(state.transform.k, state.transform.k);</find>
       <find>prev</find>
       <find>preve</find>
       <find>contextmenu</find>
@@ -91,6 +73,14 @@
       <find>assignTypeForSite</find>
       <find>diagram.cells</find>
       <find>arc</find>
+      <find>clear</find>
+      <find>#</find>
+      <find>while</find>
+      <find>DISTRICT_TYPES</find>
+      <find>menu</find>
+      <find>drawCircle</find>
+      <find>state.context()</find>
+      <find>affluence</find>
     </findStrings>
     <replaceStrings>
       <replace>this.state.</replace>
@@ -105,6 +95,8 @@
       <replace>// state.context().translate(state.transform.x, state.transform.y); state.context().scale(state.transform.k, state.transform.k);</replace>
       <replace>-edit-checkbox</replace>
       <replace>assignType4Site</replace>
+      <replace>drawCursor</replace>
+      <replace>context</replace>
     </replaceStrings>
   </component>
   <component name="Git.Settings">
@@ -136,9 +128,9 @@
         <option value="$PROJECT_DIR$/public/javascripts/split-poly-objects/line.js" />
         <option value="$PROJECT_DIR$/public/javascripts/split-poly-objects/vector.js" />
         <option value="$PROJECT_DIR$/public/split-poly.html" />
-        <option value="$PROJECT_DIR$/public/elevation-demo.html" />
         <option value="$PROJECT_DIR$/public/javascripts/main/app.js" />
         <option value="$PROJECT_DIR$/public/javascripts/split-poly-objects/renderArea.js" />
+        <option value="$PROJECT_DIR$/public/elevation-demo.html" />
         <option value="$PROJECT_DIR$/public/javascripts/main/elevation-demo.js" />
       </list>
     </option>
@@ -161,10 +153,8 @@
     <handled-path value="$PROJECT_DIR$/node_modules" />
   </component>
   <component name="ProjectFrameBounds" fullScreen="true">
-    <option name="x" value="624" />
-    <option name="y" value="23" />
-    <option name="width" value="816" />
-    <option name="height" value="827" />
+    <option name="width" value="1440" />
+    <option name="height" value="900" />
   </component>
   <component name="ProjectInspectionProfilesVisibleTreeState">
     <entry key="Project Default">
@@ -221,6 +211,12 @@
               <item name="Metropolist" type="b2602c69:ProjectViewProjectNode" />
               <item name="Metropolist" type="462c0819:PsiDirectoryNode" />
               <item name="public" type="462c0819:PsiDirectoryNode" />
+              <item name="images" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="Metropolist" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Metropolist" type="462c0819:PsiDirectoryNode" />
+              <item name="public" type="462c0819:PsiDirectoryNode" />
               <item name="javascripts" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
@@ -261,7 +257,11 @@
     <property name="DefaultHtmlFileTemplate" value="HTML File" />
   </component>
   <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/public/images" />
+    </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/public/images" />
       <recent name="$PROJECT_DIR$/public/javascripts/split-poly-objects" />
       <recent name="$PROJECT_DIR$/public" />
       <recent name="$PROJECT_DIR$/public/javascripts/main" />
@@ -317,12 +317,12 @@
       <workItem from="1545152573560" duration="1487000" />
       <workItem from="1546028352063" duration="250483000" />
       <workItem from="1549672899474" duration="32057000" />
-      <workItem from="1550108404426" duration="78966000" />
+      <workItem from="1550108404426" duration="86905000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="437946000" />
+    <option name="totallyTimeSpent" value="445885000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -528,14 +528,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/public/app.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="260">
-          <caret line="54" column="36" lean-forward="true" selection-start-line="54" selection-start-column="36" selection-end-line="54" selection-end-column="36" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/public/javascripts/main/elevation-1.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="441">
@@ -650,14 +642,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/public/clip-voronoi.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2130">
-          <caret line="142" column="46" lean-forward="true" selection-start-line="142" selection-start-column="46" selection-end-line="142" selection-end-column="46" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/routes/index.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="702">
@@ -670,14 +654,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/public/elevation-demo.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2082">
-          <caret line="183" column="52" lean-forward="false" selection-start-line="183" selection-start-column="52" selection-end-line="183" selection-end-column="52" />
           <folding />
         </state>
       </provider>
@@ -740,14 +716,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/public/javascripts/main/app.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="179">
-          <caret line="171" column="52" lean-forward="true" selection-start-line="171" selection-start-column="52" selection-end-line="171" selection-end-column="52" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/public/javascripts/libraries/d3.v4.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1806">
@@ -756,13 +724,43 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/public/app.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="205">
+          <caret line="96" column="58" lean-forward="true" selection-start-line="96" selection-start-column="58" selection-end-line="96" selection-end-column="65" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/public/javascripts/main/app.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1130">
+          <caret line="367" column="22" lean-forward="false" selection-start-line="367" selection-start-column="22" selection-end-line="367" selection-end-column="22" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/public/elevation-demo.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="642">
+          <caret line="187" column="48" lean-forward="false" selection-start-line="187" selection-start-column="48" selection-end-line="187" selection-end-column="48" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/public/clip-voronoi.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="266">
+          <caret line="124" column="13" lean-forward="false" selection-start-line="124" selection-start-column="13" selection-end-line="124" selection-end-column="13" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/public/javascripts/main/elevation-demo.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="101">
-          <caret line="443" column="21" lean-forward="false" selection-start-line="443" selection-start-column="21" selection-end-line="443" selection-end-column="21" />
-          <folding>
-            <element signature="e#443#7196#0" expanded="false" />
-          </folding>
+        <state relative-caret-position="487">
+          <caret line="910" column="29" lean-forward="true" selection-start-line="910" selection-start-column="29" selection-end-line="910" selection-end-column="29" />
+          <folding />
         </state>
       </provider>
     </entry>
