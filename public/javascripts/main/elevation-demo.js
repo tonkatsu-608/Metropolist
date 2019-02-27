@@ -19,10 +19,10 @@ function Metro(canvas) {
         $('.renderContourLine').click( function() {
             if(state.LAYERS.has(elevation)) {
                 render();
-                drawContourLines(state.waterline, 'elevation', 'blue', 4);
-                drawContourLines(0.25, 'elevation', 'red', 4);
-                drawContourLines(0.5, 'elevation', 'green', 4);
-                drawContourLines(0.75, 'elevation', 'yellow', 4);
+                drawContourLines(state.waterline, 'elevation', 'blue', 4, false);
+                drawContourLines(0.25, 'elevation', 'red', 4, false);
+                drawContourLines(0.5, 'elevation', 'green', 4, false);
+                drawContourLines(0.75, 'elevation', 'yellow', 4, false);
             }
         });
 
@@ -190,15 +190,14 @@ function Metro(canvas) {
 
         $('#incrementSlider').on('change', function() {
             state.increment = this.value;
-            render();
-            drawCursor('red');
         });
 
         $('#waterLineSlider').on('change', function() {
-            render();
             state.waterline = this.value / 10;
             state.contourLines.clear();
-            drawContourLines(state.waterline, 'elevation', 'blue', 4);
+            onChangeWaterLine();
+            render();
+            drawContourLines(state.waterline, 'elevation', 'blue', 4, false);
         });
 
         $('#elevationSwitch').on('change', function() {
@@ -252,7 +251,7 @@ function Metro(canvas) {
     }
 
     var state = {
-        N: 200,
+        N: $('#input-sites').val() || 200,
         EDIT_MODES: new Set(),
         LAYERS: new Set([elevation]),
         LAYER: 'elevation',
@@ -271,16 +270,17 @@ function Metro(canvas) {
         width () { return this.canvas.width; },
         height () { return this.canvas.height; },
         context () { return this.canvas.getContext("2d"); },
-        DISTRICT_TYPES: ['rich', 'medium','poor','plaza', 'empty', 'water'],
+        DISTRICT_TYPES: ['rich', 'medium','poor','plaza', 'empty', 'water', 'farm'],
         COLOR: [{R: 255, G: 0, B: 0}, {R: 0, G: 255, B: 0}, {R: 0, G: 0, B: 255}],
         RANDOM_COLOR: d3.scaleOrdinal().range(d3.schemeCategory20), // random color
         POLYGON_TYPE_COLOR: {
-            "rich" : [42, 101, 146], // blue #2a6592
-            "medium" : [246, 216, 172], // rice #f6d8ac
-            "poor" : [126, 154, 154], // grey #7e9a9a
-            "plaza" : [219, 152, 51], // orange #db9833
-            "empty" : [255, 255, 255], // white
-            "water" : [173, 216, 230], // light blue
+            'rich' : [152, 134, 148], // purple
+            'medium' : [161, 147, 127], // rice
+            'poor' : [141, 157, 149], // grey
+            'plaza' : [146, 157, 127], // green
+            'farm' : [253, 242, 205], // light yellow #cbc5b9
+            'empty' : [203, 197, 185], // light yellow #cbc5b9
+            'water' : [173, 216, 230], // light blue
         },
     };
 
@@ -326,7 +326,6 @@ function Metro(canvas) {
         this.triangles = this.diagram.triangles();
         this.links = this.diagram.links();
         this.edges = this.diagram.edges;
-        this.buildings = [];
     }
 
     function getCellCentroid( cell, diagram, index ) {
@@ -339,9 +338,8 @@ function Metro(canvas) {
         });
 
         let site = [ cx / count, cy / count];
-        site.elevation = 0.5;
+        site.elevation = 0.35;
         site.affluence = 0;
-        site.district = 0;
         site.wall = 0;
         // site.color = state.COLOR[Math.floor(Math.random() * 2)];
         site.type = 'empty';
@@ -381,26 +379,13 @@ function Metro(canvas) {
         });
     }
 
-    // function makeSplittedPolygons(sites, polygons) {
-    //     let buildings = [];
-    //     polygons.forEach(p => {
-    //         let BUILDINGS_NUMBER = {
-    //             "rich" : Math.round(Math.random() * 5 + 5),
-    //             "medium" : Math.round(Math.random() * 15 + 25),
-    //             "poor" : Math.round(Math.random() * 10 + 45),
-    //             "plaza" : Math.round(Math.random() * 2 + 2),
-    //             "empty" : 0,
-    //         };
-    //         let site = sites[p.site];
-    //         let n = BUILDINGS_NUMBER[site.type];
-    //         let vertices = p.vertices.map(v => state.vertices[v]);
-    //         let resultArr = splitPolygon(vertices, n);
-    //
-    //         buildings = buildings.concat(resultArr);
-    //     });
-    //
-    //     return buildings;
-    // }
+    function onChangeWaterLine() {
+        // state.graphics.sites
+        //     .filter(s => s.elevation <= state.waterline)
+        //     .forEach(s => assignType4Site(s.index));
+        //
+        state.graphics.sites.forEach(s => assignType4Site(s.index));
+    }
 
     // assign type to site(polygon/district)
     function assignType4Site(index) {
@@ -421,15 +406,21 @@ function Metro(canvas) {
         let types = new Set();
         findAdjacentSites(s).forEach(i => types.add(state.graphics.sites[i].type));
 
-        // condition of type 'plaza'
+        // condition to assign type 'plaza'
         if(types.size === 3 && types.has('poor') && types.has('medium') && types.has('rich')) {
             s.type = 'plaza';
         }
-        if(value <= state.waterline) {
+
+        // condition to assign type 'water'
+        if(s['elevation'] <= state.waterline) {
             s.type = 'water';
         }
 
-        // split polygons
+        if(s['elevation'] <= 0.5 && value > state.waterline) {
+            s.type = 'farm';
+        }
+
+        // split polygons and assign buildings for polygon
         assignBuildings4Polygon(index);
     }
 
@@ -438,12 +429,13 @@ function Metro(canvas) {
         let polygon = state.graphics.polygons[index];
         let site = state.graphics.sites[index];
         let BUILDINGS_NUMBER = {
-            "rich" : Math.round(Math.random() * 5 + 5),
-            "medium" : Math.round(Math.random() * 15 + 25),
-            "poor" : Math.round(Math.random() * 10 + 45),
-            "plaza" : Math.round(Math.random() * 2 + 2),
-            "empty" : 0,
-            "water" : 0,
+            'rich' : Math.round(Math.random() * 5 + 5),
+            'medium' : Math.round(Math.random() * 10 + 10),
+            'poor' : Math.round(Math.random() * 15 + 15),
+            'plaza' : Math.round(Math.random() * 2 + 2),
+            'farm' : Math.round(Math.random() * 15 + 15),
+            'empty' : 0,
+            'water' : 0,
         };
         let size = BUILDINGS_NUMBER[site.type];
         let vertices = polygon.vertices.map(v => state.vertices[v]);
@@ -451,9 +443,15 @@ function Metro(canvas) {
         resultArr.forEach(r => r.color = state.POLYGON_TYPE_COLOR[site.type]);
         polygon.buildings = resultArr;
 
-        while (size > 0) {
-            size = size % 3 - 1;
-            polygon.buildings.splice(Math.floor(Math.random() * polygon.buildings.length), 1, []);
+        if(site.type === 'farm') {
+            polygon.buildings = Math.random() > 0.9 ? [polygon.buildings.pop()] : [];
+        } else if(site.type === 'plaza') {
+            polygon.buildings = Math.random() > 0.5 ? [polygon.buildings.pop(), polygon.buildings.pop()] : [polygon.buildings.pop()];
+        } else {
+            while (size > 0) {
+                size = size % 5 - 1;
+                polygon.buildings.splice(Math.floor(Math.random() * polygon.buildings.length), 1, []);
+            }
         }
     }
 
@@ -480,7 +478,7 @@ function Metro(canvas) {
         // renderBackground();
         // drawSites(1, 'black'); // lineWidth, lineColor
         // drawEdges(3, 'black'); // lineWidth, lineColor
-        if(state.LAYERS.has(district)) drawContourLines(0.25, 'wall', '#191970', 8);
+        if(state.LAYERS.has(district)) drawContourLines(0.25, 'wall', 'black', 8, true);
 
         state.context().restore();
     }
@@ -496,8 +494,11 @@ function Metro(canvas) {
                                              Event Functions
     ======================================================================================================*/
     function dragsubject() {
-        if(state.isAltPressed) return null;
-        else return 0;
+        if(state.isAltPressed) {
+            return null;
+        } else {
+            return 0;
+        }
     }
     
     function dragstarted() {
@@ -598,7 +599,6 @@ function Metro(canvas) {
         if(state.isAltPressed) {
             state.transform = d3.event.transform;
             render();
-            drawCursor('red');
         }
     }
 
@@ -650,14 +650,18 @@ function Metro(canvas) {
     function drawBuildings() {
         state.context().save();
         state.graphics.polygons.forEach(p => {
-
             if(!p.buildings) return;
-            p.buildings.forEach(buildings => {
 
+            p.buildings.forEach(buildings => {
                 if(buildings === 0 || buildings.length === 0) return;
                 // start drawing building
                 state.context().beginPath();
-                state.context().lineWidth = 0;
+                state.context().translate(state.transform.x, state.transform.y);
+                state.context().scale(state.transform.k, state.transform.k);
+                state.context().translate(buildings.center[0], buildings.center[1]);
+                state.context().scale(0.9, 0.9);
+                state.context().translate(-buildings.center[0], -buildings.center[1]);
+                state.context().lineWidth = 1;
                 state.context().strokeStyle = 'black';
                 state.context().fillStyle = `rgb( ${buildings.color[0]}, ${buildings.color[1]}, ${buildings.color[2]} )`;
                 // state.context().fillStyle = state.RANDOM_COLOR(Math.random());
@@ -673,6 +677,7 @@ function Metro(canvas) {
                 state.context().closePath();
                 state.context().stroke();
                 state.context().fill();
+                state.context().setTransform(1,0,0,1,0,0);
             });
         });
         state.context().restore();
@@ -801,8 +806,12 @@ function Metro(canvas) {
      * @param color
      * @param width
      */
-    function drawContourLines(point, layer, color, width) {
+    function drawContourLines(point, layer, color, width, isWall) {
         state.context().save();
+        if(!isWall) {
+            state.context().translate(state.transform.x, state.transform.y);
+            state.context().scale(state.transform.k, state.transform.k);
+        }
         state.graphics.triangles.forEach(triangle => {
             let vertices = triangle.sort((a,b) => {
                 if (a[layer] < b[layer]) {
@@ -912,6 +921,14 @@ function Metro(canvas) {
                 }
             },
             {
+                title: 'Change type to farm',
+                action: function() {
+                    site.type = 'farm';
+                    assignBuildings4Polygon(site.index);
+                    render();
+                }
+            },
+            {
                 title: 'Change type to water',
                 action: function() {
                     site.type = 'water';
@@ -942,10 +959,12 @@ function Metro(canvas) {
             let splitResult = splitPolyInto2(p);
             let poly1 = splitResult.poly1.poly.arrVector.map(p => [p.x, p.y]);
             let poly2 = splitResult.poly2.poly.arrVector.map(p => [p.x, p.y]);
+
+            poly1.center = d3.polygonCentroid(poly1);
+            poly2.center = d3.polygonCentroid(poly2);
             subPoly.push(poly1);
             subPoly.push(poly2);
         }
-
         return subPoly;
     }
 
@@ -1053,13 +1072,6 @@ function Metro(canvas) {
             }
         });
         return sites;
-    }
-
-    function ifOnlyHasDesirabilityMode() {
-        if(state.LAYERS.has(desirability) && state.LAYERS.size === 1) {
-            return true;
-        }
-        return false;
     }
 
     function combineColors(colors) {
