@@ -193,7 +193,7 @@ function Metro(canvas) {
         });
 
         $('#waterLineSlider').on('change', function() {
-            state.waterline = this.value / 10;
+            state.waterline = this.value / 100;
             state.contourLines.clear();
             onChangeWaterLine();
             render();
@@ -256,8 +256,8 @@ function Metro(canvas) {
         LAYERS: new Set([elevation]),
         LAYER: 'elevation',
         radius: 100,
-        increment: 12,
-        waterline: .2,
+        increment: $('#incrementSlider').val() || 15,
+        waterline:  $('#waterLineSlider').val() / 100 || .15,
         pointer: {},
         vertices: [],
         contourLines: [],
@@ -284,10 +284,11 @@ function Metro(canvas) {
         },
     };
 
-    state.graphics = new Graphics(); console.log(state);
-
+    state.graphics = new Graphics();
+    console.log(state);
     render();
 
+    // initialize mouse event
     d3.select(state.canvas)
         .call(d3.drag()
             .container(state.canvas)
@@ -300,6 +301,7 @@ function Metro(canvas) {
         .on("contextmenu", d3.contextMenu(menu))
         .call(d3.zoom().scaleExtent([1 / 4, 8]).on("zoom", zoomed));
 
+    // initialize key event
     d3.select("body")
         .on("keyup", onKeyUp)
         .on("keydown", onKeyDown);
@@ -392,11 +394,11 @@ function Metro(canvas) {
         let s = state.graphics.sites[index];
         let value = (s['elevation'] + s['affluence']) / 2;
 
-        if(value >= 0.7 && value <= 1) {
+        if(value >= 0.75 && value <= 1) {
             s.type = 'rich';
-        } else if(value < 0.7 && value > 0.4) {
+        } else if(value < 0.75 && value > 0.5) {
             s.type = 'medium';
-        } else if(value <= 0.4 && value > state.waterline) {
+        } else if(value <= 0.5 && value > state.waterline) {
             s.type = 'poor';
         } else if(value === 0) {
             s.type = 'empty';
@@ -417,7 +419,7 @@ function Metro(canvas) {
         }
 
         if(s['elevation'] <= 0.5 && value > state.waterline) {
-            s.type = 'farm';
+            s.type = Math.random() > 0.5 ? 'farm' : 'empty';
         }
 
         // split polygons and assign buildings for polygon
@@ -426,8 +428,6 @@ function Metro(canvas) {
 
     // make buildings
     function assignBuildings4Polygon(index) {
-        let polygon = state.graphics.polygons[index];
-        let site = state.graphics.sites[index];
         let BUILDINGS_NUMBER = {
             'rich' : Math.round(Math.random() * 5 + 5),
             'medium' : Math.round(Math.random() * 10 + 10),
@@ -437,6 +437,8 @@ function Metro(canvas) {
             'empty' : 0,
             'water' : 0,
         };
+        let polygon = state.graphics.polygons[index];
+        let site = state.graphics.sites[index];
         let size = BUILDINGS_NUMBER[site.type];
         let vertices = polygon.vertices.map(v => state.vertices[v]);
         let resultArr = splitPolygon(vertices, size);
@@ -623,7 +625,6 @@ function Metro(canvas) {
     // draw polygons
     function drawPolygons() {
         state.context().save();
-
         state.graphics.polygons.forEach(p => {
             let colors = [...state.LAYERS].map(layer => layer(p.site));
             let color = combineColors(colors);
@@ -631,6 +632,21 @@ function Metro(canvas) {
             // start drawing polygon
             state.context().beginPath();
             state.context().fillStyle = color;
+
+            if(state.graphics.sites[p.index].type === 'farm') {
+                let canvasPattern = document.createElement("canvas");
+                canvasPattern.width = 10;
+                canvasPattern.height = 10;
+                let contextPattern = canvasPattern.getContext("2d");
+                // draw pattern to off-screen context
+                contextPattern.beginPath();
+                contextPattern.moveTo(0, 0);
+                contextPattern.lineTo(10, 10);
+                contextPattern.stroke();
+
+                let pattern = state.context().createPattern(canvasPattern,"repeat");
+                state.context().fillStyle = pattern;
+            }
             for(let i = 0, vertices = p.vertices; i < vertices.length; i++) {
                 let vertex = state.vertices[vertices[i]];
 
