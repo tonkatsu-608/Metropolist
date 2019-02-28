@@ -319,12 +319,12 @@ function Metro(canvas) {
         this.diagram = this.voronoi( this.sites );
 
         // relax sites in using Lloyd's algorithm
-        for(let n = 0; n < 2; n++) {
+        for(let n = 0; n < 5; n++) {
             this.sites = relax( this.diagram );
             this.diagram = this.voronoi( this.sites );
         }
 
-        this.polygons = makePolygons(this.diagram);
+        this.polygons = makePolygons(this.sites, this.diagram);
         this.triangles = this.diagram.triangles();
         this.links = this.diagram.links();
         this.edges = this.diagram.edges;
@@ -340,25 +340,35 @@ function Metro(canvas) {
         });
 
         let site = [ cx / count, cy / count];
+        site.index = index;
+        site.type = 'empty';
+        site.isBoundary = false;
         site.elevation = 0.35;
         site.affluence = 0;
         site.wall = 0;
-        // site.color = state.COLOR[Math.floor(Math.random() * 2)];
-        site.type = 'empty';
-        site.index = index;
         site.color = { R: Math.random() * 255, G: Math.random() * 255, B: Math.random() * 255 };
 
         return site;
     }
 
     // make polygons(districts)
-    function makePolygons(diagram) {
+    function makePolygons(sites, diagram) {
         return diagram.cells.map((cell, index) => {
-            let polygon = {};
-            polygon.index = index;
-            polygon.buildings = null;
+            let polygon = {
+                index: index,
+                area: null,
+                building: null,
+                vertices: null,
+                isBoundary: false,
+            };
             polygon.vertices = cell.halfedges.map(i => {
                 polygon.site = cell.site.index;
+                diagram.edges[i].forEach(edge => {
+                    if(edge.includes(20) || edge.includes(state.width() - 20) || edge.includes(state.height() -20)) {
+                        polygon.isBoundary = true;
+                        sites[index].isBoundary = true;
+                    }
+                });
 
                 let startVertex = cellHalfedgeStart(cell, diagram.edges[i]);
                 startVertex.edgeIndex = i;
@@ -382,10 +392,6 @@ function Metro(canvas) {
     }
 
     function onChangeWaterLine() {
-        // state.graphics.sites
-        //     .filter(s => s.elevation <= state.waterline)
-        //     .forEach(s => assignType4Site(s.index));
-        //
         state.graphics.sites.forEach(s => assignType4Site(s.index));
     }
 
@@ -418,8 +424,14 @@ function Metro(canvas) {
             s.type = 'water';
         }
 
+        // condition to assign type 'farm' and 'empty'
         if(s['elevation'] <= 0.5 && value > state.waterline) {
             s.type = Math.random() > 0.5 ? 'farm' : 'empty';
+        }
+
+        // boundaries can only be assigned as 'empty' or 'water'
+        if(s.isBoundary && s.type !== 'water') {
+            s.type = 'empty';
         }
 
         // split polygons and assign buildings for polygon
@@ -430,10 +442,10 @@ function Metro(canvas) {
     function assignBuildings4Polygon(index) {
         let BUILDINGS_NUMBER = {
             'rich' : Math.round(Math.random() * 5 + 5),
-            'medium' : Math.round(Math.random() * 10 + 10),
-            'poor' : Math.round(Math.random() * 15 + 15),
+            'medium' : Math.round(Math.random() * 8 + 10),
+            'poor' : Math.round(Math.random() * 10 + 15),
             'plaza' : Math.round(Math.random() * 2 + 2),
-            'farm' : Math.round(Math.random() * 15 + 15),
+            'farm' : Math.round(Math.random() * 10 + 10),
             'empty' : 0,
             'water' : 0,
         };
@@ -478,7 +490,7 @@ function Metro(canvas) {
         if(state.LAYERS.has(building)) drawBuildings();
         // drawTriangles();
         // renderBackground();
-        // drawSites(1, 'black'); // lineWidth, lineColor
+        // drawSites(2, 'black'); // lineWidth, lineColor
         // drawEdges(3, 'black'); // lineWidth, lineColor
         if(state.LAYERS.has(district)) drawContourLines(0.25, 'wall', 'black', 8, true);
 
@@ -632,8 +644,12 @@ function Metro(canvas) {
             // start drawing polygon
             state.context().beginPath();
             state.context().fillStyle = color;
-
-            if(state.graphics.sites[p.index].type === 'farm') {
+            // if(state.LAYERS.size === 1 && state.LAYERS.has(building)) {
+            //     state.context().fillStyle = 'rgb(203, 197, 185)';
+            // } else {
+            //    state.context().fillStyle = color;
+            // }
+            if(state.graphics.sites[p.index].type === 'farm' && state.LAYERS.has(building)) {
                 let canvasPattern = document.createElement("canvas");
                 canvasPattern.width = 10;
                 canvasPattern.height = 10;
