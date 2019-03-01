@@ -1,3 +1,5 @@
+'use strict';
+
 // clear array
 Array.prototype.clear = function() {
     while (this.length) {
@@ -25,28 +27,6 @@ function Metro(canvas) {
                 drawContourLines(0.75, 'elevation', 'yellow', 4, false);
             }
         });
-
-        // $('#startEdit').click( function() {
-        //     $('#startEdit').prop('hidden', true);
-        //     $('#stopEdit').prop('hidden', false);
-        //     $('.layerSelect').prop('hidden', false);
-        //     $('.elevationSwitch').prop('hidden', false);
-        //     $('.incrementSlider').prop('hidden', false);
-        //     $('.waterLineSlider').prop('hidden', false);
-        //     $('.renderContourLine').prop('hidden', false);
-        //     render();
-        // });
-        //
-        // $('#stopEdit').click( function() {
-        //     $('#stopEdit').prop('hidden', true);
-        //     $('#startEdit').prop('hidden', false);
-        //     $('.layerSelect').prop('hidden', true);
-        //     $('.elevationSwitch').prop('hidden', true);
-        //     $('.incrementSlider').prop('hidden', true);
-        //     $('.waterLineSlider').prop('hidden', true);
-        //     $('.renderContourLine').prop('hidden', true);
-        //     render();
-        // });
 
         // view
         $('#elevation-view-checkbox').on('change', function() {
@@ -212,7 +192,7 @@ function Metro(canvas) {
 
         if(value <= state.waterline) {
             // set color for river in [elevation] mode
-            return [173, 216, 230]; // lightBlue
+            return [68, 68, 122]; // lightBlue
         }
 
         return [grayScale, grayScale, grayScale];
@@ -270,7 +250,7 @@ function Metro(canvas) {
         width () { return this.canvas.width; },
         height () { return this.canvas.height; },
         context () { return this.canvas.getContext("2d"); },
-        DISTRICT_TYPES: ['rich', 'medium','poor','plaza', 'empty', 'water', 'farm'],
+        DISTRICT_TYPES: ['rich', 'medium','poor','plaza', 'empty', 'water', 'farm', 'park', 'castle', 'harbor', 'military', 'religious', 'university'],
         COLOR: [{R: 255, G: 0, B: 0}, {R: 0, G: 255, B: 0}, {R: 0, G: 0, B: 255}],
         RANDOM_COLOR: d3.scaleOrdinal().range(d3.schemeCategory20), // random color
         POLYGON_TYPE_COLOR: {
@@ -280,7 +260,7 @@ function Metro(canvas) {
             'plaza' : [146, 157, 127], // green
             'farm' : [253, 242, 205], // light yellow #cbc5b9
             'empty' : [203, 197, 185], // light yellow #cbc5b9
-            'water' : [173, 216, 230], // light blue
+            'water' : [68, 68, 122], // light blue
         },
     };
 
@@ -395,6 +375,29 @@ function Metro(canvas) {
         state.graphics.sites.forEach(s => assignType4Site(s.index));
     }
 
+    /**
+     *  @param waterline
+     *  @param elevation
+     *  @param affluence
+     *  @param desirability = (elevation + affluence) / 2
+     *
+     *  rich: 0.75 <= desirability <= 1
+     *  medium: 0.5 < desirability < 0.75
+     *  poor: waterline < desirability <= 0.5
+     *  plaza: AdjacentSites.contains(`poor` && `medium` && `rich`)
+     *  water: elevation <= waterline
+     *  farm: waterline < desirability && elevation <= 0.5
+     *  empty: value = 0 || (isBoundary && !water)
+     *
+     *  @todo
+     *  park:
+     *  castle: one building,
+     *  harbor: water near land,
+     *  military:
+     *  religious: one building,
+     *  university: 
+     */
+
     // assign type to site(polygon/district)
     function assignType4Site(index) {
         let s = state.graphics.sites[index];
@@ -426,13 +429,19 @@ function Metro(canvas) {
 
         // condition to assign type 'farm' and 'empty'
         if(s['elevation'] <= 0.5 && value > state.waterline) {
-            s.type = Math.random() > 0.5 ? 'farm' : 'empty';
+            s.type = 'farm';
+            assignAttributes4Farm(index);
+            // s.type = Math.random() > 0.5 ? 'farm' : 'empty';
         }
 
         // boundaries can only be assigned as 'empty' or 'water'
         if(s.isBoundary && s.type !== 'water') {
             s.type = 'empty';
         }
+
+        // if(s.type === 'farm') {
+        //     assignAttributes4Farm(index);
+        // }
 
         // split polygons and assign buildings for polygon
         assignBuildings4Polygon(index);
@@ -514,7 +523,7 @@ function Metro(canvas) {
             return 0;
         }
     }
-    
+
     function dragstarted() {
         if(state.EDIT_MODES.size >= 1 && !state.isAltPressed) {
             d3.contextMenu('close');
@@ -638,31 +647,36 @@ function Metro(canvas) {
     function drawPolygons() {
         state.context().save();
         state.graphics.polygons.forEach(p => {
+            let site = state.graphics.sites[p.index];
             let colors = [...state.LAYERS].map(layer => layer(p.site));
             let color = combineColors(colors);
 
             // start drawing polygon
             state.context().beginPath();
             state.context().fillStyle = color;
-            // if(state.LAYERS.size === 1 && state.LAYERS.has(building)) {
-            //     state.context().fillStyle = 'rgb(203, 197, 185)';
-            // } else {
-            //    state.context().fillStyle = color;
-            // }
-            if(state.graphics.sites[p.index].type === 'farm' && state.LAYERS.has(building)) {
+
+            if(site.type === 'farm' && state.LAYERS.has(building)) {
+                if(!site.offset || !site.rotation) return;
+
                 let canvasPattern = document.createElement("canvas");
                 canvasPattern.width = 10;
                 canvasPattern.height = 10;
                 let contextPattern = canvasPattern.getContext("2d");
+
                 // draw pattern to off-screen context
                 contextPattern.beginPath();
+                contextPattern.translate(site.offset, site.offset);
+                contextPattern.rotate(site.rotation);
+                contextPattern.translate(-site.offset, -site.offset);
                 contextPattern.moveTo(0, 0);
-                contextPattern.lineTo(10, 10);
+                contextPattern.lineTo(canvasPattern.width, canvasPattern.height);
                 contextPattern.stroke();
 
-                let pattern = state.context().createPattern(canvasPattern,"repeat");
+                let pattern = state.context().createPattern(canvasPattern, "repeat");
                 state.context().fillStyle = pattern;
             }
+
+            // loop every polygon's edge and fill it with color or pattern(only if 'farm')
             for(let i = 0, vertices = p.vertices; i < vertices.length; i++) {
                 let vertex = state.vertices[vertices[i]];
 
@@ -783,7 +797,6 @@ function Metro(canvas) {
     function drawTriangles() {
         state.context().save();
         state.context().beginPath();
-        
 
         for (let i = 0, n = state.graphics.triangles.length; i < n; ++i) {
             let triangle = state.graphics.triangles[i];
@@ -800,7 +813,7 @@ function Metro(canvas) {
     // render background
     function renderBackground() {
         state.context().save();
-        
+
         state.graphics.triangles.forEach(triangle => {
             const x1       = triangle[0][0],
                 y1         = triangle[0][1],
@@ -840,6 +853,7 @@ function Metro(canvas) {
      */
     function drawContourLines(point, layer, color, width, isWall) {
         state.context().save();
+
         if(!isWall) {
             state.context().translate(state.transform.x, state.transform.y);
             state.context().scale(state.transform.k, state.transform.k);
@@ -914,6 +928,32 @@ function Metro(canvas) {
         let y = state.transform.invertY(d3.event.layerY);
         let site = findSite(x, y);
 
+        if (site.isBoundary) {
+            return [{
+                title: 'Current Type: ' + site.type,
+            },
+                {
+                    title: 'Change type to water',
+                    action: function() {
+                        site.type = 'water';
+                        site['elevation'] = state.waterline / 2;
+                        site['affluence'] = state.waterline / 2;
+                        assignBuildings4Polygon(site.index);
+                        render();
+                    }
+                },
+                {
+                    title: 'Change type to empty',
+                    action: function() {
+                        site.type = 'empty';
+                        site['elevation'] = 0.35;
+                        site['affluence'] = 0;
+                        assignBuildings4Polygon(site.index);
+                        render();
+                    }
+                }];
+        }
+
         return [{
             title: 'Current Type: ' + site.type,
         },
@@ -956,6 +996,7 @@ function Metro(canvas) {
                 title: 'Change type to farm',
                 action: function() {
                     site.type = 'farm';
+                    assignAttributes4Farm(site.index);
                     assignBuildings4Polygon(site.index);
                     render();
                 }
@@ -974,6 +1015,8 @@ function Metro(canvas) {
                 title: 'Change type to empty',
                 action: function() {
                     site.type = 'empty';
+                    site['elevation'] = 0.35;
+                    site['affluence'] = 0;
                     assignBuildings4Polygon(site.index);
                     render();
                 }
@@ -1119,6 +1162,15 @@ function Metro(canvas) {
 
         return `rgb(${r}, ${g}, ${b})`;
     }
+
+    function assignAttributes4Farm(index) {
+        let s = state.graphics.sites[index];
+        // s.offset = Math.random() * 5 + 10;
+        // s.rotation = Math.random() > 0.5 ? Math.PI * 0.5 : Math.PI * 1;
+        s.offset = Math.random() * 5 + 5;
+        s.rotation = Math.random() * Math.PI;
+    };
+
     /*=====================================================================================================
                                              return Metro
     ======================================================================================================*/
