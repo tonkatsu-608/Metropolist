@@ -46,21 +46,21 @@
 *   clusters: JSON -> Object,
 *
 * */
-function Metro( canvas, data ) {
-    $(document).ready( function() {
-        $('#render').click( function() {
+function Metro(canvas, data) {
+    $(document).ready(function () {
+        $('#render').click(function () {
             newGraphics();
         });
 
-        $('#distance').on('change', function() {
+        $('#distance').on('change', function () {
             tick();
         });
 
-        $('#segment').on('change', function() {
+        $('#segment').on('change', function () {
             tick();
         });
 
-        $('#startWarp').click( function() {
+        $('#startWarp').click(function () {
             $('#startWarp').attr('hidden', true);
             $('#stopWarp').removeAttr('hidden', true);
             $('#dragSwitch').attr('disabled', true);
@@ -72,7 +72,7 @@ function Metro( canvas, data ) {
             startWarpMode();
         });
 
-        $('#stopWarp').click( function() {
+        $('#stopWarp').click(function () {
             $('#stopWarp').attr('hidden', true);
             $('#startWarp').removeAttr('hidden', true);
             $('#dragSwitch').removeAttr('disabled', true);
@@ -84,23 +84,23 @@ function Metro( canvas, data ) {
             stopWarpMode();
         });
 
-        $('#dragSwitch').on('change', function() {
-            if(this.checked) {
+        $('#dragSwitch').on('change', function () {
+            if (this.checked) {
                 state.isDragSelected = true; // single
             } else {
                 state.isDragSelected = false; // multiple
             }
         });
 
-        $('#simulateSwitch').on('change', function() {
-            if(this.checked) {
+        $('#simulateSwitch').on('change', function () {
+            if (this.checked) {
                 state.isSimulatingSelected = true; // drag
-                if(state.simulations.length !== 0) {
+                if (state.simulations.length !== 0) {
                     restartSimulations();
                 }
             } else {
                 state.isSimulatingSelected = false; // simulating
-                if(state.simulations.length !== 0) {
+                if (state.simulations.length !== 0) {
                     stopSimulations();
                 }
             }
@@ -125,38 +125,45 @@ function Metro( canvas, data ) {
         DRAGGED_SUBJECT: null,
         transform: d3.zoomIdentity, // scale parameter of zoom
         canvas: canvas.node() || d3.select("canvas").node(),
-        width () { return this.canvas.width; },
-        height () { return this.canvas.height; },
-        context () { return this.canvas.getContext("2d"); },
+        width() {
+            return this.canvas.width;
+        },
+        height() {
+            return this.canvas.height;
+        },
+        context() {
+            return this.canvas.getContext("2d");
+        },
         COLOR: d3.scaleOrdinal().range(d3.schemeCategory20), // random color
-        DISTRICT_TYPES: ['rich', 'medium','poor','plaza', 'empty'] // four types of districts
+        DISTRICT_TYPES: ['rich', 'medium', 'poor', 'plaza', 'empty'] // four types of districts
     };
 
     state.graphics = new Graphics();
     console.log(state.graphics);
+
     /*=====================================================================================================
                                          Constructor Functions
     ======================================================================================================*/
     function Graphics() {
         this.sites = makeSites();
         this.voronoi = d3.voronoi().extent([[20, 20], [state.width() - 20, state.height() - 20]]);
-        this.diagram = this.voronoi( this.sites );
-        this.polygons = makePolygons( this.diagram );
+        this.diagram = this.voronoi(this.sites);
+        this.polygons = makePolygons(this.diagram);
         this.edges = this.diagram.edges;
         this.links = this.diagram.links();
         this.triangles = this.diagram.triangles();
-        this.clusters = data ? data.clusters : this.polygons.map( makeCluster );
-        this.buildings = getBuildings( this.clusters );
+        this.clusters = data ? data.clusters : this.polygons.map(makeCluster);
+        this.buildings = getBuildings(this.clusters);
     }
 
     // make sites
     function makeSites() {
         let sites = [];
 
-        if(data) {
+        if (data) {
             sites = data.sites;
         } else {
-            sites = d3.range(state.N).map( () => [Math.random() * state.width(), Math.random() * state.height()] );
+            sites = d3.range(state.N).map(() => [Math.random() * state.width(), Math.random() * state.height()]);
             sites.forEach(s => {
                 s.color = null;
                 return s;
@@ -171,7 +178,7 @@ function Metro( canvas, data ) {
             let polygon = {};
             let vertices = cell.halfedges.map(i => {
                 let vertex = cellHalfedgeStart(cell, diagram.edges[i]);
-                polygon.site = { x: cell.site[0], y: cell.site[1], index: cell.site.index, color: null };
+                polygon.site = {x: cell.site[0], y: cell.site[1], index: cell.site.index, color: null};
                 vertex.x = vertex[0];
                 vertex.y = vertex[1];
                 state.vertices.push({x: vertex[0], y: vertex[1], index: i});
@@ -182,7 +189,7 @@ function Metro( canvas, data ) {
             polygon.vertices = vertices;
             polygon.bounds = bounds(vertices);
             polygon.area = Math.abs(d3.polygonArea(vertices));
-            polygon.center = { x: d3.polygonCentroid(vertices)[0], y: d3.polygonCentroid(vertices)[1] };
+            polygon.center = {x: d3.polygonCentroid(vertices)[0], y: d3.polygonCentroid(vertices)[1]};
             polygon.type = getType(polygon);
             switch (polygon.type) {
                 case 'rich':
@@ -213,9 +220,9 @@ function Metro( canvas, data ) {
             let x = Math.abs(poly.center.x - state.width() / 2);
             let y = Math.abs(poly.center.y - state.height() / 2);
             let distance = Math.sqrt(x * x + y * y);
-            distance = distance / Math.sqrt( (state.width() * state.width())/4 + (state.height() * state.height())/4 );
+            distance = distance / Math.sqrt((state.width() * state.width()) / 4 + (state.height() * state.height()) / 4);
 
-            if(distance > .6) {
+            if (distance > .6) {
                 return 'empty';
             } else {
                 return state.DISTRICT_TYPES[Math.floor(Math.random() * 4)];
@@ -228,7 +235,7 @@ function Metro( canvas, data ) {
         let number = 0,
             width = poly.bounds.width,
             height = poly.bounds.height;
-        switch (poly.type){
+        switch (poly.type) {
             case 'rich':
                 number = classifyCluster(Math.round(Math.random() * Math.round(height / 35) + 3), Math.round(Math.random() * 1) + 3);
                 break;
@@ -284,31 +291,32 @@ function Metro( canvas, data ) {
         return dots;
 
         function classifyCluster(more, less) {
-            if(poly.center.x > state.width() / 4 && poly.center.x < state.width() * 4 / 5 && poly.center.y > state.height() / 4 && poly.center.y < state.height() * 4 / 5) {
+            if (poly.center.x > state.width() / 4 && poly.center.x < state.width() * 4 / 5 && poly.center.y > state.height() / 4 && poly.center.y < state.height() * 4 / 5) {
                 return more;
             } else {
                 return less;
             }
         }
     }
-    
+
     // get buildings from clusters
     function getBuildings(clusters) {
         let buildings = [];
 
-        for(let i = 0; i < clusters.length; i ++) {
+        for (let i = 0; i < clusters.length; i++) {
             let cluster = clusters[i];
 
-            if(!cluster) return;
+            if (!cluster) return;
 
-            if(cluster.length !== 0) {
-                for(let building of cluster) {
+            if (cluster.length !== 0) {
+                for (let building of cluster) {
                     buildings.push(building);
                 }
             }
         }
         return buildings;
     }
+
     /*=====================================================================================================
                                              Main Functions
     ======================================================================================================*/
@@ -322,7 +330,7 @@ function Metro( canvas, data ) {
             .on("start", dragstarted)
             .on("drag", dragged)
             .on("end", dragended))
-        .call(d3.zoom().scaleExtent([1/2, 4]).on("zoom", zoomed))
+        .call(d3.zoom().scaleExtent([1 / 2, 4]).on("zoom", zoomed))
         .on("contextmenu", d3.contextMenu(menu));
 
     d3.select("body")
@@ -337,11 +345,11 @@ function Metro( canvas, data ) {
         // drawLink();
         // drawSites();
         // drawCenters('green');
-        drawEdges( 2, 'black');
+        drawEdges(2, 'black');
 
         // draw clusters
-        for(let k = 0; k <  state.graphics.polygons.length; k ++) {
-            for (let i = 0; i < state.graphics.clusters[k].length; i ++) {
+        for (let k = 0; k < state.graphics.polygons.length; k++) {
+            for (let i = 0; i < state.graphics.clusters[k].length; i++) {
                 let d = state.graphics.clusters[k][i];
                 state.context().save();
                 state.context().beginPath();
@@ -349,13 +357,13 @@ function Metro( canvas, data ) {
                 state.context().scale(state.transform.k, state.transform.k);
                 state.context().translate(d.x, d.y);
                 state.context().rotate(d.orientation);
-                state.context().translate( -(d.x), -(d.y));
+                state.context().translate(-(d.x), -(d.y));
                 state.context().lineWidth = 3;
-                if(d.random < .79) {
+                if (d.random < .79) {
                     state.context().rect(d.x - d.width / 2, d.y - d.height / 2, d.width, d.height);
                     state.context().globalCompositeOperation = 'destination-over';
                     state.context().rect(d.x - d.offset.x, d.y - d.offset.y, d.width - d.offset.x, d.height - d.offset.y);
-                } else if(d.random > .8) {
+                } else if (d.random > .8) {
                     state.context().rect(d.x - d.width / 2, d.y - d.height / 2, d.width, d.height);
                     state.context().globalCompositeOperation = 'destination-over';
                     state.context().arc(d.x + d.sign * d.offset.x, d.y + d.sign * d.offset.y, d.radius / 2, 0, 2 * Math.PI);
@@ -371,7 +379,7 @@ function Metro( canvas, data ) {
             }
         }
         // draw dragging circle
-        if(state.isDragSelected && state.DRAGGED_SUBJECT){
+        if (state.isDragSelected && state.DRAGGED_SUBJECT) {
             let d = state.DRAGGED_SUBJECT;
             state.context().save();
             state.context().beginPath();
@@ -380,7 +388,7 @@ function Metro( canvas, data ) {
             state.context().clearRect(d.x - d.width / 2, d.y - d.height / 2, d.width, d.height);
             state.context().translate(d.x, d.y);
             state.context().rotate(d.orientation);
-            state.context().translate( -(d.x), -(d.y));
+            state.context().translate(-(d.x), -(d.y));
             let dist = Math.max(d.offset.x, d.offset.y, Math.sqrt(sqr(d.offset.x) + sqr(d.offset.y)));
             state.context().moveTo(d.x + d.radius, d.y);
             state.context().arc(d.x, d.y, d.radius, 0, 2 * Math.PI);
@@ -393,9 +401,11 @@ function Metro( canvas, data ) {
             state.context().restore();
         }
     }
+
     /*=====================================================================================================
                                       Additional Functions
     ======================================================================================================*/
+
     // start simulations
     function startSimulations() {
         // make simulations among buildings
@@ -408,7 +418,8 @@ function Metro( canvas, data ) {
         setTimeout(() => {
             if (!state.isSimulatingSelected) {
                 stopSimulations();
-            }}, 0);
+            }
+        }, 0);
     }
 
     function newGraphics() {
@@ -426,7 +437,7 @@ function Metro( canvas, data ) {
     function stopSimulations() {
         state.simulations.forEach(s => s.stop());
     }
-    
+
     function startWarpMode() {
         stopSimulations();
         drawVertices();
@@ -471,7 +482,7 @@ function Metro( canvas, data ) {
             },
             {
                 title: 'Change type to Rich',
-                action: function() {
+                action: function () {
                     polygon.type = 'rich';
                     polygon.site.color = 'blue';
                     remakeCluster(polygon);
@@ -480,16 +491,16 @@ function Metro( canvas, data ) {
             },
             {
                 title: 'Change type to Medium',
-                action: function() {
+                action: function () {
                     polygon.type = 'medium';
                     polygon.site.color = 'red';
-                remakeCluster(polygon);
+                    remakeCluster(polygon);
                     $('#stopWarp').click();
                 }
             },
             {
                 title: 'Change type to Poor',
-                action: function() {
+                action: function () {
                     polygon.type = 'poor';
                     polygon.site.color = 'green';
                     remakeCluster(polygon);
@@ -498,7 +509,7 @@ function Metro( canvas, data ) {
             },
             {
                 title: 'Change type to Plaza',
-                action: function() {
+                action: function () {
                     polygon.type = 'plaza';
                     polygon.site.color = 'yellow';
                     remakeCluster(polygon);
@@ -507,7 +518,7 @@ function Metro( canvas, data ) {
             },
             {
                 title: 'Change type to Empty',
-                action: function() {
+                action: function () {
                     polygon.type = 'empty';
                     polygon.site.color = 'white';
                     remakeCluster(polygon);
@@ -610,24 +621,24 @@ function Metro( canvas, data ) {
             } while (quad = quad.next);
         }
 
-        force.iterations = function(_) {
+        force.iterations = function (_) {
             return arguments.length ? (iterations = +_, force) : iterations;
         };
 
-        force.initialize = function(_){
+        force.initialize = function (_) {
             n = (nodes = _).length;
             initialize();
         };
 
-        force.distanceMin = function(_) {
+        force.distanceMin = function (_) {
             return arguments.length ? (distanceMin2 = _ * _, force) : Math.sqrt(distanceMin2);
         };
 
-        force.distanceMax = function(_) {
+        force.distanceMax = function (_) {
             return arguments.length ? (distanceMax2 = _ * _, force) : Math.sqrt(distanceMax2);
         };
 
-        force.strength = function(_) {
+        force.strength = function (_) {
             return arguments.length ? (strength = typeof _ === "function" ? _ : constant(+_), initialize(), force) : strength;
         };
         return force;
@@ -642,10 +653,10 @@ function Metro( canvas, data ) {
         if (typeof radius !== "function") radius = constant(radius == null ? 1 : +radius);
 
         function force() {
-            for(let l = 0; l < iterations; l++) {
-                for(let k = 0; k < nodes.length; k++) {
+            for (let l = 0; l < iterations; l++) {
+                for (let k = 0; k < nodes.length; k++) {
                     let node = nodes[k],
-                        point = { x: node.x , y: node.y },
+                        point = {x: node.x, y: node.y},
                         polyPoints = polygon.vertices,
                         center = polygon.center,
                         radius = node.radius,
@@ -656,10 +667,10 @@ function Metro( canvas, data ) {
                         indexOfNearestSegment = 0;
 
                     // we loop over polygon's edges to check collisions
-                    for(let j = 0; j < polyPoints.length; j++) {
-                        let n = (j+1) < polyPoints.length ? (j+1) : 0;
-                        let segment1 = { x: polyPoints[j][0], y: polyPoints[j][1] };
-                        let segment2 = { x: polyPoints[n][0], y: polyPoints[n][1] };
+                    for (let j = 0; j < polyPoints.length; j++) {
+                        let n = (j + 1) < polyPoints.length ? (j + 1) : 0;
+                        let segment1 = {x: polyPoints[j][0], y: polyPoints[j][1]};
+                        let segment2 = {x: polyPoints[n][0], y: polyPoints[n][1]};
                         let vector = point2Segment(point, segment1, segment2);
                         let d = dist2Segment(point, vector);
 
@@ -669,7 +680,7 @@ function Metro( canvas, data ) {
                         indexOfNearestSegment = distances.indexOf(minDistance);
 
                         // set min distance between the point and its nearest polygon segment
-                        if( d < 20) {
+                        if (d < 20) {
                             let dvx = Math.abs(point.x - vector.x) / (d);
                             let dvy = Math.abs(point.y - vector.y) / (d);
                             node.vx += Math.sign(point.x - vector.x) * dvx;
@@ -706,15 +717,15 @@ function Metro( canvas, data ) {
             return;
         }
 
-        force.iterations = function(_) {
+        force.iterations = function (_) {
             return arguments.length ? (iterations = +_, force) : iterations;
         };
 
-        force.initialize = function(_) {
+        force.initialize = function (_) {
             n = (nodes = _).length;
         };
 
-        force.radius = function(_) {
+        force.radius = function (_) {
             return arguments.length ? (radius = typeof _ === "function" ? _ : constant(+_), force) : radius;
         };
 
@@ -747,9 +758,10 @@ function Metro( canvas, data ) {
         // return (Math.random() - 0.5) * 1e-6;
         return 0;
     }
+
     // took from d3-force/src/constant.js
-    function constant(x){
-        return function() {
+    function constant(x) {
+        return function () {
             return x;
         };
     }
@@ -776,7 +788,7 @@ function Metro( canvas, data ) {
         if (t < 0) return v;
         if (t > 1) return w;
 
-        return { x: v.x + t * (w.x - v.x), y: v.y + t * (w.y - v.y) };
+        return {x: v.x + t * (w.x - v.x), y: v.y + t * (w.y - v.y)};
     }
 
     function dist2Segment(point, vector) {
@@ -788,15 +800,16 @@ function Metro( canvas, data ) {
     }
 
     // get bounds of a specific polygon
-    function bounds( polygon ) {
-        let xs = polygon.map( p => p[0] ),
-            ys = polygon.map( p => p[1] ),
-            minX = Math.min.apply( null, xs ),
-            maxX = Math.max.apply( null, xs ),
-            minY = Math.min.apply( null, ys ),
-            maxY = Math.max.apply( null, ys );
-        return { width : maxX - minX, height : maxY - minY };
+    function bounds(polygon) {
+        let xs = polygon.map(p => p[0]),
+            ys = polygon.map(p => p[1]),
+            minX = Math.min.apply(null, xs),
+            maxX = Math.max.apply(null, xs),
+            minY = Math.min.apply(null, ys),
+            maxY = Math.max.apply(null, ys);
+        return {width: maxX - minX, height: maxY - minY};
     }
+
     /*=====================================================================================================
                                              Drag Functions
     ======================================================================================================*/
@@ -805,18 +818,21 @@ function Metro( canvas, data ) {
         let x = state.transform.invertX(d3.event.x);
         let y = state.transform.invertY(d3.event.y);
 
-        if(!state.isWarpMode) {
+        if (!state.isWarpMode) {
             // DRAGGED_SUBJECT = building
-            for(let i = 0; i < state.graphics.polygons.length; i ++){
+            for (let i = 0; i < state.graphics.polygons.length; i++) {
                 let point = [x, y];
 
                 isInside = d3.polygonContains(state.graphics.polygons[i].vertices, point);
-                if(isInside){
+                if (isInside) {
                     index = i;
                     break;
                 }
             }
-            try { sbj = state.simulations[index].find(x, y); } catch {}
+            try {
+                sbj = state.simulations[index].find(x, y);
+            } catch {
+            }
 
         } else {
             // DRAGGED_SUBJECT = vertex
@@ -824,28 +840,29 @@ function Metro( canvas, data ) {
                 let vertex = findVertex(x, y);
                 let edge = state.graphics.edges[vertex.index];
 
-                if(vertex.x === edge[0][0] && vertex.y === edge[0][1]) {
+                if (vertex.x === edge[0][0] && vertex.y === edge[0][1]) {
                     sbj = state.graphics.edges[vertex.index][0];
-                } else if(vertex.x === edge[1][0] && vertex.y === edge[1][1]) {
+                } else if (vertex.x === edge[1][0] && vertex.y === edge[1][1]) {
                     sbj = state.graphics.edges[vertex.index][1];
                 } else {
                     console.log("no sbj");
                 }
-            } catch { }
+            } catch {
+            }
         }
         state.DRAGGED_SUBJECT = sbj || null;
         console.log("DRAGGED_SUBJECT: ", state.DRAGGED_SUBJECT);
 
-        if(!state.DRAGGED_SUBJECT) d3.contextMenu('close');
+        if (!state.DRAGGED_SUBJECT) d3.contextMenu('close');
 
         return state.DRAGGED_SUBJECT;
     }
 
     function dragstarted() {
-        if(!state.isWarpMode) {
+        if (!state.isWarpMode) {
             // dragging building
             d3.contextMenu('close');
-            if(!state.isDragSelected) {
+            if (!state.isDragSelected) {
                 state.simulations[d3.event.subject.parent]
                     .force("center", d3.forceCenter(d3.event.x, d3.event.y))
                     .restart();
@@ -861,9 +878,9 @@ function Metro( canvas, data ) {
         let x = d3.event.x;
         let y = d3.event.y;
 
-        if(!state.isWarpMode) {
+        if (!state.isWarpMode) {
             // dragging building
-            if(!state.isDragSelected) {
+            if (!state.isDragSelected) {
                 state.simulations[d3.event.subject.parent]
                     .force("center", d3.forceCenter(x, y))
                     .restart();
@@ -871,7 +888,7 @@ function Metro( canvas, data ) {
             makePointInside();
             tick();
         } else {
-            if(x > 20 && x < state.width() - 20 && y > 20 && y < state.height() - 20) {
+            if (x > 20 && x < state.width() - 20 && y > 20 && y < state.height() - 20) {
                 d3.event.subject[0] = x;
                 d3.event.subject[1] = y;
                 d3.event.subject.x = x;
@@ -882,7 +899,7 @@ function Metro( canvas, data ) {
     }
 
     function dragended() {
-        if(!state.isWarpMode) {
+        if (!state.isWarpMode) {
             // dragging building
             if (!d3.event.active) state.simulations[d3.event.subject.parent].alphaTarget(0).stop();
             d3.event.subject.fx = null;
@@ -902,7 +919,7 @@ function Metro( canvas, data ) {
         let center = poly.center;
         let polyPoints = poly.vertices;
 
-        for(let j = 0; j < polyPoints.length; j++) {
+        for (let j = 0; j < polyPoints.length; j++) {
             let n = (j + 1) < polyPoints.length ? (j + 1) : 0;
             let segment1 = {x: polyPoints[j][0], y: polyPoints[j][1]};
             let segment2 = {x: polyPoints[n][0], y: polyPoints[n][1]};
@@ -940,6 +957,7 @@ function Metro( canvas, data ) {
         }
         return closest;
     }
+
     /*=====================================================================================================
                                              Draw Functions
     ======================================================================================================*/
@@ -962,15 +980,15 @@ function Metro( canvas, data ) {
             let min_height = Math.min(triangle[0][1], triangle[1][1], triangle[2][1]);
             let max_height = Math.max(triangle[0][1], triangle[1][1], triangle[2][1]);
 
-            for(let x = min_width; x < max_width; x ++) {
-                for(let y = min_height; y < max_height; y ++) {
+            for (let x = min_width; x < max_width; x++) {
+                for (let y = min_height; y < max_height; y++) {
                     let point = [x, y];
-                    if(d3.polygonContains(triangle, point)) {
+                    if (d3.polygonContains(triangle, point)) {
                         let color = barycentricValue(triangle, point);
 
                         state.context().beginPath();
                         state.context().fillStyle = color;
-                        state.context().fillRect(x,y,1,1);
+                        state.context().fillRect(x, y, 1, 1);
                     }
                 }
             }
@@ -1062,7 +1080,7 @@ function Metro( canvas, data ) {
             state.context().restore();
         }
     }
-    
+
     // draw vertices
     function drawVertices() {
         // clear rendered edges & vertices first
@@ -1093,7 +1111,7 @@ function Metro( canvas, data ) {
         });
 
         // draw DRAGGED_SUBJECT vertex
-        if(state.DRAGGED_SUBJECT) {
+        if (state.DRAGGED_SUBJECT) {
             let d = state.DRAGGED_SUBJECT;
             state.context().save();
             state.context().beginPath();
@@ -1112,14 +1130,14 @@ function Metro( canvas, data ) {
 
     // draw edges
     function drawEdges(width, color) {
-        for(let i = 0; i < state.graphics.edges.length; i ++) {
+        for (let i = 0; i < state.graphics.edges.length; i++) {
             let edge = state.graphics.edges[i];
-            if(edge && edge[0] && edge[1] ) {
-                if(edge.left && state.graphics.polygons[edge.left.index].children.length !== 0) {
+            if (edge && edge[0] && edge[1]) {
+                if (edge.left && state.graphics.polygons[edge.left.index].children.length !== 0) {
                     drawPath(edge[0], edge[1], width, color);
-                } else if(edge.right && state.graphics.polygons[edge.right.index].children.length !== 0) {
+                } else if (edge.right && state.graphics.polygons[edge.right.index].children.length !== 0) {
                     drawPath(edge[0], edge[1], width, color);
-                } else if(edge.left && edge.right && state.graphics.polygons[edge.left.index].children.length !== 0 && state.graphics.polygons[edge.right.index].children.length !== 0){
+                } else if (edge.left && edge.right && state.graphics.polygons[edge.left.index].children.length !== 0 && state.graphics.polygons[edge.right.index].children.length !== 0) {
                     drawPath(edge[0], edge[1], width, color);
                 }
             }
@@ -1130,7 +1148,7 @@ function Metro( canvas, data ) {
     function drawPath(v1, v2, width, color) {
         let count = 0;
         const DISTANCE = $('#distance').val() || 100;
-        const PATH_LENGTH = distance(v1,v2);
+        const PATH_LENGTH = distance(v1, v2);
         const SEGMENT = $('#segment').val() || 20;
         const SEGMENT_LENGTH = PATH_LENGTH / SEGMENT;
 
@@ -1139,31 +1157,31 @@ function Metro( canvas, data ) {
         state.context().translate(state.transform.x, state.transform.y);
         state.context().scale(state.transform.k, state.transform.k);
 
-        while( distance( v1, v2 ) > SEGMENT_LENGTH * 1.2 && count++ < 20 ) {
-            let points = itemsWithin( state.graphics.buildings, v1, DISTANCE );
-            let vectors = points.map( point => {
-                let diff = { x: v1.x - point.x, y: v1.y - point.y };
+        while (distance(v1, v2) > SEGMENT_LENGTH * 1.2 && count++ < 20) {
+            let points = itemsWithin(state.graphics.buildings, v1, DISTANCE);
+            let vectors = points.map(point => {
+                let diff = {x: v1.x - point.x, y: v1.y - point.y};
 
-                diff = toPolar( diff );
-                diff.r = Math.max( .05, diff.r - point.radius );
-                return toCartesian( diff );
+                diff = toPolar(diff);
+                diff.r = Math.max(.05, diff.r - point.radius);
+                return toCartesian(diff);
             });
 
             let f = (vPolar) => {
-               vPolar.r = DISTANCE / vPolar.r;
-               return vPolar;
+                vPolar.r = DISTANCE / vPolar.r;
+                return vPolar;
             };
 
             // get Vsum: the sum of building vectors.  Each building pushes v1 away from itself
-            let vSum = setLength( getSumOfVectors(vectors, f), 0.5 );
-            let vPull = setLength( {x : v2.x - v1.x, y : v2.y - v1.y }, 1 );
+            let vSum = setLength(getSumOfVectors(vectors, f), 0.5);
+            let vPull = setLength({x: v2.x - v1.x, y: v2.y - v1.y}, 1);
 
             // add a pulling vector from v1 to v2
             vSum.x += vPull.x;
             vSum.y += vPull.y;
-            vSum = setLength( vSum, SEGMENT_LENGTH );
+            vSum = setLength(vSum, SEGMENT_LENGTH);
 
-            let vTemp = { x : v1.x + vSum.x, y : v1.y + vSum.y };
+            let vTemp = {x: v1.x + vSum.x, y: v1.y + vSum.y};
 
             // draw line form v1 to vTemp
             state.context().moveTo(v1.x, v1.y);
@@ -1180,47 +1198,47 @@ function Metro( canvas, data ) {
         state.context().restore();
     }
 
-    function isIn( item, center, boxDimension ) {
+    function isIn(item, center, boxDimension) {
         let dx = Math.abs(item.x - center.x);
         let dy = Math.abs(item.y - center.y);
         return dx <= boxDimension && dy <= boxDimension;
     }
 
-    function itemsWithin( items, center, distance ) {
-        return items.filter( item => isIn( item, center, distance ) );
+    function itemsWithin(items, center, distance) {
+        return items.filter(item => isIn(item, center, distance));
     }
 
     // polar(r, theta) to Cartesian(x, y)
-    function toPolar( v ) {
+    function toPolar(v) {
         return {
-            r: Math.sqrt( v.x * v.x  + v.y * v.y ),
-            theta: Math.atan2( v.y, v.x )
+            r: Math.sqrt(v.x * v.x + v.y * v.y),
+            theta: Math.atan2(v.y, v.x)
         }
     }
 
     // Cartesian(x, y) to polar(r, theta)
-    function toCartesian( p ) {
+    function toCartesian(p) {
         return {
-            x: p.r * Math.cos( p.theta ),
-            y: p.r * Math.sin( p.theta )
+            x: p.r * Math.cos(p.theta),
+            y: p.r * Math.sin(p.theta)
         }
     }
 
-    function setLength( v, length ) {
-        let polar = toPolar( v );
+    function setLength(v, length) {
+        let polar = toPolar(v);
 
         polar.r = length;
-        return toCartesian( polar );
+        return toCartesian(polar);
     }
 
     // get sum of vectors
     function getSumOfVectors(vectors, f) {
         let vX = 0;
         let vY = 0;
-        for(v of vectors) {
-            let temp = toPolar( v );
-            let tempV = f( temp );
-            temp = toCartesian( tempV );
+        for (v of vectors) {
+            let temp = toPolar(v);
+            let tempV = f(temp);
+            temp = toCartesian(tempV);
             vX += temp.x;
             vY += temp.y;
         }
@@ -1231,8 +1249,8 @@ function Metro( canvas, data ) {
                                             onKey Functions
     ======================================================================================================*/
     function onKeyDown() {
-        if(d3.event.keyCode === 13) {
-            if($('#sites').val() !== "") {
+        if (d3.event.keyCode === 13) {
+            if ($('#sites').val() !== "") {
                 newGraphics();
             }
         }
