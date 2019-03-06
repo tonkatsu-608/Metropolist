@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="165d839a-52e7-4e96-a2de-bc583fff601e" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/public/elevation-demo.html" afterPath="$PROJECT_DIR$/public/elevation-demo.html" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change beforePath="$PROJECT_DIR$/public/javascripts/main/elevation-demo.js" afterPath="$PROJECT_DIR$/public/javascripts/main/elevation-demo.js" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
@@ -20,11 +20,9 @@
       <file leaf-file-name="elevation-demo.html" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/public/elevation-demo.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="158">
+            <state relative-caret-position="390">
               <caret line="26" column="68" lean-forward="false" selection-start-line="26" selection-start-column="68" selection-end-line="26" selection-end-column="68" />
-              <folding>
-                <element signature="n#style#0;n#canvas#0;n#div#1;n#div#0;n#div#0;n#div#0;n#body#0;n#html#0;n#!!top" expanded="true" />
-              </folding>
+              <folding />
             </state>
           </provider>
         </entry>
@@ -32,10 +30,18 @@
       <file leaf-file-name="elevation-demo.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/public/javascripts/main/elevation-demo.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="252">
-              <caret line="259" column="152" lean-forward="false" selection-start-line="259" selection-start-column="24" selection-end-line="259" selection-end-column="152" />
+            <state relative-caret-position="4540">
+              <caret line="651" column="5" lean-forward="false" selection-start-line="651" selection-start-column="5" selection-end-line="651" selection-end-column="5" />
               <folding>
-                <element signature="e#459#6466#0" expanded="false" />
+                <element signature="e#459#6416#0" expanded="false" />
+                <element signature="e#6755#7090#0" expanded="false" />
+                <element signature="e#7152#7333#0" expanded="false" />
+                <element signature="e#7401#7694#0" expanded="false" />
+                <element signature="e#7754#7886#0" expanded="false" />
+                <element signature="e#7946#8059#0" expanded="false" />
+                <element signature="n#!!block;n#Graphics#0;n#!!block;n#Metro#0" expanded="false" />
+                <element signature="n#!!block;n#getCellCentroid#0;n#!!block;n#Metro#0" expanded="false" />
+                <element signature="n#!!block;n#makePolygons#0;n#!!block;n#Metro#0" expanded="false" />
                 <element signature="n#!!block;n#menu#0;n#!!block;n#Metro#0" expanded="false" />
                 <element signature="n#!!block;n#findSite#0;n#!!block;n#Metro#0" expanded="false" />
                 <element signature="n#!!block;n#findSites#0;n#!!block;n#Metro#0" expanded="false" />
@@ -57,9 +63,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>bounds</find>
-      <find>clip</find>
-      <find>drawContourLines</find>
       <find>incrementSlider</find>
       <find>has</find>
       <find>state.LAYERS</find>
@@ -87,6 +90,9 @@
       <find>harbour</find>
       <find>military</find>
       <find>TODO</find>
+      <find>d</find>
+      <find>selectedSites</find>
+      <find>drawContourLines</find>
     </findStrings>
     <replaceStrings>
       <replace>this.state.</replace>
@@ -199,6 +205,7 @@
     </navigator>
     <panes>
       <pane id="Scope" />
+      <pane id="Scratches" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -238,7 +245,6 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -313,12 +319,13 @@
       <workItem from="1546028352063" duration="250483000" />
       <workItem from="1549672899474" duration="32057000" />
       <workItem from="1550108404426" duration="126824000" />
-      <workItem from="1551489771681" duration="37875000" />
+      <workItem from="1551489771681" duration="39227000" />
+      <workItem from="1551835755282" duration="8408000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="523679000" />
+    <option name="totallyTimeSpent" value="533439000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -361,7 +368,7 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="12" />
+      <option name="time" value="14" />
     </breakpoint-manager>
     <watches-manager />
   </component>
@@ -391,7 +398,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2589">
           <caret line="174" column="90" lean-forward="false" selection-start-line="174" selection-start-column="90" selection-end-line="174" selection-end-column="90" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -421,7 +427,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="219">
           <caret line="945" column="39" lean-forward="true" selection-start-line="945" selection-start-column="39" selection-end-line="945" selection-end-column="39" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -429,7 +434,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="266">
           <caret line="415" column="25" lean-forward="false" selection-start-line="415" selection-start-column="25" selection-end-line="415" selection-end-column="25" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -627,7 +631,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="249">
           <caret line="272" column="14" lean-forward="false" selection-start-line="272" selection-start-column="9" selection-end-line="272" selection-end-column="14" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -635,9 +638,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="205">
           <caret line="96" column="66" lean-forward="false" selection-start-line="96" selection-start-column="33" selection-end-line="96" selection-end-column="66" />
-          <folding>
-            <element signature="n#style#0;n#div#1;n#div#0;n#div#0;n#div#0;n#body#0;n#html#0;n#!!top" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -653,7 +653,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="135">
           <caret line="9" column="0" lean-forward="true" selection-start-line="9" selection-start-column="0" selection-end-line="9" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -668,7 +667,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="765">
           <caret line="51" column="10" lean-forward="true" selection-start-line="51" selection-start-column="10" selection-end-line="51" selection-end-column="10" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -683,7 +681,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="249">
           <caret line="70" column="22" lean-forward="false" selection-start-line="70" selection-start-column="17" selection-end-line="70" selection-end-column="22" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -691,7 +688,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="249">
           <caret line="386" column="33" lean-forward="false" selection-start-line="386" selection-start-column="28" selection-end-line="386" selection-end-column="33" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -713,20 +709,26 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/public/elevation-demo.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="158">
+        <state relative-caret-position="390">
           <caret line="26" column="68" lean-forward="false" selection-start-line="26" selection-start-column="68" selection-end-line="26" selection-end-column="68" />
-          <folding>
-            <element signature="n#style#0;n#canvas#0;n#div#1;n#div#0;n#div#0;n#div#0;n#body#0;n#html#0;n#!!top" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/public/javascripts/main/elevation-demo.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="252">
-          <caret line="259" column="152" lean-forward="false" selection-start-line="259" selection-start-column="24" selection-end-line="259" selection-end-column="152" />
+        <state relative-caret-position="4540">
+          <caret line="651" column="5" lean-forward="false" selection-start-line="651" selection-start-column="5" selection-end-line="651" selection-end-column="5" />
           <folding>
-            <element signature="e#459#6466#0" expanded="false" />
+            <element signature="e#459#6416#0" expanded="false" />
+            <element signature="e#6755#7090#0" expanded="false" />
+            <element signature="e#7152#7333#0" expanded="false" />
+            <element signature="e#7401#7694#0" expanded="false" />
+            <element signature="e#7754#7886#0" expanded="false" />
+            <element signature="e#7946#8059#0" expanded="false" />
+            <element signature="n#!!block;n#Graphics#0;n#!!block;n#Metro#0" expanded="false" />
+            <element signature="n#!!block;n#getCellCentroid#0;n#!!block;n#Metro#0" expanded="false" />
+            <element signature="n#!!block;n#makePolygons#0;n#!!block;n#Metro#0" expanded="false" />
             <element signature="n#!!block;n#menu#0;n#!!block;n#Metro#0" expanded="false" />
             <element signature="n#!!block;n#findSite#0;n#!!block;n#Metro#0" expanded="false" />
             <element signature="n#!!block;n#findSites#0;n#!!block;n#Metro#0" expanded="false" />
