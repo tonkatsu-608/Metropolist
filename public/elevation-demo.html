@@ -9,6 +9,11 @@
     <link rel="stylesheet" href="stylesheets/materialize.min.css">
     <link rel="stylesheet" href="stylesheets/d3-context-menu.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <style>
+        canvas {
+            width:100%;
+        }
+    </style>
 </head>
 <body>
 <nav class="grey lighten-3">
@@ -19,7 +24,7 @@
         <ul class="right hide-on-med-and-down">
             <li>
                 <div class="input-field">
-                    <input id="input-sites" type="number" value="1000"/>
+                    <input id="input-sites" type="number" value="100"/>
                     <label for="input-sites">sites</label>
                 </div>
             </li>
@@ -34,28 +39,97 @@
         <div class="row">
             <div class="col s2">
                 <ul class="right hide-on-med-and-down">
-                    <li id="startEdit">
-                        <a class="btn">edit</a>
-                    </li>
-                    <li id="stopEdit" hidden>
-                        <a class="btn red">stop edit</a>
-                    </li>
-                    <hr/>
+                    <li class="layerSelect">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>Layer</th>
+                                <th>View</th>
+                                <th>Edit</th>
+                            </tr>
+                            </thead>
 
-                    <li class="layerSelect" hidden>
-                        <div class="input-field">
-                            <select id="layerSelect">
-                                <option value="elevation" selected>elevation</option>
-                                <option value="affluence">affluence</option>
-                                <option value="desirability">desirability</option>
-                                <option value="district">district</option>
-                                <option value="wall">wall</option>
-                            </select>
-                            <label for="layerSelect">select layer</label>
-                        </div>
+                            <tbody>
+                            <tr>
+                                <td>elevation</td>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" class="filled-in" id="elevation-view-checkbox" checked/>
+                                        <span></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" class="filled-in" id="elevation-edit-checkbox"/>
+                                        <span></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>affluence</td>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" class="filled-in" id="affluence-view-checkbox"/>
+                                        <span></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" class="filled-in" id="affluence-edit-checkbox"/>
+                                        <span></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>desirability</td>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" class="filled-in" id="desirability-view-checkbox"/>
+                                        <span></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" class="filled-in" id="desirability-edit-checkbox"/>
+                                        <span></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>district</td>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" class="filled-in" id="district-view-checkbox"/>
+                                        <span></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" class="filled-in" id="district-edit-checkbox"/>
+                                        <span></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>building</td>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" class="filled-in" id="building-view-checkbox"/>
+                                        <span></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" class="filled-in" id="building-edit-checkbox"/>
+                                        <span></span>
+                                    </label>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
                     </li>
 
-                    <li class="elevationSwitch" hidden>
+                    <li class="elevationSwitch">
                         <p>elevation setting</p>
                         <div class="switch">
                             <label>
@@ -67,44 +141,34 @@
                         </div>
                     </li>
 
-                    <li class="incrementSlider" hidden>
+                    <li class="incrementSlider">
                         <p class="range-field">
                             <label for="incrementSlider">increment</label>
-                            <input type="range" id="incrementSlider" value="15" min="0" max="50"/>
+                            <input type="range" id="incrementSlider" value="15" min="0" max="100"/>
                         </p>
                     </li>
 
-                    <li class="waterLineSlider" hidden>
+                    <li class="waterLineSlider">
                         <p class="range-field">
                             <label for="waterLineSlider">water-line</label>
-                            <input type="range" id="waterLineSlider" value="5" min="0" max="10"/>
+                            <input type="range" id="waterLineSlider" value="15" min="0" max="100"/>
                         </p>
                     </li>
 
-                    <li id="renderContourLine" hidden>
+                    <li class="renderContourLine">
                         <a class="btn">contour line</a>
                     </li>
                 </ul>
             </div>
             <div class="col s10">
-                <canvas width="1190" height="720" id="myCanvas">
-                    Your browser does not support canvas
-                </canvas>
-                <!--<canvas id="oldCanvas" width="710" height="460"></canvas>-->
-            </div>
-            <div class="col s4" hidden>
-                <!--<canvas id="oldCanvas" width="710" height="460"></canvas>-->
-                <canvas width="450" height="300" id="newCanvas"></canvas>
-            </div>
-            <div class="col s4" hidden>
-                <div style="width: 450px; height:300px;" id="img"></div>
+                <canvas width="1180" height="700" id="myCanvas" style="background-color: rgb(203, 197, 185)">Your browser does not support canvas</canvas>
             </div>
         </div>
     </div>
 </div>
 </div>
 
-<!---------------------------------------Js libraries------------------------------------->
+<!---------------------------------------JS libraries------------------------------------->
 <script type="text/javascript" src="javascripts/libraries/jquery.js"></script>
 <script type="text/javascript" src="javascripts/libraries/materialize.min.js"></script>
 <script type="text/javascript" src="javascripts/libraries/jquery.Shortcut.js"></script>
@@ -112,7 +176,11 @@
 <script type="text/javascript" src="javascripts/libraries/d3-context-menu.js"></script>
 <script type="text/javascript" src="javascripts/libraries/canvas2image.js"></script>
 <script type="text/javascript" src="javascripts/libraries/html2canvas.js"></script>
-<!-----------------------------------------Main Js----------------------------------------->
+<!--------------------------------------Split-Poly JS------------------------------------->
+<script src="./javascripts/split-poly-objects/vector.js"></script>
+<script src="./javascripts/split-poly-objects/line.js"></script>
+<script src="./javascripts/split-poly-objects/polygon.js"></script>
+<!-----------------------------------------Main JS----------------------------------------->
 <script type="text/javascript" src="javascripts/main/elevation-demo.js"></script>
 <script>
     var metro = new Metro(d3.select("#myCanvas"));
