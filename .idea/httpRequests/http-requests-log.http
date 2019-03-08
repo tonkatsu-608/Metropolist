@@ -1,0 +1,38 @@
+GET https://www.google.com
+Accept: */*
+Cache-Control: no-cache
+
+<> 2019-03-06T122901.200.html
+
+###
+
+GET https://www.baidu.com
+Accept: */*
+Cache-Control: no-cache
+
+<> 2019-03-06T122845.200.html
+
+###
+
+GET https://www.baidu.com/app
+Accept: */*
+Cache-Control: no-cache
+
+<> 2019-03-06T122841.200.html
+
+###
+
+GET http://localhost:3000/app
+Accept: */*
+Cache-Control: no-cache
+
+<> 2019-03-06T122821.200.html
+
+###
+
+GET http://localhost:8080/resources
+Accept: */*
+Cache-Control: no-cache
+
+###
+

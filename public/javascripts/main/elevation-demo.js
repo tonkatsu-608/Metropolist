@@ -7,7 +7,7 @@ Array.prototype.clear = function () {
     }
 };
 
-function Metro(canvas) {
+function Metro(canvas, cursorCanvas) {
     /*=====================================================================================================
                                              Dom Functions
     ======================================================================================================*/
@@ -22,9 +22,9 @@ function Metro(canvas) {
             if (state.LAYERS.has(elevation)) {
                 render();
                 drawContourLines(state.waterline, 'elevation', 'blue', 4, false, true);
-                drawContourLines(0.25, 'elevation', 'red', 4, false);
-                drawContourLines(0.5, 'elevation', 'green', 4, false);
-                drawContourLines(0.75, 'elevation', 'yellow', 4, false);
+                drawContourLines(0.25, 'elevation', 'red', 4, false, false);
+                drawContourLines(0.5, 'elevation', 'green', 4, false, false);
+                drawContourLines(0.75, 'elevation', 'yellow', 4, false, false);
             }
         });
 
@@ -249,7 +249,8 @@ function Metro(canvas) {
         isIncreasing: true,
         isAltPressed: false,
         transform: d3.zoomIdentity, // scale parameter of zoom
-        canvas: canvas.node() || d3.select("canvas").node(),
+        canvas: canvas.node() || d3.select("#myCanvas").node(),
+        cursorCanvas: cursorCanvas.node() || d3.select("#cursorCanvas").node(),
         width() {
             return this.canvas.width;
         },
@@ -257,7 +258,10 @@ function Metro(canvas) {
             return this.canvas.height;
         },
         context() {
-            return this.canvas.getContext("2d", {antialias: true});
+            return this.canvas.getContext("2d", {antialias: true, depth: true});
+        },
+        cursorContext() {
+            return this.cursorCanvas.getContext("2d", {antialias: true, depth: true});
         },
         DISTRICT_TYPES: ['rich', 'medium', 'poor', 'plaza', 'empty', 'water', 'farm', 'park', 'castle', 'harbor', 'military', 'religious', 'university'],
         COLOR: [{R: 255, G: 0, B: 0}, {R: 0, G: 255, B: 0}, {R: 0, G: 0, B: 255}],
@@ -265,17 +269,17 @@ function Metro(canvas) {
         POLYGON_TYPE_COLOR: {
             'rich': [152, 134, 148], // purple
             'medium': [161, 147, 127], // rice
-            'poor': [141, 157, 149], // grey
+            'poor': [103, 99, 92], // grey
             'plaza': [242, 233, 58], // yellow
             'farm': [253, 242, 205], // light yellow #cbc5b9
             'empty': [203, 197, 185], // light yellow #cbc5b9
             'water': [51, 102, 153], // light blue
-            'park': [91, 181, 77], // light green
-            'castle': [153, 148, 138], // grey
-            'harbor': [103, 99, 92], // light blue
+            'park': [3, 165, 44], // light green
+            'castle': [255, 255, 255], // white
+            'harbor': [117, 123, 124], // light blue
             'military': [75, 83, 32], // army green
-            'religious': [163, 158, 124], // yellow/blue #A39E7C
-            'university': [105, 17, 28], // red
+            'religious': [255, 255, 255], // white
+            'university': [140, 20, 60], // red
         },
     };
     state.graphics = new Graphics();
@@ -283,9 +287,9 @@ function Metro(canvas) {
     render();
 
     // initialize mouse event
-    d3.select(state.canvas)
+    d3.select(state.cursorCanvas)
         .call(d3.drag()
-            .container(state.canvas)
+            .container(state.cursorCanvas)
             .subject(dragsubject)
             .on("start", dragstarted)
             .on("drag", dragged)
@@ -293,7 +297,7 @@ function Metro(canvas) {
         .on("wheel", onScroll)
         .on('mousemove', onMouseMove)
         .on("contextmenu", d3.contextMenu(menu))
-        .call(d3.zoom().scaleExtent([1 / 4, 8]).on("zoom", zoomed));
+        .call(d3.zoom().scaleExtent([1 / 2, 8]).on("zoom", zoomed));
 
     // initialize key event
     d3.select("body")
@@ -318,11 +322,10 @@ function Metro(canvas) {
             this.sites = relax(this.diagram);
             this.diagram = this.voronoi(this.sites);
         }
-
-        this.polygons = makePolygons(this.sites, this.diagram);
-        this.triangles = this.diagram.triangles();
-        this.links = this.diagram.links();
         this.edges = this.diagram.edges;
+        this.links = this.diagram.links();
+        this.triangles = this.diagram.triangles();
+        this.polygons = makePolygons(this.sites, this.diagram);
     }
 
     function getCellCentroid(cell, diagram, index) {
@@ -353,11 +356,14 @@ function Metro(canvas) {
             let polygon = {
                 index: index,
                 area: null,
+                center: null,
                 vertices: null,
                 buildings: null,
-                isBoundary: false,
                 subPolygons: null,
+                isBoundary: false,
+                edges: cell.halfedges, // an array of indexes into diagram.edges
             };
+
             polygon.vertices = cell.halfedges.map(i => {
                 polygon.site = cell.site.index;
                 diagram.edges[i].forEach(edge => {
@@ -366,6 +372,7 @@ function Metro(canvas) {
                         sites[index].isBoundary = true;
                     }
                 });
+
 
                 let startVertex = cellHalfedgeStart(cell, diagram.edges[i]);
                 startVertex.edgeIndex = i;
@@ -381,7 +388,9 @@ function Metro(canvas) {
 
                 return startVertex.vertexIndex;
             });
+
             let vertices = polygon.vertices.map(v => state.vertices[v]);
+            polygon.center = d3.polygonCentroid(vertices);
             polygon.area = Math.abs(d3.polygonArea(vertices));
 
             return polygon;
@@ -391,6 +400,7 @@ function Metro(canvas) {
     // render
     function render() {
         state.context().save();
+        state.cursorContext().clearRect(0, 0, state.width(), state.height());
         state.context().clearRect(0, 0, state.width(), state.height());
         state.context().translate(state.transform.x, state.transform.y);
         state.context().scale(state.transform.k, state.transform.k);
@@ -406,16 +416,20 @@ function Metro(canvas) {
         // drawSites(2, 'black'); // lineWidth, lineColor
         // drawEdges(3, 'black'); // lineWidth, lineColor
 
+        /* draw docks */
+        if (state.LAYERS.has(building)) drawDock('white', 'black', 2); // bgColor, edgeColor, lineWidth
+
         /* draw walls */
-        if (state.LAYERS.has(district)) drawContourLines(0.25, 'wall', 'black', 8, true);
+        if (state.LAYERS.has(district)) drawContourLines(0.25, 'wall', 'black', 8, true, false);
 
         state.context().restore();
     }
 
     function newGraphics() {
         state.vertices.clear();
-        state.N = $('#input-sites').val() || 100;
+        state.isAltPressed = true;
         state.currentCastle = null;
+        state.N = $('#input-sites').val() || 100;
         state.graphics = new Graphics();
 
         render();
@@ -450,11 +464,11 @@ function Metro(canvas) {
         let adjacentTypesMap = new Map();
         let adjacentTypesSet = getAdjacentTypes(s.index); // get all adjacent types -> Set<>
 
-        if (value >= 0.75 && value <= 1) {
+        if (value >= 0.8 && value <= 1) {
             s.type = 'rich';
-        } else if (value < 0.75 && value > 0.5) {
+        } else if (value < 0.8 && value > 0.6) {
             s.type = 'medium';
-        } else if (value <= 0.5 && value > state.waterline) {
+        } else if (value <= 0.6 && value > state.waterline) {
             s.type = 'poor';
         } else if (value === 0) {
             s.type = 'empty';
@@ -501,10 +515,9 @@ function Metro(canvas) {
         }
 
         // assign type `farm` and `empty`
-        if (s['elevation'] <= 0.5 && value > state.waterline) {
+        if (value <= 0.45 && value > state.waterline) {
             if (!adjacentTypesSet.has('water')) {
                 s.type = 'farm';
-                assignAttributes4Farm(index);
             } else {
                 s.type = 'empty';
             }
@@ -512,11 +525,11 @@ function Metro(canvas) {
 
         // boundaries can only be assigned as 'empty' or 'water'
         if (s.isBoundary && s.type !== 'water') {
-            s.type = 'empty';
+            s.type = Math.random() > 0.5 ? 'empty' : 'farm';
         }
 
         // randomly assign `religious`
-        if (!s.isBoundary && s.type !== 'water') {
+        if (!s.isBoundary && s.type !== 'water' && Number(getAlltypes().get('religious')) <= 2.5 / 100 * state.N) {
             if (Math.random() > 0.99) {
                 s.type = 'religious';
             }
@@ -545,12 +558,12 @@ function Metro(canvas) {
             'farm': Math.round(Math.random() * 10 + 10),
             'empty': 0,
             'water': 0,
-            'harbor': 0, // dock
             'park': 0,
-            'castle': Math.round(Math.random() * 2 + 2), // 1
-            'military': Math.round(Math.random() * 5 + 5),
+            'castle': 0, // 1
+            'military': Math.round(Math.random() * 2 + 6),
+            'harbor': Math.round(Math.random() * 4 + 8), // docks
             'religious': Math.round(Math.random() * 2 + 4),
-            'university': Math.round(Math.random() * 2 + 4), // UWL red
+            'university': Math.round(Math.random() * 1 + 5), // UWL red
         };
         let polygon = state.graphics.polygons[index],
             site = state.graphics.sites[index],
@@ -563,7 +576,7 @@ function Metro(canvas) {
         polygon.buildings = resultArr;
 
         if (site.type === 'farm') {
-            size = Math.round(Math.random() * 2 + 4);
+            size = Math.round(Math.random() * 4 + 2);
             polygon.subPolygons = splitPolygon(vertices, size, 0.5);
             polygon.buildings = Math.random() > 0.9 ? [polygon.buildings.pop()] : [];
         } else {
@@ -571,8 +584,6 @@ function Metro(canvas) {
 
             if (site.type === 'plaza') {
                 polygon.buildings = Math.random() > 0.5 ? [polygon.buildings.pop(), polygon.buildings.pop()] : [polygon.buildings.pop()];
-            } else if (site.type === 'castle') {
-                polygon.buildings = [polygon.buildings.pop()];
             } else if (site.type === 'military') {
                 resultArr = splitPolygon(vertices, size, 0.5);
                 resultArr.forEach(r => r.color = state.POLYGON_TYPE_COLOR[site.type]);
@@ -638,7 +649,7 @@ function Metro(canvas) {
             .filter(s => s.type === 'military')
             .forEach(s => {
                 let adjacentTypesSet = getAdjacentTypes(s.index); // get all adjacent types
-                if(!adjacentTypesSet.has('castle')) {
+                if (!adjacentTypesSet.has('castle')) {
                     assignType4Site(s.index);
                 }
             });
@@ -748,8 +759,9 @@ function Metro(canvas) {
     function onMouseMove() {
         if (!state.isAltPressed && state.EDIT_MODES.size >= 1) {
             state.pointer = d3.mouse(this);
-            render();
-            if (!(state.EDIT_MODES.has('building') && state.EDIT_MODES.size === 1)) drawCursor('red');
+            if (!(state.EDIT_MODES.has('building') && state.EDIT_MODES.size === 1)) {
+                drawCursor('red');
+            }
         }
     }
 
@@ -760,8 +772,9 @@ function Metro(canvas) {
 
             if (state.radius < 15) state.radius = 15;
             if (state.radius > 700) state.radius = 700;
-            render();
-            if (!(state.EDIT_MODES.has('building') && state.EDIT_MODES.size === 1)) drawCursor('red');
+            if (!(state.EDIT_MODES.has('building') && state.EDIT_MODES.size === 1)) {
+                drawCursor('red');
+            }
         }
     }
 
@@ -784,9 +797,7 @@ function Metro(canvas) {
     }
 
     function onKeyUp() {
-        if (state.isAltPressed) {
-            state.isAltPressed = false;
-        }
+        state.isAltPressed = state.isAltPressed ? false : true;
     }
 
     /*=====================================================================================================
@@ -795,20 +806,33 @@ function Metro(canvas) {
 
     /**
      * Creates a canvas filled with a 45-degree pinstripe.
-     * @returns the filled {HTMLCanvasElement}
+     * @returns {HTMLCanvasElement}
      */
     function makeDiagonalPattern(site) {
         let canvasPattern = document.createElement("canvas");
-        canvasPattern.width = site.patternWidth;
-        canvasPattern.height = site.patternHeight;
+        canvasPattern.width = site.size;
+        canvasPattern.height = site.size;
         let contextPattern = canvasPattern.getContext("2d", {antialias: true, depth: false});
 
         // draw pattern to off-screen context
         contextPattern.beginPath();
-        state.context().fillStyle = 'black';
-        contextPattern.translate(site.patternWidth / 2, site.patternHeight / 2);
+
+        contextPattern.translate(site.size / 2, site.size / 2);
         contextPattern.rotate(site.rotation);
-        contextPattern.translate(-site.patternWidth / 2, -site.patternHeight / 2);
+        contextPattern.translate(-site.size / 2, -site.size / 2);
+        // for(let l = 0; l <= site.size; l += site.size / 10) {
+        //     contextPattern.moveTo(l, 0);
+        //     contextPattern.lineTo(l, site.size);
+        // }
+
+        // if(site.rotation === 0) {
+        //     contextPattern.moveTo(0, 0);
+        //     contextPattern.lineTo(canvasPattern.width, canvasPattern.height);
+        // } else if(site.rotation === 1) {
+        //     contextPattern.moveTo(canvasPattern.width, 0);
+        //     contextPattern.lineTo(0, canvasPattern.height);
+        // }
+
         contextPattern.moveTo(0, 0);
         contextPattern.lineTo(canvasPattern.width, canvasPattern.height);
         contextPattern.stroke();
@@ -827,30 +851,46 @@ function Metro(canvas) {
 
             // start drawing polygon
             state.context().beginPath();
-            state.context().fillStyle = color;
             // state.context().fillStyle = site.type === 'water' ? 'rgb(51, 102, 153)' : 'rgb(203, 197, 185)';
 
             if (site.type === 'farm' && state.LAYERS.has(building)) {
-                if (!site.patternWidth || !site.patternWidth || !site.rotation) return;
-
-                let pattern = state.context().createPattern(makeDiagonalPattern(site), "repeat");
-                state.context().fillStyle = pattern;
                 p.subPolygons.forEach(sub => {
-                    if (!sub.center) return;
 
+                    if (!sub.center) return;
+                    let pattern = state.context().createPattern(makeDiagonalPattern(sub), "repeat");
                     state.context().translate(sub.center[0], sub.center[1]);
                     state.context().scale(0.8, 0.8);
                     state.context().translate(-sub.center[0], -sub.center[1]);
+                    state.context().fillStyle = pattern;
                     drawPolygon(sub);
+                    state.context().closePath();
+                    state.context().fill();
                     state.context().setTransform(1, 0, 0, 1, 0, 0);
                     state.context().translate(state.transform.x, state.transform.y);
                     state.context().scale(state.transform.k, state.transform.k);
                 });
-            } else {
+
+            } else if (site.type === 'castle' && state.LAYERS.has(building)) {
+                state.context().translate(p.center[0], p.center[1]);
+                state.context().scale(0.4, 0.4);
+                state.context().translate(-p.center[0], -p.center[1]);
+                state.context().fillStyle = color;
+                state.context().lineWidth = 4;
+                state.context().strokeStyle = 'black';
                 drawPolygon(convert2Vertices(p.vertices));
+                state.context().closePath();
+                state.context().stroke();
+                state.context().fill();
+                state.context().setTransform(1, 0, 0, 1, 0, 0);
+                state.context().translate(state.transform.x, state.transform.y);
+                state.context().scale(state.transform.k, state.transform.k);
+
+            } else {
+                state.context().fillStyle = color;
+                drawPolygon(convert2Vertices(p.vertices));
+                state.context().closePath();
+                state.context().fill();
             }
-            state.context().closePath();
-            state.context().fill();
         });
         state.context().restore();
     }
@@ -878,10 +918,8 @@ function Metro(canvas) {
                 if (buildings === 0 || buildings.length === 0 || !buildings.center) return;
                 // start drawing building
                 state.context().beginPath();
-                state.context().translate(state.transform.x, state.transform.y);
-                state.context().scale(state.transform.k, state.transform.k);
                 state.context().translate(buildings.center[0], buildings.center[1]);
-                state.context().scale(0.9, 0.9);
+                state.context().scale(0.8, 0.8);
                 state.context().translate(-buildings.center[0], -buildings.center[1]);
                 state.context().lineWidth = 1;
                 state.context().strokeStyle = 'black';
@@ -892,6 +930,8 @@ function Metro(canvas) {
                 state.context().stroke();
                 state.context().fill();
                 state.context().setTransform(1, 0, 0, 1, 0, 0);
+                state.context().translate(state.transform.x, state.transform.y);
+                state.context().scale(state.transform.k, state.transform.k);
             });
         });
         state.context().restore();
@@ -899,29 +939,62 @@ function Metro(canvas) {
 
     // draw circle following mouse
     function drawCursor(color) {
+        if (!state.cursorCanvas) return;
+
+        state.cursorContext().clearRect(0, 0, state.width(), state.height());
+        state.cursorContext().beginPath();
+
+        state.cursorContext().moveTo(state.pointer[0], state.pointer[1]);
+        state.cursorContext().arc(state.pointer[0], state.pointer[1], state.radius, 0, 2 * Math.PI, false);
+        state.cursorContext().arc(state.pointer[0], state.pointer[1], state.radius / 2, 0, 2 * Math.PI, false);
+
+        state.cursorContext().moveTo(state.pointer[0], state.pointer[1]);
+        state.cursorContext().lineTo(state.pointer[0] - state.radius, state.pointer[1]);
+
+        state.cursorContext().moveTo(state.pointer[0], state.pointer[1] - state.radius);
+        state.cursorContext().lineTo(state.pointer[0], state.pointer[1] + state.radius);
+
+        state.cursorContext().lineWidth = 1.5;
+        state.cursorContext().strokeStyle = color;
+        state.cursorContext().stroke();
+    }
+
+    // draw dock
+    function drawDock(bgColor, edgeColor, lineWidth) {
+        if (!getAlltypes().get('harbor')) return;
+
         state.context().save();
         state.context().beginPath();
+        state.graphics.sites
+            .filter(s => s.type === 'harbor')
+            .forEach(s => {
+                let poly = state.graphics.polygons[s.index];
 
-        state.context().moveTo(state.pointer[0], state.pointer[1]);
-        state.context().arc(state.pointer[0], state.pointer[1], state.radius, 0, 2 * Math.PI, false);
-        state.context().arc(state.pointer[0], state.pointer[1], state.radius / 2, 0, 2 * Math.PI, false);
+                convert2Edges(poly.edges).forEach(e => {
+                    let left = e.left ? state.graphics.sites[e.left.index] : null;
+                    let right = e.right ? state.graphics.sites[e.right.index] : null;
 
-        state.context().moveTo(state.pointer[0], state.pointer[1]);
-        state.context().lineTo(state.pointer[0] - state.radius, state.pointer[1]);
+                    if (left.type === 'water' || right.type === 'water') {
+                        // edge next to water
 
-        state.context().moveTo(state.pointer[0], state.pointer[1] - state.radius);
-        state.context().lineTo(state.pointer[0], state.pointer[1] + state.radius);
+                        var midX = (e[0][0] + e[1][0]) / 2;
+                        var midY = (e[0][1] + e[1][1]) / 2;
 
-        state.context().lineWidth = 1.5;
-        state.context().strokeStyle = color;
-        state.context().stroke();
+                        state.context().moveTo(midX, midY);
+                        state.context().arc(midX, midY, 10, 0, 2 * Math.PI, false);
+
+                        state.context().fillStyle = bgColor;
+                        state.context().lineWidth = lineWidth;
+                        state.context().strokeStyle = edgeColor;
+                        state.context().fill();
+                        state.context().stroke();
+                    }
+                });
+            });
         state.context().restore();
     }
 
-    /**
-     * rgba(0, 0, 0, 1) represents black
-     * rgba(0, 0, 0, 0) represents white
-     */
+    // draw sites
     function drawSites(radius, color) {
         state.context().save();
         state.context().beginPath();
@@ -1109,34 +1182,49 @@ function Metro(canvas) {
 
     // context menu event
     function menu() {
-        if (!state.EDIT_MODES.has('district') && !state.EDIT_MODES.has('building')) d3.select('.d3-context-menu').remove();
+        // condition of closing
+        if (!state.EDIT_MODES.has('district') && !state.EDIT_MODES.has('building')) {
+            d3.select('.d3-context-menu').remove();
+        }
         let x = state.transform.invertX(d3.event.layerX);
         let y = state.transform.invertY(d3.event.layerY);
         let site = findSite(x, y);
+        let percentMap = getAlltypes();
 
         if (site.isBoundary) {
             return [{
                 title: 'Current Type: ' + site.type,
             },
                 {
-                    title: 'Change type to water',
+                    title: `water: ${percentMap.get('water') || 0} / ${state.N}`,
                     action: function () {
                         site.type = 'water';
                         site['elevation'] = state.waterline / 2;
                         site['affluence'] = state.waterline / 2;
                         assignBuildings4Polygon(site.index);
                         render();
-                    }
+                    },
+                    disabled: site.type === 'water' ? true : false
                 },
                 {
-                    title: 'Change type to empty',
+                    title: `farm: ${percentMap.get('farm') || 0} / ${state.N}`,
+                    action: function () {
+                        site.type = 'farm';
+                        assignBuildings4Polygon(site.index);
+                        render();
+                    },
+                    disabled: site.type === 'farm' ? true : false
+                },
+                {
+                    title: `empty: ${percentMap.get('empty') || 0} / ${state.N}`,
                     action: function () {
                         site.type = 'empty';
                         site['elevation'] = 0.35;
                         site['affluence'] = 0;
                         assignBuildings4Polygon(site.index);
                         render();
-                    }
+                    },
+                    disabled: site.type === 'empty' ? true : false
                 }];
         }
 
@@ -1147,115 +1235,125 @@ function Metro(canvas) {
                 divider: true
             },
             {
-                title: 'Change type to rich',
+                title: `rich: ${percentMap.get('rich') || 0} / ${state.N}`,
                 action: function () {
                     site.type = 'rich';
                     assignBuildings4Polygon(site.index);
                     render();
-                }
+                },
+                disabled: site.type === 'rich' ? true : false
             },
             {
-                title: 'Change type to medium',
+                title: `medium: ${percentMap.get('medium') || 0} / ${state.N}`,
                 action: function () {
                     site.type = 'medium';
                     assignBuildings4Polygon(site.index);
                     render();
-                }
+                },
+                disabled: site.type === 'medium' ? true : false
             },
             {
-                title: 'Change type to poor',
+                title: `poor: ${percentMap.get('poor') || 0} / ${state.N}`,
                 action: function () {
                     site.type = 'poor';
                     assignBuildings4Polygon(site.index);
                     render();
-                }
+                },
+                disabled: site.type === 'poor' ? true : false
             },
             {
-                title: 'Change type to plaza',
+                title: `plaza: ${percentMap.get('plaza') || 0} / ${state.N}`,
                 action: function () {
                     site.type = 'plaza';
                     assignBuildings4Polygon(site.index);
                     render();
-                }
+                },
+                disabled: site.type === 'plaza' ? true : false
             },
             {
-                title: 'Change type to park',
+                title: `park: ${percentMap.get('park') || 0} / ${state.N}`,
                 action: function () {
                     site.type = 'park';
                     assignBuildings4Polygon(site.index);
                     render();
-                }
+                },
+                disabled: site.type === 'park' ? true : false
             },
+            // {
+            //     title: `university: ${percentMap.get('university') || 0} / ${state.N}`,
+            //     action: function () {
+            //         site.type = 'university';
+            //         assignBuildings4Polygon(site.index);
+            //         render();
+            //     },
+            //     disabled: site.type === 'university' ? true : false
+            // },
+            // {
+            //     title: `castle: ${percentMap.get('castle') || 0} / ${state.N}`,
+            //     action: function () {
+            //         site.type = 'castle';
+            //         assignBuildings4Polygon(site.index);
+            //         render();
+            //     },
+            //     disabled: site.type === 'castle' ? true : false
+            // },
+            // {
+            //     title: `military: ${percentMap.get('military') || 0} / ${state.N}`,
+            //     action: function () {
+            //         site.type = 'military';
+            //         assignBuildings4Polygon(site.index);
+            //         render();
+            //     },
+            //     disabled: site.type === 'military' ? true : false
+            // },
             {
-                title: 'Change type to university',
-                action: function () {
-                    site.type = 'university';
-                    assignBuildings4Polygon(site.index);
-                    render();
-                }
-            },
-            {
-                title: 'Change type to castle',
-                action: function () {
-                    site.type = 'castle';
-                    assignBuildings4Polygon(site.index);
-                    render();
-                }
-            },
-            {
-                title: 'Change type to military',
-                action: function () {
-                    site.type = 'military';
-                    assignBuildings4Polygon(site.index);
-                    render();
-                }
-            },
-            {
-                title: 'Change type to religious',
+                title: `religious: ${percentMap.get('religious') || 0} / ${state.N}`,
                 action: function () {
                     site.type = 'religious';
                     assignBuildings4Polygon(site.index);
                     render();
-                }
+                },
+                disabled: site.type === 'religious' || Number(getAlltypes().get('religious')) > 2.5 / 100 * state.N ? true : false
             },
             {
-                title: 'Change type to farm',
+                title: `farm: ${percentMap.get('farm') || 0} / ${state.N}`,
                 action: function () {
                     site.type = 'farm';
-                    assignAttributes4Farm(site.index);
                     assignBuildings4Polygon(site.index);
                     render();
-                }
+                },
+                disabled: site.type === 'farm' ? true : false
             },
             {
-                title: 'Change type to water',
+                title: `water: ${percentMap.get('water') || 0} / ${state.N}`,
                 action: function () {
                     site.type = 'water';
                     site['elevation'] = state.waterline / 2;
                     site['affluence'] = state.waterline / 2;
                     assignBuildings4Polygon(site.index);
                     render();
-                }
+                },
+                disabled: site.type === 'water' ? true : false
             },
             {
-                title: 'Change type to harbor',
+                title: `harbor: ${percentMap.get('harbor') || 0} / ${state.N}`,
                 action: function () {
                     site.type = 'harbor';
-                    site['elevation'] = state.waterline / 2;
-                    site['affluence'] = state.waterline / 2;
                     assignBuildings4Polygon(site.index);
                     render();
-                }
+                },
+                disabled: site.type === 'harbor' ? true : false
             },
             {
-                title: 'Change type to empty',
+                title: `empty: ${percentMap.get('empty') || 0} / ${state.N}`,
                 action: function () {
                     site.type = 'empty';
                     site['elevation'] = 0.35;
                     site['affluence'] = 0;
                     assignBuildings4Polygon(site.index);
                     render();
-                }
+                },
+                disabled: site.type === 'empty' ? true : false
             }];
     };
 
@@ -1276,10 +1374,21 @@ function Metro(canvas) {
             let poly1 = splitResult.poly1.poly.arrVector.map(p => [p.x, p.y]);
             let poly2 = splitResult.poly2.poly.arrVector.map(p => [p.x, p.y]);
 
+            poly1.size = 10;
+            poly2.size = 10;
+
             poly1.center = d3.polygonCentroid(poly1);
             poly2.center = d3.polygonCentroid(poly2);
-            subPoly.push(poly1);
-            subPoly.push(poly2);
+
+            // poly1.rotation = Math.random() * Math.PI;
+            // poly2.rotation = Math.random() * Math.PI;
+
+            // poly1.rotation = Math.random() > 0.5 ? 0 : 1;
+            // poly2.rotation = Math.random() < 0.5 ? 0 : 1;
+            poly1.rotation = Math.random() > 0.5 ? Math.PI * 0.5 : Math.PI * 1;
+            poly2.rotation = Math.random() > 0.5 ? Math.PI * 0.5 : Math.PI * 1;
+
+            subPoly.push(poly1, poly2);
         }
         return subPoly;
     }
@@ -1407,16 +1516,6 @@ function Metro(canvas) {
         return `rgb(${r}, ${g}, ${b})`;
     }
 
-    // assign offset and rotation to `farm`
-    function assignAttributes4Farm(index) {
-        let s = state.graphics.sites[index];
-        s.patternWidth = 10;
-        s.patternHeight = 10;
-        // s.offset = Math.random() * 4 + 8;
-        // s.rotation = Math.PI * (Math.random() * 0.5 + 0.5);
-        s.rotation = Math.random() > 0.5 ? Math.PI * 0.5 : Math.PI * 1;
-    };
-
     // clear polygon's subPolygons
     function clearSubPolygons(polygon) {
         if (!polygon.subPolygons) return;
@@ -1424,18 +1523,43 @@ function Metro(canvas) {
         polygon.subPolygons = null;
     }
 
-    // convert vertex-index to vertex
+    // convert indexes of vertex to vertices
     function convert2Vertices(indexes) {
         return indexes.map(i => state.vertices[i]);
+    }
+
+    // convert edge-index to edge
+    function convert2Edges(indexes) {
+        return indexes.map(i => state.graphics.edges[i]);
     }
 
     // get adjacent sites' type
     function getAdjacentTypes(index) {
         let adjacentTypesSet = new Set();
-
         findAdjacentSites(index).forEach(s => adjacentTypesSet.add(state.graphics.sites[s].type));
 
         return adjacentTypesSet;
+    }
+
+    /**
+     * get all sites' type
+     * @returns {Map<any, any>}
+     */
+    function getAlltypes() {
+        let map = new Map(), n = state.graphics.sites.length;
+
+        state.DISTRICT_TYPES.forEach(type => {
+            state.graphics.sites.forEach(s => {
+                if (type !== s.type) return;
+                if (map.has(type)) {
+                    map.set(type, map.get(type) + 1);
+                } else {
+                    map.set(type, 1);
+                }
+            });
+        });
+
+        return map;
     }
 
     /*=====================================================================================================

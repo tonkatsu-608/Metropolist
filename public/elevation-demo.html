@@ -3,15 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <title>Metropolist</title>
-    <link rel="shortcut icon" type="image/x-icon" href="images/metro.ico" media="screen" />
-    <link rel="Bookmark" href="images/metro.ico" />
+    <link rel="shortcut icon" type="image/x-icon" href="images/metro.ico" media="screen"/>
+    <link rel="Bookmark" href="images/metro.ico"/>
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link rel="stylesheet" href="stylesheets/materialize.min.css">
     <link rel="stylesheet" href="stylesheets/d3-context-menu.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <style>
         canvas {
-            width:100%;
+            width: 100%;
+        }
+
+        #myCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            background-color: rgb(203, 197, 185);
+        }
+
+        #cursorCanvas {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            z-index: 1;
         }
     </style>
 </head>
@@ -19,7 +34,8 @@
 <nav class="grey lighten-3">
     <div class="nav-wrapper">
         <a href="#" class="brand-logo" style="max-height: 80px;">
-            <img id="test" src="https://fontmeme.com/permalink/180923/7d95b1af3bc6a2edd6b5c31370e73e2d.png" height="60%" width="60%" alt="pixel-fonts" border="0">
+            <img id="test" src="https://fontmeme.com/permalink/180923/7d95b1af3bc6a2edd6b5c31370e73e2d.png" height="60%"
+                 width="60%" alt="pixel-fonts" border="0">
         </a>
         <ul class="right hide-on-med-and-down">
             <li>
@@ -160,8 +176,14 @@
                     </li>
                 </ul>
             </div>
-            <div class="col s10">
-                <canvas width="1180" height="700" id="myCanvas" style="background-color: rgb(203, 197, 185)">Your browser does not support canvas</canvas>
+            <div class="col s10" style="position: relative;">
+                <canvas width="1180" height="700" id="myCanvas">Your
+                    browser does not support canvas
+                </canvas>
+                <canvas width="1180" height="700" id="cursorCanvas">Your
+                    browser does not support canvas
+                </canvas>
+
             </div>
         </div>
     </div>
@@ -183,7 +205,7 @@
 <!-----------------------------------------Main JS----------------------------------------->
 <script type="text/javascript" src="javascripts/main/elevation-demo.js"></script>
 <script>
-    var metro = new Metro(d3.select("#myCanvas"));
+    var metro = new Metro(d3.select("#myCanvas"), d3.select("#cursorCanvas"));
 </script>
 </body>
 </html>
