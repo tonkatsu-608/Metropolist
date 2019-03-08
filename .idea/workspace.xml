@@ -2,8 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="165d839a-52e7-4e96-a2de-bc583fff601e" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/public/elevation-demo.html" afterPath="$PROJECT_DIR$/public/elevation-demo.html" />
       <change beforePath="$PROJECT_DIR$/public/javascripts/main/elevation-demo.js" afterPath="$PROJECT_DIR$/public/javascripts/main/elevation-demo.js" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
@@ -34,8 +32,8 @@
       <file leaf-file-name="elevation-demo.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/public/javascripts/main/elevation-demo.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="395">
-              <caret line="977" column="39" lean-forward="false" selection-start-line="977" selection-start-column="39" selection-end-line="977" selection-end-column="39" />
+            <state relative-caret-position="385">
+              <caret line="990" column="0" lean-forward="false" selection-start-line="990" selection-start-column="0" selection-end-line="990" selection-end-column="0" />
               <folding>
                 <element signature="e#473#6451#0" expanded="false" />
                 <element signature="n#!!block;n#drawSites#0;n#!!block;n#Metro#0" expanded="false" />
@@ -43,6 +41,26 @@
                 <element signature="n#!!block;n#drawTriangles#0;n#!!block;n#Metro#0" expanded="false" />
                 <element signature="n#!!block;n#renderBackground#0;n#!!block;n#Metro#0" expanded="false" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="d3.v4.js" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/public/javascripts/libraries/d3.v4.js">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="236">
+              <caret line="11096" column="38" lean-forward="false" selection-start-line="11096" selection-start-column="33" selection-end-line="11096" selection-end-column="38" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="elevation-1.js" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/public/javascripts/main/elevation-1.js">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="276">
+              <caret line="711" column="0" lean-forward="true" selection-start-line="711" selection-start-column="0" selection-end-line="711" selection-end-column="0" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -59,9 +77,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>new</find>
-      <find>input-sites</find>
-      <find>university</find>
       <find>park</find>
       <find>wall</find>
       <find>harbour</find>
@@ -89,6 +104,9 @@
       <find>rotate</find>
       <find>drawCursor</find>
       <find>cursorContext</find>
+      <find>drawDock</find>
+      <find>sqr</find>
+      <find>polygonContains</find>
     </findStrings>
     <replaceStrings>
       <replace>this.state.</replace>
@@ -439,7 +457,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="567613000" />
+    <option name="totallyTimeSpent" value="571718000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -546,14 +564,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="173">
           <caret line="2344" column="0" lean-forward="false" selection-start-line="2344" selection-start-column="0" selection-end-line="2344" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/public/javascripts/main/elevation-1.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="441">
-          <caret line="211" column="29" lean-forward="false" selection-start-line="211" selection-start-column="23" selection-end-line="211" selection-end-column="29" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -813,14 +823,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/public/javascripts/libraries/d3.v4.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="266">
-          <caret line="16592" column="16" lean-forward="false" selection-start-line="16592" selection-start-column="16" selection-end-line="16592" selection-end-column="16" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/public/elevation-demo.html">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="199">
@@ -847,10 +849,26 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/public/javascripts/main/elevation-1.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="276">
+          <caret line="711" column="0" lean-forward="true" selection-start-line="711" selection-start-column="0" selection-end-line="711" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/public/javascripts/libraries/d3.v4.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="236">
+          <caret line="11096" column="38" lean-forward="false" selection-start-line="11096" selection-start-column="33" selection-end-line="11096" selection-end-column="38" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/public/javascripts/main/elevation-demo.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="395">
-          <caret line="977" column="39" lean-forward="false" selection-start-line="977" selection-start-column="39" selection-end-line="977" selection-end-column="39" />
+        <state relative-caret-position="385">
+          <caret line="990" column="0" lean-forward="false" selection-start-line="990" selection-start-column="0" selection-end-line="990" selection-end-column="0" />
           <folding>
             <element signature="e#473#6451#0" expanded="false" />
             <element signature="n#!!block;n#drawSites#0;n#!!block;n#Metro#0" expanded="false" />

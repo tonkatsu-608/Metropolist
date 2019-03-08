@@ -417,7 +417,7 @@ function Metro(canvas, cursorCanvas) {
         // drawEdges(3, 'black'); // lineWidth, lineColor
 
         /* draw docks */
-        if (state.LAYERS.has(building)) drawDock('white', 'black', 2); // bgColor, edgeColor, lineWidth
+        if (state.LAYERS.has(building)) drawDock('rgb(204, 204, 204)', 'rgb(204, 204, 204)', 10); // bgColor, edgeColor, lineWidth
 
         /* draw walls */
         if (state.LAYERS.has(district)) drawContourLines(0.25, 'wall', 'black', 8, true, false);
@@ -973,15 +973,23 @@ function Metro(canvas, cursorCanvas) {
                 convert2Edges(poly.edges).forEach(e => {
                     let left = e.left ? state.graphics.sites[e.left.index] : null;
                     let right = e.right ? state.graphics.sites[e.right.index] : null;
+                    let waterSite = left.type === 'water' ? left : right;
+                    let point = null;
 
-                    if (left.type === 'water' || right.type === 'water') {
-                        // edge next to water
+                    if (waterSite.type === 'water') {
+                        let midX = (e[0][0] + e[1][0]) / 2;
+                        let midY = (e[0][1] + e[1][1]) / 2;
+                        let d = distance(e[0], e[1]) / 3;
+                        let dockDestination = getPerpendicularLineDestination(e[0][0], e[0][1], e[1][0], e[1][1], midX, midY, d);
 
-                        var midX = (e[0][0] + e[1][0]) / 2;
-                        var midY = (e[0][1] + e[1][1]) / 2;
+                        let point1 = [dockDestination.x1, dockDestination.y1];
+                        let point2 = [dockDestination.x2, dockDestination.y2];
+                        let a = d3.polygonContains(convert2Vertices(state.graphics.polygons[waterSite.index].vertices), point1);
+                        let b = d3.polygonContains(convert2Vertices(state.graphics.polygons[waterSite.index].vertices), point2);
 
+                        point = b ? point2 : point1;
                         state.context().moveTo(midX, midY);
-                        state.context().arc(midX, midY, 10, 0, 2 * Math.PI, false);
+                        state.context().lineTo(point[0], point[1]);
 
                         state.context().fillStyle = bgColor;
                         state.context().lineWidth = lineWidth;
@@ -992,6 +1000,34 @@ function Metro(canvas, cursorCanvas) {
                 });
             });
         state.context().restore();
+    }
+
+    function distance(a, b) {
+        return Math.sqrt(sqr(b[0] - a[0]) + sqr(b[1] - a[1]));
+    }
+
+    // https://math.stackexchange.com/questions/306468/perpendicular-line-passing-through-the-midpoint-of-another-line
+    /**
+     *
+     * @param x1
+     * @param y1
+     * @param x2
+     * @param y2
+     * @param midX
+     * @param midY
+     * @param d
+     * @returns {{x1: *, y1: *, x2: *, y2: *}}
+     */
+    function getPerpendicularLineDestination(p1_x, p1_y, p2_x, p2_y, midX, midY, d) {
+        let k1 = (p2_y - p1_y) / (p2_x - p1_x); // given segment slope
+        let k2 = -1 / k1; // perpendicular line slope
+
+        let x1 = d / Math.sqrt(1 + sqr(k2)) + midX;
+        let y1 = d * k2 / Math.sqrt(1 + sqr(k2)) + midY;
+        let x2 = d / Math.sqrt(1 - sqr(k2)) + midX;
+        let y2 = d * k2 / Math.sqrt(1 - sqr(k2)) + midY;
+
+        return { x1: x1, y1: y1, x2: x2, y2: y2};
     }
 
     // draw sites
@@ -1159,6 +1195,11 @@ function Metro(canvas, cursorCanvas) {
     /*=====================================================================================================
                                              Additional Functions
     ======================================================================================================*/
+
+    // get square of x
+    function sqr(x) {
+        return x * x;
+    }
 
     // get vertices from diagram.cell
     function getCellVertices(cell, diagram) {
