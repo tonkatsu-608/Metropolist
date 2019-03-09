@@ -32,8 +32,8 @@
       <file leaf-file-name="elevation-demo.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/public/javascripts/main/elevation-demo.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="385">
-              <caret line="990" column="0" lean-forward="false" selection-start-line="990" selection-start-column="0" selection-end-line="990" selection-end-column="0" />
+            <state relative-caret-position="3502">
+              <caret line="1596" column="11" lean-forward="false" selection-start-line="1596" selection-start-column="11" selection-end-line="1596" selection-end-column="11" />
               <folding>
                 <element signature="e#473#6451#0" expanded="false" />
                 <element signature="n#!!block;n#drawSites#0;n#!!block;n#Metro#0" expanded="false" />
@@ -41,26 +41,6 @@
                 <element signature="n#!!block;n#drawTriangles#0;n#!!block;n#Metro#0" expanded="false" />
                 <element signature="n#!!block;n#renderBackground#0;n#!!block;n#Metro#0" expanded="false" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="d3.v4.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/public/javascripts/libraries/d3.v4.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="236">
-              <caret line="11096" column="38" lean-forward="false" selection-start-line="11096" selection-start-column="33" selection-end-line="11096" selection-end-column="38" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="elevation-1.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/public/javascripts/main/elevation-1.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="276">
-              <caret line="711" column="0" lean-forward="true" selection-start-line="711" selection-start-column="0" selection-end-line="711" selection-end-column="0" />
-              <folding />
             </state>
           </provider>
         </entry>
@@ -77,15 +57,12 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>park</find>
-      <find>wall</find>
       <find>harbour</find>
       <find>military</find>
       <find>TODO</find>
       <find>d</find>
       <find>selectedSites</find>
       <find>drawContourLines</find>
-      <find>subPolygons</find>
       <find>harbor</find>
       <find>draw</find>
       <find>menu</find>
@@ -105,8 +82,11 @@
       <find>drawCursor</find>
       <find>cursorContext</find>
       <find>drawDock</find>
-      <find>sqr</find>
       <find>polygonContains</find>
+      <find>drawDis</find>
+      <find>subPolygons</find>
+      <find>makeDia</find>
+      <find>sqr</find>
     </findStrings>
     <replaceStrings>
       <replace>this.state.</replace>
@@ -457,7 +437,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="571718000" />
+    <option name="totallyTimeSpent" value="575005000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -867,8 +847,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/public/javascripts/main/elevation-demo.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="385">
-          <caret line="990" column="0" lean-forward="false" selection-start-line="990" selection-start-column="0" selection-end-line="990" selection-end-column="0" />
+        <state relative-caret-position="3502">
+          <caret line="1596" column="11" lean-forward="false" selection-start-line="1596" selection-start-column="11" selection-end-line="1596" selection-end-column="11" />
           <folding>
             <element signature="e#473#6451#0" expanded="false" />
             <element signature="n#!!block;n#drawSites#0;n#!!block;n#Metro#0" expanded="false" />

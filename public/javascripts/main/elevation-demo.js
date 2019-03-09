@@ -417,7 +417,7 @@ function Metro(canvas, cursorCanvas) {
         // drawEdges(3, 'black'); // lineWidth, lineColor
 
         /* draw docks */
-        if (state.LAYERS.has(building)) drawDock('rgb(204, 204, 204)', 'rgb(204, 204, 204)', 10); // bgColor, edgeColor, lineWidth
+        if (state.LAYERS.has(building)) drawDock('rgb(233, 233, 233)', 'rgb(233, 233, 233)', 10); // bgColor, edgeColor, lineWidth
 
         /* draw walls */
         if (state.LAYERS.has(district)) drawContourLines(0.25, 'wall', 'black', 8, true, false);
@@ -578,6 +578,7 @@ function Metro(canvas, cursorCanvas) {
         if (site.type === 'farm') {
             size = Math.round(Math.random() * 4 + 2);
             polygon.subPolygons = splitPolygon(vertices, size, 0.5);
+            polygon.subPolygons.forEach( sp => sp.pattern = state.context().createPattern(makeDiagonalPattern(sp), "repeat") );
             polygon.buildings = Math.random() > 0.9 ? [polygon.buildings.pop()] : [];
         } else {
             clearSubPolygons(polygon);
@@ -808,27 +809,30 @@ function Metro(canvas, cursorCanvas) {
      * Creates a canvas filled with a 45-degree pinstripe.
      * @returns {HTMLCanvasElement}
      */
-    function makeDiagonalPattern(site) {
+    function makeDiagonalPattern(sub) {
+
         let canvasPattern = document.createElement("canvas");
-        canvasPattern.width = site.size;
-        canvasPattern.height = site.size;
+        canvasPattern.width = sub.size;
+        canvasPattern.height = sub.size;
         let contextPattern = canvasPattern.getContext("2d", {antialias: true, depth: false});
+        contextPattern.clearRect(0, 0, canvasPattern.width, canvasPattern.height);
 
         // draw pattern to off-screen context
         contextPattern.beginPath();
 
-        contextPattern.translate(site.size / 2, site.size / 2);
-        contextPattern.rotate(site.rotation);
-        contextPattern.translate(-site.size / 2, -site.size / 2);
-        // for(let l = 0; l <= site.size; l += site.size / 10) {
+        contextPattern.translate(sub.size / 2, sub.size / 2);
+        contextPattern.rotate(sub.rotation);
+        contextPattern.translate(-sub.size / 2, -sub.size / 2);
+
+        // for(let l = 0; l <= sub.size; l += sub.size / 10) {
         //     contextPattern.moveTo(l, 0);
-        //     contextPattern.lineTo(l, site.size);
+        //     contextPattern.lineTo(l, sub.size);
         // }
 
-        // if(site.rotation === 0) {
+        // if(sub.rotation === 0) {
         //     contextPattern.moveTo(0, 0);
         //     contextPattern.lineTo(canvasPattern.width, canvasPattern.height);
-        // } else if(site.rotation === 1) {
+        // } else if(sub.rotation === 1) {
         //     contextPattern.moveTo(canvasPattern.width, 0);
         //     contextPattern.lineTo(0, canvasPattern.height);
         // }
@@ -857,11 +861,12 @@ function Metro(canvas, cursorCanvas) {
                 p.subPolygons.forEach(sub => {
 
                     if (!sub.center) return;
-                    let pattern = state.context().createPattern(makeDiagonalPattern(sub), "repeat");
+
+                    state.context().beginPath();
                     state.context().translate(sub.center[0], sub.center[1]);
                     state.context().scale(0.8, 0.8);
                     state.context().translate(-sub.center[0], -sub.center[1]);
-                    state.context().fillStyle = pattern;
+                    state.context().fillStyle = sub.pattern;
                     drawPolygon(sub);
                     state.context().closePath();
                     state.context().fill();
@@ -987,7 +992,7 @@ function Metro(canvas, cursorCanvas) {
                         let a = d3.polygonContains(convert2Vertices(state.graphics.polygons[waterSite.index].vertices), point1);
                         let b = d3.polygonContains(convert2Vertices(state.graphics.polygons[waterSite.index].vertices), point2);
 
-                        point = b ? point2 : point1;
+                        point = a ? point1 : point2;
                         state.context().moveTo(midX, midY);
                         state.context().lineTo(point[0], point[1]);
 
@@ -1000,34 +1005,6 @@ function Metro(canvas, cursorCanvas) {
                 });
             });
         state.context().restore();
-    }
-
-    function distance(a, b) {
-        return Math.sqrt(sqr(b[0] - a[0]) + sqr(b[1] - a[1]));
-    }
-
-    // https://math.stackexchange.com/questions/306468/perpendicular-line-passing-through-the-midpoint-of-another-line
-    /**
-     *
-     * @param x1
-     * @param y1
-     * @param x2
-     * @param y2
-     * @param midX
-     * @param midY
-     * @param d
-     * @returns {{x1: *, y1: *, x2: *, y2: *}}
-     */
-    function getPerpendicularLineDestination(p1_x, p1_y, p2_x, p2_y, midX, midY, d) {
-        let k1 = (p2_y - p1_y) / (p2_x - p1_x); // given segment slope
-        let k2 = -1 / k1; // perpendicular line slope
-
-        let x1 = d / Math.sqrt(1 + sqr(k2)) + midX;
-        let y1 = d * k2 / Math.sqrt(1 + sqr(k2)) + midY;
-        let x2 = d / Math.sqrt(1 - sqr(k2)) + midX;
-        let y2 = d * k2 / Math.sqrt(1 - sqr(k2)) + midY;
-
-        return { x1: x1, y1: y1, x2: x2, y2: y2};
     }
 
     // draw sites
@@ -1195,6 +1172,11 @@ function Metro(canvas, cursorCanvas) {
     /*=====================================================================================================
                                              Additional Functions
     ======================================================================================================*/
+
+    // get distance of two vectors
+    function distance(a, b) {
+        return Math.sqrt(sqr(b[0] - a[0]) + sqr(b[1] - a[1]));
+    }
 
     // get square of x
     function sqr(x) {
@@ -1601,6 +1583,30 @@ function Metro(canvas, cursorCanvas) {
         });
 
         return map;
+    }
+
+    /**
+     * @param x1
+     * @param y1
+     * @param x2
+     * @param y2
+     * @param midX
+     * @param midY
+     * @param d
+     * @returns {{x1: *, y1: *, x2: *, y2: *}}
+     * @URL https://math.stackexchange.com/questions/306468/perpendicular-line-passing-through-the-midpoint-of-another-line
+     */
+    function getPerpendicularLineDestination(p1_x, p1_y, p2_x, p2_y, midX, midY, d) {
+        let k1 = (p2_y - p1_y) / (p2_x - p1_x); // given segment slope
+        let k2 = -1 / k1; // perpendicular line slope
+
+        let x1 = midX + d / Math.sqrt(1 + sqr(k2));
+        let y1 = midY + d * k2 / Math.sqrt(1 + sqr(k2));
+
+        let x2 = midX - d / Math.sqrt(1 - sqr(k2));
+        let y2 = midY - d * k2 / Math.sqrt(1 - sqr(k2));
+
+        return { x1: x1, y1: y1, x2: x2, y2: y2};
     }
 
     /*=====================================================================================================
