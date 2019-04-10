@@ -427,7 +427,6 @@ function Metro(canvas, cursorCanvas) {
 
     function newGraphics() {
         state.vertices.clear();
-        state.isAltPressed = true;
         state.currentCastle = null;
         state.N = $('#input-sites').val() || 100;
         state.graphics = new Graphics();
@@ -529,20 +528,11 @@ function Metro(canvas, cursorCanvas) {
         }
 
         // randomly assign `religious`
-        if (!s.isBoundary && s.type !== 'water' && Number(getAlltypes().get('religious')) <= 2.5 / 100 * state.N) {
+        if (!s.isBoundary && s.type !== 'water' && Number(getAllTypes().get('religious')) <= 2.5 / 100 * state.N) {
             if (Math.random() > 0.99) {
                 s.type = 'religious';
             }
         }
-        /**
-         *  @TODO
-         *  park: no building, green,
-         *  castle: one building, highest desirability, grey
-         *  harbor: water near land, poor, brown
-         *  military: near castle and wall, silver
-         *  religious: random buildings, yellow/blue
-         *  university: next to a least 2 rich, red
-         */
 
         // split polygons and assign buildings for polygon
         assignBuildings4Polygon(index);
@@ -966,7 +956,7 @@ function Metro(canvas, cursorCanvas) {
 
     // draw dock
     function drawDock(bgColor, edgeColor, lineWidth) {
-        if (!getAlltypes().get('harbor')) return;
+        if (!getAllTypes().get('harbor')) return;
 
         state.context().save();
         state.context().beginPath();
@@ -1154,13 +1144,14 @@ function Metro(canvas, cursorCanvas) {
 
     // draw a line from p1[0, 1] to p2[0, 1]
     function drawLine(p1, p2, width, color, isWaterLine) {
+        if(state.waterline === 0) return;
         state.context().beginPath();
         state.context().fillStyle = color;
         state.context().lineWidth = width;
         state.context().lineCap = 'round';
         state.context().strokeStyle = color;
-        state.context().moveTo(p1[0], p1[1]);
         if (!isWaterLine) {
+            state.context().moveTo(p1[0], p1[1]);
             state.context().arc(p1[0], p1[1], 5, 0, 2 * Math.PI, false);
         }
         state.context().moveTo(p1[0], p1[1]);
@@ -1212,7 +1203,7 @@ function Metro(canvas, cursorCanvas) {
         let x = state.transform.invertX(d3.event.layerX);
         let y = state.transform.invertY(d3.event.layerY);
         let site = findSite(x, y);
-        let percentMap = getAlltypes();
+        let percentMap = getAllTypes();
 
         if (site.isBoundary) {
             return [{
@@ -1336,7 +1327,7 @@ function Metro(canvas, cursorCanvas) {
                     assignBuildings4Polygon(site.index);
                     render();
                 },
-                disabled: site.type === 'religious' || Number(getAlltypes().get('religious')) > 2.5 / 100 * state.N ? true : false
+                disabled: site.type === 'religious' || Number(getAllTypes().get('religious')) > 2.5 / 100 * state.N ? true : false
             },
             {
                 title: `farm: ${percentMap.get('farm') || 0} / ${state.N}`,
@@ -1568,7 +1559,7 @@ function Metro(canvas, cursorCanvas) {
      * get all sites' type
      * @returns {Map<any, any>}
      */
-    function getAlltypes() {
+    function getAllTypes() {
         let map = new Map(), n = state.graphics.sites.length;
 
         state.DISTRICT_TYPES.forEach(type => {

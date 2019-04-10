@@ -14,6 +14,10 @@ var mapSchema = new schema({
         type: String,
         required: true
     },
+    isVisible: {
+        type: Boolean,
+        required: true
+    },
     createDate: {
         type: String,
         required: true
@@ -25,53 +29,19 @@ var mapSchema = new schema({
     data: {
         type: Object,
         required: false
-    },
-    // segment: {
-    //     type: Number,
-    //     required: false
-    // },
-    // distance: {
-    //     type: Number,
-    //     required: false
-    // },
-    // sites: {
-    //     type: Array,
-    //     required: false
-    // },
-    // edges: {
-    //     type: Array,
-    //     required: false
-    // },
-    // polygons: {
-    //     type: Array,
-    //     required: false
-    // },
-    // clusters: {
-    //     type: Array,
-    //     required: false
-    // },
-    // vertices: {
-    //     type: Array,
-    //     required: false
-    // },
+    }
 });
 
-mapSchema.methods.transformMap = function ( map ) {
+mapSchema.methods.transformMap = function (map) {
     return {
         id: map._id,
         uid: map.uid,
         name: map.name,
         img: map.img,
         data: map.data,
-        // createDate: map.createDate,
-        // editDate: map.editDate,
-        // segment: map.segment,
-        // distance: map.distance,
-        // sites: map.sites,
-        // edges: map.edges,
-        // polygons: map.polygons,
-        // clusters: map.clusters,
-        // vertices: map.vertices,
+        createDate: map.createDate,
+        editDate: map.editDate,
+        isVisible: map.isVisible,
     };
 }
 
@@ -80,24 +50,11 @@ mapSchema.statics.findAll = function (cb) {
 }
 
 mapSchema.statics.update = function (map, cb) {
-    return this.findOneAndUpdate({ _id: map.id },
-        { $set: {
-                name: map.name,
-                img: map.img,
-                data: map.data,
-                // editDate: map.editDate,
-                // segment: map.segment,
-                // distance: map.distance,
-                // sites: map.sites,
-                // edges: map.edges,
-                // polygons: map.polygons,
-                // clusters: map.clusters,
-                // vertices: map.vertices,
-        }}, { new: true }, cb);
+    return this.findOneAndUpdate({_id: map.id}, {$set: map}, {new: true}, cb);
 }
 
 mapSchema.statics.delete = function (id, cb) {
-    return this.findByIdAndRemove( id, cb );
+    return this.findByIdAndRemove(id, cb);
 }
 
 module.exports = mongoose.model('maps', mapSchema, 'maps');

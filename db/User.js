@@ -9,7 +9,7 @@ var userSchema = new schema({
     },
     avatar: {
         type: String,
-        required: false
+        required: true
     },
     firstname: {
         type: String,
@@ -37,6 +37,7 @@ userSchema.methods.transformUser = function ( user ) {
     return {
         id: user._id,
         email: user.email,
+        avatar: user.avatar,
         firstname: user.firstname,
         lastname: user.lastname,
         role: user.role,
@@ -64,6 +65,7 @@ userSchema.statics.update = function (user, cb) {
     return this.findByIdAndUpdate(user.id,
         { $set: {
                 email: user.email,
+                avatar: user.avatar,
                 firstname: user.firstname,
                 lastname: user.lastname,
                 role: user.role,
