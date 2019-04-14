@@ -49,6 +49,9 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(cors(corsOptions));
 
+const paginate = require('express-paginate');
+app.use(paginate.middleware(10, 50));
+
 app.use('/', indexRouter);
 app.use('/metro/auth', auth);
 

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Map = require('../db/Map');
 const User = require('../db/User');
+const paginate = require('express-paginate');
 
 let loggedIn = function (req, res, next) {
     if (req.isAuthenticated()) {
@@ -22,7 +23,7 @@ router.get('/', function (req, res, next) {
                                             User API
 ======================================================================================================*/
 router.get('/failure', function (req, res, next) {
-    res.status(500).json({msg: 'invalid email or password'});
+    res.status(500).json({msg: 'invalid email or password', status: 'invalid'});
 });
 
 router.post('/metro/api/v1/logout', function (req, res) {
@@ -130,17 +131,31 @@ router.put('/metro/api/v1/user/update/enabled', function (req, res, next) {
                                             Map API
 ======================================================================================================*/
 // get all visible maps
-router.get('/metro/api/v1/maps', function (req, res, next) {
-    Map.find()
-        .where('isVisible').equals(true)
-        .sort({createDate: -1})
-        .exec(function (err, maps) {
-            if (err) {
-                res.status(404).send({error: 'no maps'});
-            } else {
-                res.status(200).send(maps.map(m => new Map().transformMap(m)));
-            }
+router.get('/metro/api/v1/maps', async (req, res, next) => {
+    try {
+        const [results, itemCount] = await Promise.all([
+            Map.find({isVisible: true})
+                .sort({createDate: -1})
+                // .limit(req.query.limit)
+                .exec(),
+            Map.count({isVisible: true})
+        ]);
+
+        const pageCount = Math.ceil(itemCount / req.query.limit); // how many pages
+        let currentPage = parseInt(req.query.page);
+        if (!currentPage) currentPage = 1;
+        if (currentPage > pageCount) currentPage = pageCount;
+
+        res.send({
+            maps: results.map(m => new Map().transformMap(m)).slice(currentPage * req.query.limit - req.query.limit, currentPage * req.query.limit),
+            currentPage: currentPage,
+            pageCount: pageCount,
+            mapCount: itemCount
         });
+
+    } catch (err) {
+        next(err);
+    }
 });
 
 // get map by id
