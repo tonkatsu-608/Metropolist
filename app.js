@@ -1,3 +1,16 @@
+// ├── src
+// │   ├── bin
+// │   ├── db
+// │   │   ├── Map.js
+// │   │   ├── User.js
+// │   ├── public
+// │   │   ├── Frontend folder
+// │   ├── routes
+// │   │   ├── auth.js
+// │   │   ├── index.js
+// │   ├── app.js
+// │   ├── passport.js
+// │   ├── package.json
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
@@ -48,9 +61,6 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(cors(corsOptions));
-
-const paginate = require('express-paginate');
-app.use(paginate.middleware(10, 50));
 
 app.use('/', indexRouter);
 app.use('/metro/auth', auth);

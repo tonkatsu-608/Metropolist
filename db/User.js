@@ -5,6 +5,7 @@ var bcrypt = require('bcrypt-nodejs');
 var userSchema = new schema({
     email: {
         type: String,
+        unique: true,
         required: true
     },
     avatar: {
@@ -13,10 +14,12 @@ var userSchema = new schema({
     },
     firstname: {
         type: String,
+        trim: true,
         required: true
     },
     lastname: {
         type: String,
+        trim: true,
         required: true
     },
     password: {
@@ -98,7 +101,7 @@ userSchema.statics.updatePassword = function (user, cb) {
 userSchema.statics.updateEnabled = function (user, cb) {
     return this.findByIdAndUpdate(user.id,
         { $set: {
-                enabled: false
+                enabled: user.enabled
             }}, { new: true }, cb);
 }
 

@@ -22,9 +22,9 @@ function Metro(canvas, cursorCanvas) {
             if (state.LAYERS.has(elevation)) {
                 render();
                 drawContourLines(state.waterline, 'elevation', 'blue', 4, false, true);
-                drawContourLines(0.25, 'elevation', 'red', 4, false, false);
-                drawContourLines(0.5, 'elevation', 'green', 4, false, false);
-                drawContourLines(0.75, 'elevation', 'yellow', 4, false, false);
+                drawContourLines(0.25, 'elevation', 'red', 4, false, true);
+                drawContourLines(0.5, 'elevation', 'green', 4, false, true);
+                drawContourLines(0.75, 'elevation', 'yellow', 4, false, true);
             }
         });
 
@@ -243,7 +243,6 @@ function Metro(canvas, cursorCanvas) {
         currentCastle: null,
         pointer: {},
         vertices: [],
-        contourLines: [],
         selectedSites: [],
         isDragging: false,
         isIncreasing: true,
@@ -310,8 +309,8 @@ function Metro(canvas, cursorCanvas) {
     function Graphics() {
         const MIN_WIDTH = 20;
         const MIN_HEIGHT = 20;
-        const MAX_WIDTH = state.width() - 20;
-        const MAX_HEIGHT = state.height() - 20;
+        const MAX_WIDTH = state.width() - MIN_WIDTH;
+        const MAX_HEIGHT = state.height() - MIN_HEIGHT;
 
         this.sites = d3.range(state.N).map(() => [Math.random() * (MAX_WIDTH - MIN_WIDTH) + MIN_WIDTH, Math.random() * (MAX_HEIGHT - MIN_HEIGHT) + MIN_HEIGHT, 0]);
         this.voronoi = d3.voronoi().extent([[MIN_WIDTH, MIN_HEIGHT], [MAX_WIDTH, MAX_HEIGHT]]);
@@ -411,10 +410,10 @@ function Metro(canvas, cursorCanvas) {
         /* draw buildings */
         if (state.LAYERS.has(building)) drawBuildings();
 
-        // drawTriangles();
         // renderBackground();
-        // drawSites(2, 'black'); // lineWidth, lineColor
-        // drawEdges(3, 'black'); // lineWidth, lineColor
+        drawSites(2, 'black'); // lineWidth, lineColor
+        drawEdges(2, 'black'); // lineWidth, lineColor
+        // drawTriangles(1.5, 'grey'); // lineWidth, lineColor
 
         /* draw docks */
         if (state.LAYERS.has(building)) drawDock('rgb(233, 233, 233)', 'rgb(233, 233, 233)', 10); // bgColor, edgeColor, lineWidth
@@ -1038,7 +1037,7 @@ function Metro(canvas, cursorCanvas) {
     }
 
     // draw triangles
-    function drawTriangles() {
+    function drawTriangles(width, color) {
         state.context().save();
         state.context().beginPath();
 
@@ -1048,7 +1047,8 @@ function Metro(canvas, cursorCanvas) {
             state.context().lineTo(triangle[1][0], triangle[1][1]);
             state.context().lineTo(triangle[2][0], triangle[2][1]);
             state.context().closePath();
-            state.context().strokeStyle = `grey`;
+            state.context().lineWidth = width;
+            state.context().strokeStyle = color;
             state.context().stroke();
         }
         state.context().restore();
@@ -1134,8 +1134,6 @@ function Metro(canvas, cursorCanvas) {
                 let pt1 = pointOnEdge(e1[0], e1[1], point, layer);
                 let pt2 = pointOnEdge(e2[0], e2[1], point, layer);
 
-                state.contourLines.clear();
-                state.contourLines.push([pt1, pt2]);
                 drawLine(pt1, pt2, width, color, isWaterLine);
             }
         });

@@ -187,7 +187,7 @@ function Metro(canvas) {
     };
 
     var state = {
-        N: 1000,
+        N: 100,
         LAYERS: new Set([elevation]),
         LAYER: 'elevation',
         radius: 100,
@@ -235,14 +235,16 @@ function Metro(canvas) {
     function Graphics() {
         const MIN_WIDTH = 20;
         const MIN_HEIGHT = 20;
-        const MAX_WIDTH = state.width() - 20;
-        const MAX_HEIGHT = state.height() - 20;
+        const MAX_WIDTH = state.width() - MIN_WIDTH;
+        const MAX_HEIGHT = state.height() - MIN_HEIGHT;
 
         this.sites = d3.range(state.N).map( () => [Math.random() * (MAX_WIDTH - MIN_WIDTH) + MIN_WIDTH, Math.random() * (MAX_HEIGHT - MIN_HEIGHT) + MIN_HEIGHT, 0] );
         this.voronoi = d3.voronoi().extent([[MIN_WIDTH, MIN_HEIGHT], [MAX_WIDTH, MAX_HEIGHT]]);
+        // this.relaxedSites = this.voronoi(this.sites).polygons().map(d3.polygonCentroid);
         this.diagram = this.voronoi( this.sites );
 
-        for( let n = 0; n < 10; n++ ) {
+        // relaxation
+        for( let n = 0; n < 5; n++ ) {
             this.sites = relax( this.diagram );
             this.diagram = this.voronoi( this.sites );
         }
@@ -343,12 +345,22 @@ function Metro(canvas) {
     function render() {
         state.context().clearRect(0, 0, state.width(), state.height());
 
+
+        state.context().save();
+        state.context().beginPath();
+        state.context().lineWidth = 4;
+        state.context().strokeStyle = 'black';
+        state.context().rect(20, 20, state.width() - 40, state.height() - 40);
+        state.context().stroke();
+        state.context().restore();
+
+
         drawPolygons();
-        // drawTriangles();
+        drawEdges(1, 'lightgrey');
+        drawTriangles(1, 'black');
+        drawSites(3, 'red');
         // renderBackground();
-        drawEdges(0.5, 'grey'); // lineWidth, lineColor
-        drawContourLines(0.25, 'black', 8);
-        // drawSites(1, 'black'); // lineWidth, lineColor
+        // drawContourLines(0.25, 'black', 8);
     }
 
     function newGraphics() {
@@ -483,7 +495,7 @@ function Metro(canvas) {
 
             // start drawing polygon
             state.context().beginPath();
-            state.context().fillStyle = color;
+            state.context().fillStyle = 'white';
             for(let j = 0, vertices = polygons[i].vertices; j < vertices.length; j++) {
                 let vertex = state.vertices[vertices[j]];
 
@@ -563,7 +575,7 @@ function Metro(canvas) {
     }
 
     // draw triangles
-    function drawTriangles() {
+    function drawTriangles(width, color) {
         state.context().save();
         for (let i = 0, n = state.graphics.triangles.length; i < n; ++i) {
             let triangle = state.graphics.triangles[i];
@@ -572,7 +584,8 @@ function Metro(canvas) {
             state.context().lineTo(triangle[1][0], triangle[1][1]);
             state.context().lineTo(triangle[2][0], triangle[2][1]);
             state.context().closePath();
-            state.context().strokeStyle = `grey`;
+            state.context().lineWidth = width;
+            state.context().strokeStyle = color;
             state.context().stroke();
         }
         state.context().restore();
@@ -583,7 +596,8 @@ function Metro(canvas) {
         state.context().save();
 
         state.graphics.triangles.forEach(triangle => {
-            const x1       = triangle[0][0],
+            const
+                x1         = triangle[0][0],
                 y1         = triangle[0][1],
                 x2         = triangle[1][0],
                 y2         = triangle[1][1],

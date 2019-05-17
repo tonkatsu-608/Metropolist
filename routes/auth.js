@@ -40,5 +40,9 @@ module.exports = function (passport) {
         }
     });
 
+    router.post('/logout', function (req, res) {
+        req.logout();
+    });
+
     return router;
 };

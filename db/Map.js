@@ -8,6 +8,7 @@ var mapSchema = new schema({
     },
     name: {
         type: String,
+        trim: true,
         required: true
     },
     img: {
@@ -31,6 +32,8 @@ var mapSchema = new schema({
         required: false
     }
 });
+
+mapSchema.index({ createDate: 1 });
 
 mapSchema.methods.transformMap = function (map) {
     return {

@@ -1,16 +1,34 @@
+// /*================================================================================
+//                                      User API
+// ================================================================================*/
+// router.get('/metro/api/v1/users/:uid', (req, res, next) => {...});
+// router.get('/metro/api/v1/users', (req, res, next) => {...});
+// router.patch('/metro/api/v1/users/:uid/password', (req, res, next) => {...});
+// router.put('/metro/api/v1/users/:uid/email', (req, res, next) => {...});
+// router.put('/metro/api/v1/users/:uid/name', (req, res, next) => {...});
+// router.put('/metro/api/v1/users/:uid/password', (req, res, next) => {...});
+// router.put('/metro/api/v1/users/:uid/enabled', (req, res, next) => {...});
+//
+// /*================================================================================
+//                                		Map API
+// ================================================================================*/
+// router.get('/metro/api/v1/maps', async (req, res, next) => {...});
+// router.get('/metro/api/v1/maps/:mid', (req, res, next) => {...});
+// router.get('/metro/api/v1/users/:uid/maps/', (req, res, next) => {...});
+// router.post('/metro/api/v1/maps', (req, res, next) => {...});
+// router.put('/metro/api/v1/maps/:mid', (req, res, next) => {...});
+// router.delete('/metro/api/v1/maps/:mid', (req, res, next) => {...});
+
 const express = require('express');
 const router = express.Router();
 const Map = require('../db/Map');
 const User = require('../db/User');
-const paginate = require('express-paginate');
 
 let loggedIn = function (req, res, next) {
     if (req.isAuthenticated()) {
         next();
     } else {
-        return res.status(401).json({
-            error: 'User not authenticated'
-        })
+        return res.status(401).send({msg: 'error: user not authenticated'});
     }
 }
 
@@ -22,30 +40,27 @@ router.get('/', function (req, res, next) {
 /*=====================================================================================================
                                             User API
 ======================================================================================================*/
-router.get('/failure', function (req, res, next) {
+
+router.get('/failure', (req, res, next) => {
     res.status(500).json({msg: 'invalid email or password', status: 'invalid'});
 });
 
-router.post('/metro/api/v1/logout', function (req, res) {
-    req.logout();
-});
-
-// get user by id
-router.get('/metro/api/v1/user/:id', function (req, res, next) {
-    let id = req.params.id;
-    User.findOne({_id: id}, function (err, user) {
+// get user by uid
+router.get('/metro/api/v1/users/:uid', (req, res, next) => {
+    let uid = req.params.uid;
+    User.findOne({_id: uid}, function (err, user) {
         if (err) {
-            res.status(404).send({error: 'no such user'});
+            res.status(404).send({msg: 'error: user did not find'});
         } else {
             res.status(200).send(new User().transformUser(user));
         }
     });
 });
 
-router.get('/metro/api/v1/users', function (req, res, next) {
+router.get('/metro/api/v1/users', (req, res, next) => {
     User.findAll(function (err, users) {
         if (err) {
-            res.status(500).send({msg: 'error occur in get users'});
+            res.status(404).send({msg: 'error: cannot find users'});
         } else {
             res.json(users.map(function (user) {
                 return new User().transformUser(user);
@@ -54,22 +69,24 @@ router.get('/metro/api/v1/users', function (req, res, next) {
     });
 });
 
-router.patch('/metro/api/v1/user/verify/password', function (req, res, next) {
+router.patch('/metro/api/v1/users/:uid/password', (req, res, next) => {
+    let uid = req.params.uid;
     let body = req.body;
-    User.findOne({_id: body.id}, function (err, user) {
+    User.findOne({_id: uid}, function (err, user) {
         if (err) {
-            res.status(404).send({error: 'no such user'});
+            res.status(404).send({msg: 'error: user did not find'});
         } else {
             res.status(200).send(new User().verifyPassword(body.password, user.password));
         }
     });
 });
 
-router.put('/metro/api/v1/user/update/email', function (req, res, next) {
+router.put('/metro/api/v1/users/:uid/email', (req, res, next) => {
+    let uid = req.params.uid;
     let user = req.body;
     User.findByEmail(user.email, function (err, doc) {
         if (err) {
-            res.status(404).send({msg: 'error occur in finding user'});
+            res.status(404).send({msg: 'error: user did not find'});
         } else {
             if (doc) {
                 res.status(409).send({msg: 'sorry, email already exists'});
@@ -88,7 +105,8 @@ router.put('/metro/api/v1/user/update/email', function (req, res, next) {
     });
 });
 
-router.put('/metro/api/v1/user/update/name', function (req, res, next) {
+router.put('/metro/api/v1/users/:uid/name', (req, res, next) => {
+    let uid = req.params.uid;
     let user = req.body;
     User.updateName(user, function (err, doc) {
         if (err) {
@@ -101,7 +119,8 @@ router.put('/metro/api/v1/user/update/name', function (req, res, next) {
     });
 });
 
-router.put('/metro/api/v1/user/update/password', function (req, res, next) {
+router.put('/metro/api/v1/users/:uid/password', (req, res, next) => {
+    let uid = req.params.uid;
     let user = req.body;
     user.password = new User().hashPassword(user.password);
     User.updatePassword(user, function (err, doc) {
@@ -115,7 +134,8 @@ router.put('/metro/api/v1/user/update/password', function (req, res, next) {
     });
 });
 
-router.put('/metro/api/v1/user/update/enabled', function (req, res, next) {
+router.put('/metro/api/v1/users/:uid/enabled', (req, res, next) => {
+    let uid = req.params.uid;
     let user = req.body;
     User.updateEnabled(user, function (err, doc) {
         if (err) {
@@ -132,38 +152,44 @@ router.put('/metro/api/v1/user/update/enabled', function (req, res, next) {
 ======================================================================================================*/
 // get all visible maps
 router.get('/metro/api/v1/maps', async (req, res, next) => {
+    let currentPage = parseInt(req.query.page);
+    let limit = parseInt(req.query.limit) || 3;
+
     try {
         const [results, itemCount] = await Promise.all([
             Map.find({isVisible: true})
                 .sort({createDate: -1})
-                // .limit(req.query.limit)
+                .limit(currentPage * limit)
                 .exec(),
             Map.count({isVisible: true})
         ]);
 
-        const pageCount = Math.ceil(itemCount / req.query.limit); // how many pages
-        let currentPage = parseInt(req.query.page);
+        const pageCount = Math.ceil(itemCount / limit); // how many pages
         if (!currentPage) currentPage = 1;
         if (currentPage > pageCount) currentPage = pageCount;
 
+        const from = (currentPage - 1) * limit;
+        let to = currentPage * limit;
+        if (to < 0) to = 0;
+
         res.send({
-            maps: results.map(m => new Map().transformMap(m)).slice(currentPage * req.query.limit - req.query.limit, currentPage * req.query.limit),
+            maps: results.map(m => new Map().transformMap(m)).slice(from, to),
             currentPage: currentPage,
             pageCount: pageCount,
             mapCount: itemCount
         });
-
     } catch (err) {
+        console.log(err);
         next(err);
     }
 });
 
 // get map by id
-router.get('/metro/api/v1/map/:id', function (req, res, next) {
-    let id = req.params.id;
-    Map.findOne({_id: id}, function (err, map) {
+router.get('/metro/api/v1/maps/:mid', (req, res, next) => {
+    let mid = req.params.mid;
+    Map.findOne({_id: mid}, function (err, map) {
         if (err) {
-            res.status(404).send({error: 'no such map'});
+            res.status(404).send({msg: 'error: cannot find the map'});
         } else {
             res.status(200).send(new Map().transformMap(map));
         }
@@ -171,42 +197,42 @@ router.get('/metro/api/v1/map/:id', function (req, res, next) {
 });
 
 // get all maps belong to the user
-router.get('/metro/api/v1/user/:uid/maps/', function (req, res, next) {
+router.get('/metro/api/v1/users/:uid/maps/', (req, res, next) => {
     let uid = req.params.uid;
     Map.find()
         .where('uid').equals(uid)
         .sort({editDate: -1})
         .exec(function (err, users) {
             if (err) {
-                res.status(500).send({msg: 'error occur in finding maps for specific user'});
+                res.status(404).send({msg: 'error: cannot find maps'});
             } else {
                 res.status(200).json(users.map(m => new Map().transformMap(m)));
             }
         });
 });
 
-// create map with id
-router.post('/metro/api/v1/map/create', function (req, res, next) {
+// create map with mid
+router.post('/metro/api/v1/maps', (req, res, next) => {
     let map = req.body;
     let tempMap = new Map();
     tempMap.uid = map.uid || "";
     tempMap.img = map.img || "";
     tempMap.name = map.name || "";
-    tempMap.createDate = map.createDate;
+    tempMap.createDate = map.createDate || formatDate(new Date(), 'yyyy-MM-dd HH:mm:ss', 'en-US');
     tempMap.editDate = map.editDate;
     tempMap.isVisible = map.isVisible || false;
 
     tempMap.save(function (err, doc) {
         if (err) {
-            res.status(500).send({error: 'error occur in creating map'});
+            res.status(400).send({error: 'error occur in creating the map'});
         } else {
-            res.status(200).send(doc._id);
+            res.status(201).send(doc._id);
         }
     });
 });
 
 // update map
-router.put('/metro/api/v1/map/update', function (req, res, next) {
+router.put('/metro/api/v1/maps/:mid', (req, res, next) => {
     let map = req.body;
     Map.update(map, function (err, doc) {
         if (err) {
@@ -219,9 +245,9 @@ router.put('/metro/api/v1/map/update', function (req, res, next) {
     });
 });
 
-router.delete('/metro/api/v1/map/delete/:id', function (req, res, next) {
-    let id = req.params.id;
-    Map.delete(id, function (err, doc) {
+router.delete('/metro/api/v1/maps/:mid', (req, res, next) => {
+    let mid = req.params.mid;
+    Map.delete(mid, function (err, doc) {
         if (err) {
             res.status(404).send({msg: 'map did not find'});
         } else {
@@ -231,6 +257,10 @@ router.delete('/metro/api/v1/map/delete/:id', function (req, res, next) {
         }
     })
 });
+
+/*=====================================================================================================
+                                            File API
+======================================================================================================*/
 
 router.get('/app', function (req, res, next) {
     res.sendFile('app.html', {root: __dirname + "/../public"});
