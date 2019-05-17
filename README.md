@@ -33,9 +33,9 @@
 
 ## Samples
 *This project will attempt to achieve the quality and style of hand-created maps such as the following:*
-![map1](http://charity.cs.uwlax.edu/projects/metropolist/assets/map1.jpg)
-![map2](http://charity.cs.uwlax.edu/projects/metropolist/assets/map2.jpg)
-![map3](http://charity.cs.uwlax.edu/projects/metropolist/assets/map3.jpg)
-![map4](http://charity.cs.uwlax.edu/projects/metropolist/assets/map4.jpg)
-![map5](http://charity.cs.uwlax.edu/projects/metropolist/assets/map5.jpg)
-![map6](http://charity.cs.uwlax.edu/projects/metropolist/assets/map6.jpg)
+![map1](https://charity.cs.uwlax.edu/projects/metropolist/assets/map1.jpg)
+![map2](https://charity.cs.uwlax.edu/projects/metropolist/assets/map2.jpg)
+![map3](https://charity.cs.uwlax.edu/projects/metropolist/assets/map3.jpg)
+![map4](https://charity.cs.uwlax.edu/projects/metropolist/assets/map4.jpg)
+![map5](https://charity.cs.uwlax.edu/projects/metropolist/assets/map5.jpg)
+![map6](https://charity.cs.uwlax.edu/projects/metropolist/assets/map6.jpg)
