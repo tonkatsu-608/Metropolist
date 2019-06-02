@@ -1,5 +1,13 @@
-var localStrategy = require('passport-local').Strategy;
-var User = require('./db/User');
+const localStrategy = require('passport-local').Strategy;
+const passportJWT = require("passport-jwt");
+const JWTStrategy   = passportJWT.Strategy;
+const ExtractJWT = passportJWT.ExtractJwt;
+const User = require('./db/User');
+
+const passportOpts = {
+    jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken(),
+    secretOrKey: '_metro_key'
+};
 
 module.exports = function (passport) {
     passport.serializeUser(function (user, done) {
@@ -19,4 +27,12 @@ module.exports = function (passport) {
                 return done(null, user);
             });
         }));
+
+    passport.use(new JWTStrategy(passportOpts, function (jwtPayload, done) {
+        const expirationDate = new Date(jwtPayload.exp * 1000);
+        if(expirationDate < new Date()) {
+            return done(null, false);
+        }
+        done(null, jwtPayload);
+    }))
 }

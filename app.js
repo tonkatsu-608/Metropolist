@@ -11,17 +11,18 @@
 // │   ├── app.js
 // │   ├── passport.js
 // │   ├── package.json
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-var sassMiddleware = require('node-sass-middleware');
-var mongoose = require('mongoose');
-var session = require('express-session');
-var bodyParser = require('body-parser');
-var passport = require('passport');
-var cors = require('cors')
+const createError = require('http-errors');
+const express = require('express');
+const path = require('path');
+const logger = require('morgan');
+const sassMiddleware = require('node-sass-middleware');
+const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
+const session = require('express-session');
+const mongoose = require('mongoose');
+const passport = require('passport');
+const cors = require('cors');
+const expressJwt = require('express-jwt');
 
 require('./passport')(passport);
 mongoose.connect('mongodb://localhost:27017/metropolist', { useNewUrlParser: true });
@@ -52,11 +53,11 @@ app.use(sassMiddleware({
     sourceMap: true
 }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(session({
-    secret: 'metro',
-    saveUninitialized: false,
-    resave: false
-}));
+// app.use(session({
+//     secret: '_metro_key',
+//     saveUninitialized: false,
+//     resave: false
+// }));
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -80,5 +81,7 @@ app.use(function(err, req, res, next) {
     res.status(err.status || 500);
     res.render('error');
 });
+
+app.use(expressJwt({secret: '_metro_key'}).unless({path: ['/metro/auth']}));
 
 module.exports = app;

@@ -21,6 +21,8 @@
 
 const express = require('express');
 const router = express.Router();
+const passport = require('passport');
+
 const Map = require('../db/Map');
 const User = require('../db/User');
 
@@ -41,12 +43,12 @@ router.get('/', function (req, res, next) {
                                             User API
 ======================================================================================================*/
 
-router.get('/failure', (req, res, next) => {
+router.get('/failure', (req, res) => {
     res.status(500).json({msg: 'invalid email or password', status: 'invalid'});
 });
 
 // get user by uid
-router.get('/metro/api/v1/users/:uid', (req, res, next) => {
+router.get('/metro/api/v1/users/:uid', passport.authenticate('jwt'), (req, res) => {
     let uid = req.params.uid;
     User.findOne({_id: uid}, function (err, user) {
         if (err) {
@@ -57,7 +59,7 @@ router.get('/metro/api/v1/users/:uid', (req, res, next) => {
     });
 });
 
-router.get('/metro/api/v1/users', (req, res, next) => {
+router.get('/metro/api/v1/users', passport.authenticate('jwt'), (req, res) => {
     User.findAll(function (err, users) {
         if (err) {
             res.status(404).send({msg: 'error: cannot find users'});
@@ -69,7 +71,7 @@ router.get('/metro/api/v1/users', (req, res, next) => {
     });
 });
 
-router.patch('/metro/api/v1/users/:uid/password', (req, res, next) => {
+router.patch('/metro/api/v1/users/:uid/password', passport.authenticate('jwt'), (req, res) => {
     let uid = req.params.uid;
     let body = req.body;
     User.findOne({_id: uid}, function (err, user) {
@@ -81,7 +83,7 @@ router.patch('/metro/api/v1/users/:uid/password', (req, res, next) => {
     });
 });
 
-router.put('/metro/api/v1/users/:uid/email', (req, res, next) => {
+router.put('/metro/api/v1/users/:uid/email', passport.authenticate('jwt'), (req, res) => {
     let uid = req.params.uid;
     let user = req.body;
     User.findByEmail(user.email, function (err, doc) {
@@ -105,7 +107,7 @@ router.put('/metro/api/v1/users/:uid/email', (req, res, next) => {
     });
 });
 
-router.put('/metro/api/v1/users/:uid/name', (req, res, next) => {
+router.put('/metro/api/v1/users/:uid/name', passport.authenticate('jwt'), (req, res) => {
     let uid = req.params.uid;
     let user = req.body;
     User.updateName(user, function (err, doc) {
@@ -119,7 +121,7 @@ router.put('/metro/api/v1/users/:uid/name', (req, res, next) => {
     });
 });
 
-router.put('/metro/api/v1/users/:uid/password', (req, res, next) => {
+router.put('/metro/api/v1/users/:uid/password', passport.authenticate('jwt'), (req, res) => {
     let uid = req.params.uid;
     let user = req.body;
     user.password = new User().hashPassword(user.password);
@@ -128,13 +130,13 @@ router.put('/metro/api/v1/users/:uid/password', (req, res, next) => {
             res.status(404).send({msg: 'error: user did not find'});
         } else {
             if (doc) {
-                res.status(200).json(new User().transformUser(doc));
+                res.status(200).json({msg: 'password updated successfully'});
             }
         }
     });
 });
 
-router.put('/metro/api/v1/users/:uid/enabled', (req, res, next) => {
+router.put('/metro/api/v1/users/:uid/enabled', passport.authenticate('jwt'), (req, res) => {
     let uid = req.params.uid;
     let user = req.body;
     User.updateEnabled(user, function (err, doc) {
@@ -151,7 +153,7 @@ router.put('/metro/api/v1/users/:uid/enabled', (req, res, next) => {
                                             Map API
 ======================================================================================================*/
 // get all visible maps
-router.get('/metro/api/v1/maps', async (req, res, next) => {
+router.get('/metro/api/v1/maps', passport.authenticate('jwt'), async (req, res, next) => {
     let currentPage = parseInt(req.query.page);
     let limit = parseInt(req.query.limit) || 3;
 
@@ -179,14 +181,22 @@ router.get('/metro/api/v1/maps', async (req, res, next) => {
             mapCount: itemCount
         });
     } catch (err) {
-        console.log(err);
         next(err);
     }
 });
 
 // get map by id
-router.get('/metro/api/v1/maps/:mid', (req, res, next) => {
+router.get('/metro/api/v1/maps/:mid', passport.authenticate('jwt'), (req, res) => {
     let mid = req.params.mid;
+    // Map.find()
+    //     .where('_id').equals(mid)
+    //     .exec(function (err, map) {
+    //         if (err) {
+    //             res.status(404).send({msg: 'error: cannot find the map'});
+    //         } else {
+    //             res.status(200).send(new Map().transformMap(map));
+    //         }
+    //     });
     Map.findOne({_id: mid}, function (err, map) {
         if (err) {
             res.status(404).send({msg: 'error: cannot find the map'});
@@ -197,7 +207,7 @@ router.get('/metro/api/v1/maps/:mid', (req, res, next) => {
 });
 
 // get all maps belong to the user
-router.get('/metro/api/v1/users/:uid/maps/', (req, res, next) => {
+router.get('/metro/api/v1/users/:uid/maps/', passport.authenticate('jwt'), (req, res) => {
     let uid = req.params.uid;
     Map.find()
         .where('uid').equals(uid)
@@ -212,7 +222,7 @@ router.get('/metro/api/v1/users/:uid/maps/', (req, res, next) => {
 });
 
 // create map with mid
-router.post('/metro/api/v1/maps', (req, res, next) => {
+router.post('/metro/api/v1/maps', passport.authenticate('jwt'), (req, res) => {
     let map = req.body;
     let tempMap = new Map();
     tempMap.uid = map.uid || "";
@@ -232,7 +242,7 @@ router.post('/metro/api/v1/maps', (req, res, next) => {
 });
 
 // update map
-router.put('/metro/api/v1/maps/:mid', (req, res, next) => {
+router.put('/metro/api/v1/maps/:mid', passport.authenticate('jwt'), (req, res) => {
     let map = req.body;
     Map.update(map, function (err, doc) {
         if (err) {
@@ -245,7 +255,7 @@ router.put('/metro/api/v1/maps/:mid', (req, res, next) => {
     });
 });
 
-router.delete('/metro/api/v1/maps/:mid', (req, res, next) => {
+router.delete('/metro/api/v1/maps/:mid', passport.authenticate('jwt'), (req, res) => {
     let mid = req.params.mid;
     Map.delete(mid, function (err, doc) {
         if (err) {
