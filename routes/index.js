@@ -188,15 +188,6 @@ router.get('/metro/api/v1/maps', passport.authenticate('jwt'), async (req, res, 
 // get map by id
 router.get('/metro/api/v1/maps/:mid', passport.authenticate('jwt'), (req, res) => {
     let mid = req.params.mid;
-    // Map.find()
-    //     .where('_id').equals(mid)
-    //     .exec(function (err, map) {
-    //         if (err) {
-    //             res.status(404).send({msg: 'error: cannot find the map'});
-    //         } else {
-    //             res.status(200).send(new Map().transformMap(map));
-    //         }
-    //     });
     Map.findOne({_id: mid}, function (err, map) {
         if (err) {
             res.status(404).send({msg: 'error: cannot find the map'});
@@ -268,28 +259,28 @@ router.delete('/metro/api/v1/maps/:mid', passport.authenticate('jwt'), (req, res
     })
 });
 
-/*=====================================================================================================
-                                            File API
-======================================================================================================*/
-
-router.get('/app', function (req, res, next) {
-    res.sendFile('app.html', {root: __dirname + "/../public"});
-});
-
-router.get('/todolist', function (req, res, next) {
-    res.sendFile('todolist.html', {root: __dirname + "/../public"});
-});
-
-router.get('/elevation-demo', function (req, res, next) {
-    res.sendFile('elevation-demo.html', {root: __dirname + "/../public"});
-});
-
-router.get('/topology', function (req, res, next) {
-    res.sendFile('topology-demo.html', {root: __dirname + "/../public"});
-});
-
-router.get('/split-poly', function (req, res, next) {
-    res.sendFile('split-poly.html', {root: __dirname + "/../public"});
-});
+// /*=====================================================================================================
+//                                             File API
+// ======================================================================================================*/
+//
+// router.get('/app', function (req, res, next) {
+//     res.sendFile('app.html', {root: __dirname + "/../public"});
+// });
+//
+// router.get('/todolist', function (req, res, next) {
+//     res.sendFile('todolist.html', {root: __dirname + "/../public"});
+// });
+//
+// router.get('/elevation-demo', function (req, res, next) {
+//     res.sendFile('elevation-demo.html', {root: __dirname + "/../public"});
+// });
+//
+// router.get('/topology', function (req, res, next) {
+//     res.sendFile('topology-demo.html', {root: __dirname + "/../public"});
+// });
+//
+// router.get('/split-poly', function (req, res, next) {
+//     res.sendFile('split-poly.html', {root: __dirname + "/../public"});
+// });
 
 module.exports = router;

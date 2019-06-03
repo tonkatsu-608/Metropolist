@@ -33,7 +33,7 @@ var mapSchema = new schema({
     }
 });
 
-mapSchema.index({ createDate: 1 });
+mapSchema.index({createDate: 1});
 
 mapSchema.methods.transformMap = function (map) {
     return {

@@ -23,9 +23,10 @@ const mongoose = require('mongoose');
 const passport = require('passport');
 const cors = require('cors');
 const expressJwt = require('express-jwt');
+const history = require('connect-history-api-fallback');
 
 require('./passport')(passport);
-mongoose.connect('mongodb://localhost:27017/metropolist', { useNewUrlParser: true });
+mongoose.connect('mongodb://localhost:27017/metropolist', {useNewUrlParser: true});
 
 var indexRouter = require('./routes/index');
 var auth = require('./routes/auth')(passport);
@@ -34,9 +35,7 @@ var corsOptions = {
     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 };
 var app = express();
-// app.listen(8000, () => {
-//     console.log('Port: 8000 started!');
-// });
+app.use(history());
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -67,12 +66,12 @@ app.use('/', indexRouter);
 app.use('/metro/auth', auth);
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
     next(createError(404));
 });
 
 // error handler
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
     // set locals, only providing error in development
     res.locals.message = err.message;
     res.locals.error = req.app.get('env') === 'development' ? err : {};
