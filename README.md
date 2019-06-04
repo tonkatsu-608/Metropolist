@@ -1,5 +1,4 @@
-# Metropolist - a procedual map generator and editor
-
+# Metropolist
 ## Overview
 This web application allows users to create randomly generated fantasy maps of cities and additionally allows user to annotate and edit city elements at a fine granularity.
 
@@ -40,7 +39,7 @@ npm start
 [http://localhost:3000](http://localhost:3000)
 
 * Now you can register as a new user via [http://localhost:3000/signup](http://localhost:3000/signup)
-* Or login as a old user [http://localhost:3000/login](http://localhost:3000/login) <br>
+* Or login as an old user [http://localhost:3000/login](http://localhost:3000/login) <br>
 
 * There is a default admin:
 ```
