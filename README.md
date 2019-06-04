@@ -3,7 +3,7 @@
 This web application allows users to create randomly generated fantasy maps of cities and additionally allows user to annotate and edit city elements at a fine granularity.
 
 <p align="center">
-  <img src="https://github.com/haleyysz/Metropolist/blob/master/public/assets/images/screenshot-0.png" width="60%">
+  <img src="https://github.com/haleyysz/Metropolist/blob/master/public/assets/images/screenshot-0.png">
   <br>
   <i>a screenshot of the map generator page</i>
 </p>
@@ -17,8 +17,9 @@ This web application allows users to create randomly generated fantasy maps of c
 Other libraries used:
 * [d3.js](https://github.com/d3/d3): Map rendering engine
 * [Angular Material](https://material.angular.io): Layout and styles
-* [Passport.js](http://www.passportjs.org): Password encryption
-* [express-jwt](https://github.com/auth0/express-jwt): User authentication
+* [Passport.js](http://www.passportjs.org): User authentication
+* [express-jwt](https://github.com/auth0/express-jwt): JSON Web Token
+* [bcrypt-nodejs](https://www.npmjs.com/package/bcrypt-nodejs): Password encryption
 
 ## Installation & usage
 * **Install Node.js**  [https://nodejs.org/en/download](https://nodejs.org/en/download)
