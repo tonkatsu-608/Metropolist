@@ -22,7 +22,7 @@ Other libraries used:
 * [express-jwt](https://github.com/auth0/express-jwt): User authentication
 
 ## Installation & usage
-* **Istall Node.js**  [https://nodejs.org/en/download](https://nodejs.org/en/download)
+* **Install Node.js**  [https://nodejs.org/en/download](https://nodejs.org/en/download)
 * **Install MongoDB**  [https://docs.mongodb.com/manual/installation](https://docs.mongodb.com/manual/installation)
 * **Clone this project to your local machine**
 ```
