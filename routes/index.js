@@ -138,13 +138,24 @@ router.put('/metro/api/v1/users/:uid/password', passport.authenticate('jwt'), (r
 
 router.put('/metro/api/v1/users/:uid/enabled', passport.authenticate('jwt'), (req, res) => {
     let uid = req.params.uid;
-    let user = req.body;
-    User.updateEnabled(user, function (err, doc) {
+
+    User.findOne({_id: uid}, function (err, doc) {
         if (err) {
-            res.status(404).send({msg: 'error: user did not find'});
+            res.status(404).send({error: 'error: user did not find'});
         } else {
-            if (doc) {
-                res.status(200).json(new User().transformUser(doc));
+            let user = req.body;
+            if(user.role === 'admin') {
+                res.status(405).send({error: 'error: admin cannot be disabled'});
+            } else {
+                User.updateEnabled(user, function (err, doc) {
+                    if (err) {
+                        res.status(404).send({error: 'error: user did not match'});
+                    } else {
+                        if (doc) {
+                            res.status(200).json(new User().transformUser(doc));
+                        }
+                    }
+                });
             }
         }
     });

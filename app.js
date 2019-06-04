@@ -25,8 +25,9 @@ const cors = require('cors');
 const expressJwt = require('express-jwt');
 const history = require('connect-history-api-fallback');
 
-require('./passport')(passport);
 mongoose.connect('mongodb://localhost:27017/metropolist', {useNewUrlParser: true});
+require('./db/seed');
+require('./passport')(passport);
 
 var indexRouter = require('./routes/index');
 var auth = require('./routes/auth')(passport);
