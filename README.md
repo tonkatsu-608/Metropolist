@@ -2,6 +2,8 @@
 ## Overview
 This web application allows users to create randomly generated fantasy maps of cities and additionally allows user to annotate and edit city elements at a fine granularity.
 
+All the functional requirements are listed in the project advisor's [website](https://charity.cs.uwlax.edu/projects/metropolist/metropolist.html).
+
 <p align="center">
   <img src="https://github.com/haleyysz/Metropolist/blob/master/public/assets/images/screenshot-0.png">
   <br>
@@ -16,6 +18,7 @@ This web application allows users to create randomly generated fantasy maps of c
 
 Other libraries used:
 * [d3.js](https://github.com/d3/d3): Map rendering engine
+* [poly-split-js](https://github.com/kladess/poly-split-js): Polygon partition
 * [Angular Material](https://material.angular.io): Layout and styles
 * [Passport.js](http://www.passportjs.org): User authentication
 * [express-jwt](https://github.com/auth0/express-jwt): JSON Web Token
@@ -27,6 +30,10 @@ Other libraries used:
 * **Clone this project to your local machine**
 ```
 git clone https://github.com/haleyysz/Metropolist.git
+```
+* **Enter the project
+```
+cd Metropolist
 ```
 * **Run MongoDB**
 ```
