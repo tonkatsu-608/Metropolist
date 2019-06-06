@@ -31,7 +31,7 @@ Other libraries used:
 ```
 git clone https://github.com/haleyysz/Metropolist.git
 ```
-* **Enter the project
+* **Enter the project**
 ```
 cd Metropolist
 ```
