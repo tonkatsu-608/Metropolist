@@ -42,8 +42,12 @@ npm start
 * Now you can register as a new user via [http://localhost:3000/signup](http://localhost:3000/signup)
 * Or login as an old user [http://localhost:3000/login](http://localhost:3000/login) <br>
 
-* There is a default admin:
+* There is a default admin
 ```
 email: admin@admin.com
 password: adminABC123
 ```
+
+## Authors
+* Author: [Shizheng Yang](https://github.com/haleyysz)
+* Advisor: [Kenny Hunt](https://charity.cs.uwlax.edu)
