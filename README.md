@@ -1,6 +1,8 @@
 # Metropolist
 ## Overview
-This web application allows users to create randomly generated fantasy maps of cities and additionally allows user to annotate and edit city elements at a fine granularity.
+This web application allows users to create randomly generated fantasy maps of cities and additionally allows user to annotate and edit city elements at a fine granularity for dynamic online searching (like Google Maps).
+
+The goal of this project is to build a web application to automatically generate city maps for use in role-playing games (RPG) or worldbuilding narratives.
 
 All the functional requirements are listed in the project advisor's [website](https://charity.cs.uwlax.edu/projects/metropolist/metropolist.html).
 
